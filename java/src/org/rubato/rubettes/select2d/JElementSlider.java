@@ -89,7 +89,7 @@ public abstract class JElementSlider extends JPanel {
         rightBox.add(new JLabel("current: "));
         currentField = new JTextField(6);
         currentField.setEditable(false);
-        currentField.setBackground(Color.WHITE);
+        currentField.setBackground(org.rubato.composer.Utilities.textBackground());
         rightBox.add(currentField);
         add(rightBox, BorderLayout.EAST);
     }

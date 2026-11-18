@@ -209,7 +209,7 @@ class JAffineMorphismType
                     matrixEntries[i][j].setBackground(Utilities.ERROR_BG_COLOR);
                 }
                 else {
-                    matrixEntries[i][j].setBackground(Color.WHITE);
+                    matrixEntries[i][j].setBackground(org.rubato.composer.Utilities.textBackground());
                 }
             }
             String s = vectorEntries[i].getText();
@@ -218,7 +218,7 @@ class JAffineMorphismType
                 vectorEntries[i].setBackground(Utilities.ERROR_BG_COLOR);
             }
             else {
-                vectorEntries[i].setBackground(Color.WHITE);
+                vectorEntries[i].setBackground(org.rubato.composer.Utilities.textBackground());
             }
         }
         if (ok) {

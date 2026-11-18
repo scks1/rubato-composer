@@ -69,7 +69,7 @@ public class JSchemeDialog
         bottomPanel.setLayout(new BorderLayout());
         
         errorArea = new JTextArea(1, 0);
-        errorArea.setForeground(Color.RED);
+        errorArea.setForeground(org.rubato.composer.Utilities.errorForeground());
         errorArea.setFocusable(false);
         errorArea.setEditable(false);
         bottomPanel.add(new JScrollPane(errorArea), BorderLayout.NORTH);        

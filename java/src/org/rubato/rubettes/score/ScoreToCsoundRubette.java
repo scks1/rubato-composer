@@ -138,7 +138,7 @@ public final class ScoreToCsoundRubette extends AbstractRubette {
             fileNameField = new JTextField(getScoFileName());
             fileNameField.setEditable(false);
             fileNameField.setOpaque(true);
-            fileNameField.setBackground(Color.WHITE);
+            fileNameField.setBackground(org.rubato.composer.Utilities.textBackground());
             fileNameField.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
             fileBox.add(fileNameField);
             fileBox.add(Box.createHorizontalStrut(5));

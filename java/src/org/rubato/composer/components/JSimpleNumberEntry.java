@@ -97,7 +97,7 @@ public class JSimpleNumberEntry
                 inputFields[i].setBackground(prefs.getEntryErrorColor());
             }
             else {
-                inputFields[i].setBackground(Color.WHITE);
+                inputFields[i].setBackground(org.rubato.composer.Utilities.textBackground());
                 list.add(element);
             }
         }
