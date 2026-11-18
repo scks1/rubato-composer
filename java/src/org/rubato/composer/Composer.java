@@ -199,6 +199,8 @@ public class Composer implements WindowStateListener {
                 return;
             }
         }
+        // the look and feel must be in place before any component exists
+        Theme.install();
         Composer composer = new Composer(args);
         composer.start();
     }

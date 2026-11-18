@@ -49,6 +49,8 @@ public abstract class JPreferencesPanel extends JPanel {
     
     protected void addPreference(String label, JComponent comp) {
         JLabel jlabel = new JLabel(label);
+        // screen readers announce the label with the control
+        jlabel.setLabelFor(comp);
         c.fill = GridBagConstraints.HORIZONTAL;
         c.weightx = 1.0;
         c.weighty = 0.0;
@@ -68,6 +70,6 @@ public abstract class JPreferencesPanel extends JPanel {
     protected UserPreferences    userPrefs;
     protected GridBagLayout      gridbag;
     protected GridBagConstraints c;
-    private   Insets             rightPadding = new Insets(0, 0, 0, 15); 
-    private   Insets             noPadding    = new Insets(0, 0, 0, 0); 
+    private   Insets             rightPadding = new Insets(3, 0, 3, 15); 
+    private   Insets             noPadding    = new Insets(3, 0, 3, 0); 
 }

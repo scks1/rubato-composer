@@ -139,7 +139,7 @@ public final class UserPreferences {
     
     
     public Color getEntryErrorColor() {
-        return new Color(1.0f, 0.6f, 0.0f);
+        return org.rubato.composer.Utilities.ERROR_BG_COLOR;
     }
     
     
@@ -165,6 +165,20 @@ public final class UserPreferences {
             i++;
         }
         preferences.put("RecentFile"+i, "");
+    }
+    
+    
+    /**
+     * Sets the user interface theme, one of the names in
+     * {@link org.rubato.composer.Theme#NAMES}. Takes effect at the next start.
+     */
+    public void setTheme(String theme) {
+        preferences.put(PREF_UI_THEME, theme);
+    }
+    
+    
+    public String getTheme() {
+        return preferences.get(PREF_UI_THEME, "light"); //$NON-NLS-1$
     }
     
     
@@ -199,4 +213,5 @@ public final class UserPreferences {
     private static final String PREF_DIR_CURRENT      = "dir.current"; //$NON-NLS-1$
     private static final String PREF_DEFAULT_QUANT    = "rational.quant"; //$NON-NLS-1$
     private static final String PREF_SHOW_PROGRESS    = "run.showprogress"; //$NON-NLS-1$
+    private static final String PREF_UI_THEME         = "ui.theme"; //$NON-NLS-1$
 }
