@@ -244,7 +244,7 @@ public class BigBangModel extends Model {
 	public void affineTransformObjects(TransformationProperties properties, double[] shift, RMatrix transform) {
 		if (properties.startNewTransformation()) {
 			this.addOperation(new AffineTransformation(this, properties, shift, transform));
-		} else if (this.updateTransformation(properties, ShearingTransformation.class)) {
+		} else if (this.updateTransformation(properties, AffineTransformation.class)) {
 			AffineTransformation lastTransformation = (AffineTransformation)this.operationGraph.getLastAddedOperation();
 			lastTransformation.setParameters(shift, transform);
 			this.updateAfterModifying(lastTransformation);
