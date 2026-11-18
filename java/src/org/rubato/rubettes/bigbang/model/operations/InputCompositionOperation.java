@@ -69,7 +69,9 @@ public class InputCompositionOperation extends AbstractOperation {
 	}
 	
 	public OperationPathResults execute() {
-		return this.model.getDenotatorManager().setOrAddComposition(this.modifiedComposition);
+		//the manager adds the factors of the given denotator to its composition and later operations
+		//change them in place, so each execution gets its own copy
+		return this.model.getDenotatorManager().setOrAddComposition(this.modifiedComposition.copy());
 	}
 	
 	@Override
