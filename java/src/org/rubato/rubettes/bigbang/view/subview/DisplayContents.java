@@ -1,5 +1,6 @@
 package org.rubato.rubettes.bigbang.view.subview;
 
+import org.rubato.rubettes.bigbang.model.BigBangObjects;
 import org.rubato.rubettes.bigbang.view.model.DisplayObject;
 import org.rubato.rubettes.bigbang.view.model.ViewParameter;
 import org.rubato.rubettes.bigbang.view.model.ViewParameters;
@@ -19,6 +20,7 @@ public class DisplayContents {
 	protected double xZoomFactor, yZoomFactor;
 	protected Point position;
 	private boolean satellitesConnected;
+	private ValueLookup[] valueLookups = new ValueLookup[0];
 	
 	public DisplayContents() {
 	}
@@ -187,14 +189,47 @@ public class DisplayContents {
 	public double translateValue(DisplayObject object, int viewParameterIndex) {
 		int valueIndex = this.viewParameters.getSelectedViewParameterAt(viewParameterIndex);
 		if (valueIndex > -1 && valueIndex < this.displayObjects.getCoordinateSystemValueNames().size()) {
-			String valueName = this.displayObjects.getCoordinateSystemValueNames().get(valueIndex);
-			int nameInstanceNumber = this.displayObjects.getInstanceNumberOfCoordinateValueName(valueIndex);
-			Double denotatorValue = object.getNthValue(valueName, nameInstanceNumber);
+			ValueLookup lookup = this.getValueLookup(viewParameterIndex, valueIndex);
+			Double denotatorValue = object.getNthValue(lookup.valueName, lookup.instanceNumber);
 			if (denotatorValue != null) {
 				return this.viewParameters.get(viewParameterIndex).translateDenotatorValue(denotatorValue);
 			}
 		}
 		return this.viewParameters.get(viewParameterIndex).getDefaultValue();
+	}
+	
+	/**
+	 * Returns the value name and instance number that the given view parameter shows, reusing the
+	 * last lookup while the parameter shows the same coordinate system value of the same objects.
+	 * FormValueFinder computes instance numbers by walking the coordinate system, which costs more
+	 * than reading the value itself.
+	 */
+	private ValueLookup getValueLookup(int viewParameterIndex, int valueIndex) {
+		BigBangObjects objects = this.displayObjects.getBigBangObjects();
+		if (viewParameterIndex >= this.valueLookups.length) {
+			this.valueLookups = java.util.Arrays.copyOf(this.valueLookups, viewParameterIndex + 1);
+		}
+		ValueLookup lookup = this.valueLookups[viewParameterIndex];
+		if (lookup == null || lookup.objects != objects || lookup.valueIndex != valueIndex) {
+			String valueName = this.displayObjects.getCoordinateSystemValueNames().get(valueIndex);
+			int instanceNumber = this.displayObjects.getInstanceNumberOfCoordinateValueName(valueIndex);
+			lookup = new ValueLookup(objects, valueIndex, valueName, instanceNumber);
+			this.valueLookups[viewParameterIndex] = lookup;
+		}
+		return lookup;
+	}
+	
+	private static final class ValueLookup {
+		final BigBangObjects objects;
+		final int valueIndex;
+		final String valueName;
+		final int instanceNumber;
+		ValueLookup(BigBangObjects objects, int valueIndex, String valueName, int instanceNumber) {
+			this.objects = objects;
+			this.valueIndex = valueIndex;
+			this.valueName = valueName;
+			this.instanceNumber = instanceNumber;
+		}
 	}
 	
 	public void paint(AbstractPainter painter, int width, int height) {
