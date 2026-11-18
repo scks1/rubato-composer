@@ -225,7 +225,7 @@ public class JComposer extends JFrame implements Observer {
 
         fileMenu.addSeparator();
         
-        JMenu recentFilesItem = new JMenu("Recent Files");
+        JMenu recentFilesItem = new JMenu(Messages.getString("JComposer.recentfiles")); //$NON-NLS-1$
         fileMenu.add(recentFilesItem);
         recentFiles = new RecentFiles(recentFilesItem);
         recentFiles.setAction(new AbstractAction() {
@@ -247,7 +247,7 @@ public class JComposer extends JFrame implements Observer {
         menuBar.add(fileMenu);
 
         // Edit menu
-        JMenu editMenu = new JMenu("Edit");
+        JMenu editMenu = new JMenu(Messages.getString("JComposer.edit")); //$NON-NLS-1$
         editMenu.setMnemonic(KeyEvent.VK_E);
         
         final JMenuItem cutItem = new JMenuItem(cutAction);
