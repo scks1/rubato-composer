@@ -145,6 +145,12 @@ public class OperationPathResults {
 		this.removedPaths = new TreeSet<DenotatorPath>();
 	}
 	
+	/** Returns true if these results hold no new, removed, changed or selected paths. */
+	public boolean isEmpty() {
+		return this.newPaths.isEmpty() && this.removedPaths.isEmpty() && this.changedPaths.isEmpty()
+				&& (this.pathsToBeSelected == null || this.pathsToBeSelected.isEmpty());
+	}
+	
 	public void setNewPaths(Set<DenotatorPath> newPaths) {
 		this.newPaths = newPaths;
 	}

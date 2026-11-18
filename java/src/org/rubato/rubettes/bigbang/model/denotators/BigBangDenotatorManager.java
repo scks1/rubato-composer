@@ -676,6 +676,42 @@ public class BigBangDenotatorManager {
 	}
 	
 	/**
+	 * The state of this manager between two operations, which BigBangModel keeps so that it can
+	 * re-execute an operation graph from a given operation onward.
+	 */
+	public static final class Checkpoint {
+		private final Denotator composition;
+		
+		private Checkpoint(Denotator composition) {
+			this.composition = composition;
+		}
+	}
+	
+	/**
+	 * Returns a checkpoint holding a deep copy of the current composition, or null if this manager
+	 * holds state that the copy would miss: an unfinished wallpaper, an alteration, or path results
+	 * that no operation has collected yet.
+	 */
+	public Checkpoint checkpoint() {
+		if (this.currentWallpaper != null || this.currentAlteration != null
+				|| (this.currentPathResults != null && !this.currentPathResults.isEmpty())) {
+			return null;
+		}
+		return new Checkpoint(this.composition.copy());
+	}
+	
+	/**
+	 * Sets the composition to a copy of the one in the given checkpoint, so that the checkpoint
+	 * can be restored again later.
+	 */
+	public void restore(Checkpoint checkpoint) {
+		this.composition = checkpoint.composition.copy();
+		this.currentWallpaper = null;
+		this.currentAlteration = null;
+		this.resetCurrentPaths();
+	}
+	
+	/**
 	 * does not clone current wallpaper or alteration 
 	 */
 	public BigBangDenotatorManager clone() {

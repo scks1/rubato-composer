@@ -59,6 +59,17 @@ public class BigBangModel extends Model {
 	private BigBangOperationGraph operationGraph;
 	private BigBangGraphAnimator animator;
 	
+	//Incremental replay: the operations executed by the last update, in order, the path results each
+	//of them returned, and the denotator state before each of them (null where it was not captured).
+	//An update that knows which operations changed restores the state before the first changed one
+	//and executes the graph from there on. Setting the system property rubato.bigbang.fullReplay
+	//to true, or calling setIncrementalReplay(false), makes every update execute all operations.
+	private boolean incrementalReplay = !Boolean.getBoolean("rubato.bigbang.fullReplay");
+	private final List<AbstractOperation> replayedOperations = new ArrayList<AbstractOperation>();
+	private final List<OperationPathResults> replayedPathResults = new ArrayList<OperationPathResults>();
+	private final List<BigBangDenotatorManager.Checkpoint> checkpoints = new ArrayList<BigBangDenotatorManager.Checkpoint>();
+	private int lastReplayStart;
+	
 	public BigBangModel() {
 		this.denotators = new BigBangDenotatorManager();
 		this.setInputActive(true);
@@ -77,12 +88,14 @@ public class BigBangModel extends Model {
 	}
 	
 	public void reset() {
+		this.clearReplayCache();
 		this.undoManager.discardAllEdits();
 		this.operationGraph = new BigBangOperationGraph();
 		this.firePropertyChange(BigBangController.GRAPH, null, this.operationGraph);
 	}
 	
 	private void setGraph(BigBangOperationGraph graph) {
+		this.clearReplayCache();
 		this.operationGraph = graph;
 	}
 	
@@ -127,8 +140,9 @@ public class BigBangModel extends Model {
 			this.setForm(composition.getForm());
 		}
 		if (this.operationGraph.getSelectedOperation() instanceof InputCompositionOperation) {
-			((InputCompositionOperation)this.operationGraph.getSelectedOperation()).setOrAddComposition(composition);
-			this.operationModified();
+			InputCompositionOperation input = (InputCompositionOperation)this.operationGraph.getSelectedOperation();
+			input.setOrAddComposition(composition);
+			this.operationModified(input);
 		} else {
 			this.addOperation(new InputCompositionOperation(this, composition));
 		}
@@ -148,7 +162,7 @@ public class BigBangModel extends Model {
 			if (lastEdit != null && lastEdit instanceof AddObjectsOperation) {
 				AddObjectsOperation addEdit = (AddObjectsOperation) lastEdit;
 				if (addEdit.addObjects(pathsWithValues, powersetPaths, inPreviewMode)) {
-					this.operationModified();
+					this.operationModified(addEdit);
 					return;
 				}
 			}
@@ -165,7 +179,7 @@ public class BigBangModel extends Model {
 		}
 		if (edit != null) {
 			edit.unAddObjects(pathsWithValues);
-			this.operationModified();
+			this.operationModified(edit);
 		}
 	}
 	
@@ -177,7 +191,7 @@ public class BigBangModel extends Model {
 		AbstractOperation lastEdit = this.operationGraph.getLastAddedOperation();
 		if (lastEdit != null && lastEdit instanceof DeleteObjectsOperation) {
 			((DeleteObjectsOperation)lastEdit).addObjects(objects);
-			this.operationModified();
+			this.operationModified(lastEdit);
 			return;
 		}
 		this.addOperation(new DeleteObjectsOperation(this, objects));
@@ -187,7 +201,7 @@ public class BigBangModel extends Model {
 		if (properties.startNewTransformation()) {
 			this.addOperation(new TranslationTransformation(this, properties));
 		} else if (this.updateTransformation(properties, TranslationTransformation.class)) {
-			this.updateComposition();
+			this.updateAfterModifying(this.operationGraph.getLastAddedOperation());
 		}
 	}
 	
@@ -197,7 +211,7 @@ public class BigBangModel extends Model {
 		} else if (this.updateTransformation(properties, RotationTransformation.class)) {
 			RotationTransformation lastRotation = (RotationTransformation)this.operationGraph.getLastAddedOperation();
 			lastRotation.setParameters(startingPoint, angle);
-			this.updateComposition();
+			this.updateAfterModifying(lastRotation);
 		}
 	}
 	
@@ -231,7 +245,7 @@ public class BigBangModel extends Model {
 		} else if (this.updateTransformation(properties, ShearingTransformation.class)) {
 			AffineTransformation lastTransformation = (AffineTransformation)this.operationGraph.getLastAddedOperation();
 			lastTransformation.setParameters(shift, transform);
-			this.updateComposition();
+			this.updateAfterModifying(lastTransformation);
 		}
 	}
 	
@@ -247,7 +261,7 @@ public class BigBangModel extends Model {
 	private void modifyLastTransformation(double[] newValues) {
 		AbstractTransformation lastTransformation = (AbstractTransformation)this.operationGraph.getLastAddedOperation();
 		lastTransformation.modify(newValues);
-		this.updateComposition();
+		this.updateAfterModifying(lastTransformation);
 	}
 	
 	public void shapeObjects(TransformationProperties properties, TreeMap<Double,Double> shapingLocations) {
@@ -259,7 +273,7 @@ public class BigBangModel extends Model {
 		}
 		if (edit != null && edit.getShapingPaths().equals(properties.getTransformationPaths())) {
 			edit.addShapingLocations(shapingLocations);
-			this.updateComposition();
+			this.updateAfterModifying(edit);
 		} else {	
 			this.addOperation(new ShapingOperation(this, properties, shapingLocations));
 		}
@@ -323,13 +337,13 @@ public class BigBangModel extends Model {
 		edit.execute();
 		this.postEdit(edit);
 		this.objects.removeOperation(operation);
-		this.updateComposition();
+		this.updateAfterStructuralChange();
 		this.firePropertyChange(BigBangController.GRAPH, null, this.operationGraph);
 	}
 	
 	private void postEdit(AbstractUndoableEdit edit) {
 		this.undoManager.postEdit(edit);
-		this.updateComposition();
+		this.updateAfterStructuralChange();
 		this.firePropertyChange(BigBangController.UNDO, null, this.undoManager);
 		this.firePropertyChange(BigBangController.GRAPH, null, this.operationGraph);
 		//this.firePropertyChange(BigBangController.SELECT_COMPOSITION_STATE, null, this.transformationGraph.getSelectedCompositionState());
@@ -340,13 +354,18 @@ public class BigBangModel extends Model {
 		this.firePropertyChange(BigBangController.GRAPH, null, this.operationGraph);
 	}
 	
+	private void operationModified(AbstractOperation operation) {
+		this.updateAfterModifying(operation);
+		this.firePropertyChange(BigBangController.GRAPH, null, this.operationGraph);
+	}
+	
 	public void modifyOperation(Integer operationIndex, Double ratio) {
 		if (operationIndex >= 0 && this.operationGraph.getEdgeCount() > operationIndex) {
 			DijkstraShortestPath<CompositionState,AbstractOperation> dijkstra = new DijkstraShortestPath<CompositionState,AbstractOperation>(this.operationGraph);
 		    List<AbstractOperation> shortestPath = dijkstra.getPath(this.operationGraph.getFirstState(), this.operationGraph.getLastState());
 		    AbstractOperation operation = shortestPath.get(operationIndex);
 		    operation.modify(ratio);
-			this.updateComposition();
+			this.updateAfterModifying(operation);
 			this.firePropertyChange(BigBangController.MODIFY_OPERATION, null, operation);
 		}
 	}
@@ -364,7 +383,7 @@ public class BigBangModel extends Model {
 		CompositionState state = this.operationGraph.getSource(lastAddedOperation);
 		//this.undoneOperations.add(this.transformationGraph.removeLastAddedOperation());
 		this.undoManager.undo();
-		this.updateComposition();
+		this.updateAfterStructuralChange();
 		this.firePropertyChange(BigBangController.UNDO, null, this.undoManager);
 		this.firePropertyChange(BigBangController.GRAPH, null, this.operationGraph);
 	}
@@ -372,7 +391,7 @@ public class BigBangModel extends Model {
 	public void redo() {
 		//this.transformationGraph.addOrInsertOperation(this.undoneOperations.remove(this.undoneOperations.size()-1), false);
 		this.undoManager.redo();
-		this.updateComposition();
+		this.updateAfterStructuralChange();
 		this.firePropertyChange(BigBangController.REDO, null, this.undoManager);
 		this.firePropertyChange(BigBangController.GRAPH, null, this.operationGraph);
 	}
@@ -401,19 +420,19 @@ public class BigBangModel extends Model {
 	
 	public void selectCompositionStateAt(Integer stateIndex) {
 		this.operationGraph.selectCompositionStateAt(stateIndex);
-		this.updateComposition();
+		this.updateAfterStructuralChange();
 		this.firePropertyChange(BigBangController.SELECT_COMPOSITION_STATE, null, this.operationGraph.getSelectedCompositionState());
 	}
 	
 	public void selectCompositionState(CompositionState vertex) {
 		this.operationGraph.selectCompositionState(vertex);
-		this.updateComposition();
+		this.updateAfterStructuralChange();
 		this.firePropertyChange(BigBangController.SELECT_COMPOSITION_STATE, null, vertex);
 	}
 	
 	public void deselectCompositionStates() {
 		this.operationGraph.deselectCompositionStates();
-		this.updateComposition();
+		this.updateAfterStructuralChange();
 		this.firePropertyChange(BigBangController.DESELECT_COMPOSITION_STATES, null, null);
 	}
 	
@@ -473,21 +492,112 @@ public class BigBangModel extends Model {
 		return this.operationGraph;
 	}
 	
+	/**
+	 * Executes every operation on the current path of the graph. Callers that changed operations
+	 * without telling the model which ones use this method.
+	 */
 	public synchronized void updateComposition() {
+		this.replayFrom(0);
+	}
+	
+	/**
+	 * Updates after operations were added, removed or reordered on the current path, or a different
+	 * state was selected, with no operation changed in place.
+	 */
+	private synchronized void updateAfterStructuralChange() {
+		this.replayFrom(this.getReplayStart(null));
+	}
+	
+	/**
+	 * Updates after the given operation changed in place, as a drag gesture changes the last
+	 * transformation.
+	 */
+	private synchronized void updateAfterModifying(AbstractOperation modifiedOperation) {
+		this.replayFrom(this.getReplayStart(modifiedOperation));
+	}
+	
+	public void setIncrementalReplay(boolean incrementalReplay) {
+		this.incrementalReplay = incrementalReplay;
+		this.clearReplayCache();
+	}
+	
+	/**
+	 * Returns the index of the first operation that the last update executed, 0 if it executed all
+	 * of them.
+	 */
+	public int getLastReplayStart() {
+		return this.lastReplayStart;
+	}
+	
+	private void clearReplayCache() {
+		this.replayedOperations.clear();
+		this.replayedPathResults.clear();
+		this.checkpoints.clear();
+	}
+	
+	/**
+	 * Returns the index of the first operation on the current path that has to be executed again:
+	 * the first one that differs from the last update's operations, or the modified one if it comes
+	 * earlier. The index then moves back to the nearest operation with a captured checkpoint.
+	 */
+	private int getReplayStart(AbstractOperation modifiedOperation) {
+		if (!this.incrementalReplay) {
+			return 0;
+		}
+		List<AbstractOperation> current = this.operationGraph.getCurrentlyExecutedOperationsInOrder();
+		int start = 0;
+		int commonLength = Math.min(current.size(), this.replayedOperations.size());
+		while (start < commonLength && current.get(start) == this.replayedOperations.get(start)) {
+			start++;
+		}
+		if (modifiedOperation != null) {
+			for (int i = 0; i < start; i++) {
+				if (current.get(i) == modifiedOperation) {
+					start = i;
+					break;
+				}
+			}
+		}
+		//the last operation on the path always runs again, since its results set up the final objects
+		start = Math.min(start, current.size()-1);
+		while (start > 0 && (start >= this.checkpoints.size() || this.checkpoints.get(start) == null)) {
+			start--;
+		}
+		return Math.max(start, 0);
+	}
+	
+	/**
+	 * Executes the operations of the current path from the given index on. For an index above 0,
+	 * the denotators are restored to the checkpoint before that operation and the objects at that
+	 * operation are rebuilt from the previous operation's stored path results.
+	 */
+	private void replayFrom(int start) {
 		if (this.operationGraph.getEdgeCount() > 0) {
-			List<AbstractOperation> operationsToBeExecuted = this.operationGraph.getCurrentlyExecutedOperationsInOrder();
-			this.denotators.reset();
+			List<AbstractOperation> operationsToBeExecuted = new ArrayList<AbstractOperation>(this.operationGraph.getCurrentlyExecutedOperationsInOrder());
+			if (start > 0) {
+				this.denotators.restore(this.checkpoints.get(start));
+				this.objects.updatePaths(operationsToBeExecuted.get(start-1), operationsToBeExecuted.get(start), this.replayedPathResults.get(start-1));
+			} else {
+				this.denotators.reset();
+			}
+			this.lastReplayStart = start;
+			this.truncateReplayCache(start);
 			
 			OperationPathResults currentPathResults = null;
-			for (int i = 0; i < operationsToBeExecuted.size(); i++) {
+			for (int i = start; i < operationsToBeExecuted.size(); i++) {
 				AbstractOperation currentOperation = operationsToBeExecuted.get(i);
 				AbstractOperation nextOperation = null;
 				if (i < operationsToBeExecuted.size()-1) {
 					nextOperation = operationsToBeExecuted.get(i+1);
 				}
+				if (i >= this.checkpoints.size()) {
+					this.checkpoints.add(this.incrementalReplay && i > 0 ? this.denotators.checkpoint() : null);
+				}
 				//System.out.println(currentOperation);
 				PerformanceCheck.startTask("execute");
 				currentPathResults = currentOperation.execute();
+				this.replayedOperations.add(currentOperation);
+				this.replayedPathResults.add(currentPathResults);
 				PerformanceCheck.startTask("update paths");
 				this.objects.updatePaths(currentOperation, nextOperation, currentPathResults);
 			}
@@ -501,9 +611,23 @@ public class BigBangModel extends Model {
 			PerformanceCheck.startTask("fire");
 			this.fireCompositionChange();
 		} else {
+			this.clearReplayCache();
+			this.lastReplayStart = 0;
 			this.objects.clearObjects();
 			this.denotators.reset();
 			this.fireCompositionChange();
+		}
+	}
+	
+	//keeps the operations and results before start, and the checkpoints up to and including start
+	private void truncateReplayCache(int start) {
+		while (this.replayedOperations.size() > start) {
+			this.replayedOperations.remove(this.replayedOperations.size()-1);
+			this.replayedPathResults.remove(this.replayedPathResults.size()-1);
+		}
+		int keptCheckpoints = start > 0 ? start+1 : 0;
+		while (this.checkpoints.size() > keptCheckpoints) {
+			this.checkpoints.remove(this.checkpoints.size()-1);
 		}
 	}
 	
