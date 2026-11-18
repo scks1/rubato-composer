@@ -412,7 +412,7 @@ public class JComposer extends JFrame implements Observer {
         messageLog = new JMessageLog();
         bottomTabs.addTab(Messages.getString("JComposer.messagelog"), messageLog); //$NON-NLS-1$
         
-        bottomPanel.setPreferredSize(new Dimension(0, 150));
+        bottomPanel.setPreferredSize(new Dimension(0, Theme.scale(150)));
         return bottomPanel;
     }
 
@@ -434,7 +434,7 @@ public class JComposer extends JFrame implements Observer {
         networkList.setShowAction(showNetworkAction);
         rightTabs.addTab(Messages.getString("JComposer.networks"), networkList); //$NON-NLS-1$
         
-        rightPanel.setPreferredSize(new Dimension(200, 0));
+        rightPanel.setPreferredSize(new Dimension(Theme.scale(200), 0));
         return rightPanel;
     }
     
@@ -1332,7 +1332,7 @@ public class JComposer extends JFrame implements Observer {
     
     
     public Dimension getPreferredSize() {
-        return PREFERRED_SIZE;
+        return new Dimension(Theme.scale(PREFERRED_SIZE.width), Theme.scale(PREFERRED_SIZE.height));
     }
     
 

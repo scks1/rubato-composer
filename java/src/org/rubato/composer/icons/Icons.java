@@ -77,10 +77,31 @@ public class Icons {
         URL imageURL;
         imageURL = cls.getResource(name);
         ImageIcon icon = new ImageIcon(imageURL);
-        if (Theme.isDark() && !name.startsWith("splash")) {
+        if (name.startsWith("splash")) {
+            // the splash window lays its parts out in fixed pixels
+            return icon;
+        }
+        if (Theme.isDark()) {
             icon = forDarkBackground(icon);
         }
-        return icon;
+        return scaled(icon);
+    }
+
+
+    /**
+     * Returns <code>icon</code> scaled by the user interface scale factor
+     * (flatlaf.uiScale). Whole factors replicate pixels so the bitmap icons
+     * stay sharp; other factors use smooth scaling.
+     */
+    public static ImageIcon scaled(ImageIcon icon) {
+        int w = icon.getIconWidth(), h = icon.getIconHeight();
+        int sw = Theme.scale(w), sh = Theme.scale(h);
+        if (w <= 0 || h <= 0 || (sw == w && sh == h)) {
+            return icon;
+        }
+        boolean whole = (sw % w == 0) && (sh % h == 0);
+        return new ImageIcon(icon.getImage().getScaledInstance(sw, sh,
+            whole ? java.awt.Image.SCALE_REPLICATE : java.awt.Image.SCALE_SMOOTH));
     }
 
 
