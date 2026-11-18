@@ -11,10 +11,16 @@ import org.rubato.rubettes.util.Polygon2D;
 
 public class AWTPainter extends AbstractPainter {
 	
+	//pixels drawn outside the rectangle are clipped away, so painters may skip such shapes
+	private static final int CULLING_MARGIN = 2;
+	
 	private Graphics g;
+	//the clip when the painter was made, or null if there was none
+	private java.awt.Rectangle clip;
 	
 	public AWTPainter(Graphics g) {
 		this.g = g;
+		this.clip = g.getClipBounds();
 		this.g.setFont(org.rubato.composer.Theme.font(Font.PLAIN, 10f/13f, new Font("Lucida Grande", Font.PLAIN, 10)));
 	}
 	
@@ -83,6 +89,23 @@ public class AWTPainter extends AbstractPainter {
 	public int getStringHeight(String s) {
 		Graphics2D g2D = (Graphics2D)this.g;
 		return (int)g2D.getFont().getStringBounds(s, g2D.getFontRenderContext()).getHeight();
+	}
+	
+	/**
+	 * Returns false if the rectangle, rounded as fillRect rounds it and widened by a margin that
+	 * covers shapes rounded vertex by vertex, lies wholly outside the clip.
+	 */
+	@Override
+	public boolean mayReach(double x, double y, double width, double height) {
+		if (this.clip == null) {
+			return true;
+		}
+		int x1 = this.round(x), y1 = this.round(y);
+		int x2 = x1 + this.round(width), y2 = y1 + this.round(height);
+		int minX = Math.min(x1, x2) - CULLING_MARGIN, maxX = Math.max(x1, x2) + CULLING_MARGIN;
+		int minY = Math.min(y1, y2) - CULLING_MARGIN, maxY = Math.max(y1, y2) + CULLING_MARGIN;
+		return maxX >= this.clip.x && minX <= this.clip.x + this.clip.width
+				&& maxY >= this.clip.y && minY <= this.clip.y + this.clip.height;
 	}
 	
 	private int round(double d) {

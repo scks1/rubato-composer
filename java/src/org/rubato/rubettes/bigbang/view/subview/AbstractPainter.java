@@ -29,5 +29,13 @@ public abstract class AbstractPainter {
 	public abstract int getStringWidth(String s);
 	
 	public abstract int getStringHeight(String s);
+	
+	/**
+	 * Returns false only if nothing drawn inside the given rectangle could reach the drawing
+	 * surface, so a caller may skip computing and drawing it. The default is true.
+	 */
+	public boolean mayReach(double x, double y, double width, double height) {
+		return true;
+	}
 
 }

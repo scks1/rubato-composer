@@ -212,6 +212,10 @@ public class DisplayObject implements Comparable<DisplayObject> {
 	}
 	
 	public void paint(AbstractPainter painter) {
+		if (this.rectangle != null && !painter.mayReach(this.rectangle.getX(), this.rectangle.getY(), this.rectangle.getWidth(), this.rectangle.getHeight())) {
+			//outside the clip: the fill would draw nothing
+			return;
+		}
 		if (this.isVisible() && this.display != null && this.rectangle != null) {
 			painter.setColor(this.getColor());
 			//System.out.println(Arrays.toString(this.getColor()));
