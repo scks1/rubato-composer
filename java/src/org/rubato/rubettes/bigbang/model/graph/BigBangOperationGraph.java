@@ -176,8 +176,9 @@ public class BigBangOperationGraph extends DirectedSparseMultigraph<CompositionS
 	}
 	
 	//returns the index in operationsInAddedOrder before all outgoing edges of the given state 
+	//or at the end if the state has no outgoing edges
 	private int getInsertionIndex(CompositionState state) {
-		int minIndex = Integer.MAX_VALUE;
+		int minIndex = this.allOperationsInLogicalOrder.size();
 		for (AbstractOperation currentEdit : this.getOutEdges(state)) {
 			minIndex = Math.min(minIndex, this.allOperationsInLogicalOrder.indexOf(currentEdit));
 		}
@@ -346,14 +347,19 @@ public class BigBangOperationGraph extends DirectedSparseMultigraph<CompositionS
 	}
 	
 	/*
-	 * 
+	 * moves all operations leaving or entering state2 to state1 and removes state2. only called when
+	 * state1 has no path to state2, so redirecting edges into state2 cannot close a cycle
 	 */
 	private void combineStates(CompositionState state1, CompositionState state2) {
-		//move all state2 edges to state1
-		for (AbstractOperation currentOperation : this.getOutEdges(state2)) {
+		for (AbstractOperation currentOperation : new ArrayList<AbstractOperation>(this.getOutEdges(state2))) {
 			CompositionState endPoint = this.getEndpoints(currentOperation).getSecond();
 			this.removeEdge(currentOperation);
 			this.addEdge(currentOperation, state1, endPoint, EdgeType.DIRECTED);
+		}
+		for (AbstractOperation currentOperation : new ArrayList<AbstractOperation>(this.getInEdges(state2))) {
+			CompositionState startPoint = this.getEndpoints(currentOperation).getFirst();
+			this.removeEdge(currentOperation);
+			this.addEdge(currentOperation, startPoint, state1, EdgeType.DIRECTED);
 		}
 		this.removeCompositionState(state2);
 	}
@@ -387,6 +393,10 @@ public class BigBangOperationGraph extends DirectedSparseMultigraph<CompositionS
 			return this.allOperationsInAddedOrder.get(this.allOperationsInAddedOrder.size()-1);
 		}
 		return null;
+	}
+	
+	public List<AbstractOperation> getOperationsInLogicalOrder() {
+		return java.util.Collections.unmodifiableList(this.allOperationsInLogicalOrder);
 	}
 	
 	public List<AbstractOperation> getCurrentlyExecutedOperationsInOrder() {
