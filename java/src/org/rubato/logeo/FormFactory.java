@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.rubato.math.module.*;
 import org.rubato.math.yoneda.*;
+import org.rubato.math.module.Module;
 
 /**
  * Static utility class for building forms.

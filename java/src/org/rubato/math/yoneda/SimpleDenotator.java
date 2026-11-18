@@ -39,6 +39,7 @@ import org.rubato.math.module.morphism.ModuleMorphism;
 import org.rubato.xml.XMLReader;
 import org.rubato.xml.XMLWriter;
 import org.w3c.dom.Element;
+import org.rubato.math.module.Module;
 
 /**
  * Simple denotator class.

@@ -23,6 +23,7 @@ import java.util.*;
 
 import org.rubato.math.module.*;
 import org.rubato.util.Pair;
+import org.rubato.math.module.Module;
 
 /**
  * Utilities for address management.

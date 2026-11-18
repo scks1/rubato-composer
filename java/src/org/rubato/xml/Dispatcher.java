@@ -30,6 +30,7 @@ import org.rubato.math.yoneda.ConstantModuleMorphismMap;
 import org.rubato.math.yoneda.ModuleMorphismMap;
 import org.rubato.math.yoneda.MorphismMap;
 import org.w3c.dom.Element;
+import org.rubato.math.module.Module;
 
 public class Dispatcher {
 

@@ -14,6 +14,7 @@ import org.rubato.math.arith.Complex;
 import org.rubato.math.arith.Rational;
 import org.rubato.math.module.*;
 import org.rubato.math.yoneda.*;
+import org.rubato.math.module.Module;
 
 @SuppressWarnings("all")
 public final class DenotexParser implements DenotexParserConstants {

@@ -31,6 +31,7 @@ import javax.swing.event.ChangeListener;
 
 import org.rubato.math.module.*;
 import org.rubato.util.TextUtils;
+import org.rubato.math.module.Module;
 
 /**
  * A component for creating modules.

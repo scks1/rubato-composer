@@ -34,6 +34,7 @@ import org.rubato.xml.XMLInputOutput;
 import org.rubato.xml.XMLReader;
 import org.rubato.xml.XMLWriter;
 import org.w3c.dom.Element;
+import org.rubato.math.module.Module;
 
 /**
  * A split morphism describes a morphism from a free module into itself,

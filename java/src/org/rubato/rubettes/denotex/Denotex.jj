@@ -48,6 +48,7 @@ import org.rubato.math.arith.*;
 import org.rubato.math.module.*;
 import org.rubato.math.yoneda.*;
 import org.rubato.base.Repository;
+import org.rubato.math.module.Module;
 
 public final class DenotexParser {
 

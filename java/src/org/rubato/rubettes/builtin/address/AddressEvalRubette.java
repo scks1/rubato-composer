@@ -49,6 +49,7 @@ import org.rubato.util.TextUtils;
 import org.rubato.xml.XMLReader;
 import org.rubato.xml.XMLWriter;
 import org.w3c.dom.Element;
+import org.rubato.math.module.Module;
 
 /**
  * 

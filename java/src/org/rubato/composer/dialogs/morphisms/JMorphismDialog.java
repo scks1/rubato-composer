@@ -41,6 +41,7 @@ import org.rubato.composer.plugin.ModuleMorphismPlugin;
 import org.rubato.composer.plugin.PluginManager;
 import org.rubato.math.module.*;
 import org.rubato.math.module.morphism.*;
+import org.rubato.math.module.Module;
 
 /**
  * ModuleMorphism creator dialog.
