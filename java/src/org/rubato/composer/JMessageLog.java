@@ -120,8 +120,14 @@ public class JMessageLog extends JPanel {
             Message msg = (Message)value;
             Color fg = JComposer.statusColor[msg.type];
             setText(dateFormat.format(msg.date)+" - "+msg.msg); //$NON-NLS-1$
-            setBackground(isSelected ? fg: Color.WHITE);
-            setForeground(isSelected ? Color.WHITE: fg);
+            if (Theme.isFlat()) {
+                setBackground(isSelected ? list.getSelectionBackground() : list.getBackground());
+                setForeground(isSelected ? list.getSelectionForeground() : fg);
+            }
+            else {
+                setBackground(isSelected ? fg: Color.WHITE);
+                setForeground(isSelected ? Color.WHITE: fg);
+            }
             return this;
         }        
 

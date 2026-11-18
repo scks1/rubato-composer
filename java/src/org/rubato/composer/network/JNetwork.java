@@ -908,8 +908,8 @@ public class JNetwork extends JLayeredPane
         
         private Rectangle rect = new Rectangle();
         
-        private Color fillColor = new Color(255, 250, 205);        
-        private Color lineColor = new Color(205, 201, 165);        
+        private Color fillColor = Theme.color("Rubato.canvas.selectionFill", new Color(255, 250, 205)); //$NON-NLS-1$
+        private Color lineColor = Theme.color("Rubato.canvas.selectionLine", new Color(205, 201, 165)); //$NON-NLS-1$
     }
     
 
@@ -938,7 +938,7 @@ public class JNetwork extends JLayeredPane
     private DropTarget dropTarget;
     private ChangeObservable changeObservable = new ChangeObservable();
 
-    private final static Color backgroundColor = Color.WHITE;
+    private final static Color backgroundColor = Theme.color("Rubato.canvas.background", Color.WHITE); //$NON-NLS-1$
 
     private final static Dimension PREFERRED_SIZE = new Dimension(1500, 1500);
     private final static Dimension MINIMUM_SIZE = new Dimension(200, 200);

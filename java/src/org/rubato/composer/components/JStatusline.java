@@ -19,6 +19,8 @@
 
 package org.rubato.composer.components;
 
+import org.rubato.composer.Theme;
+
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
@@ -88,9 +90,9 @@ public class JStatusline extends JTextField {
     }    
 
 
-    private final static Color ERROR_COLOR   = Color.RED;
-    private final static Color WARNING_COLOR = Color.ORANGE;
-    private final static Color INFO_COLOR    = Color.GREEN;
+    private final static Color ERROR_COLOR   = Theme.color("Rubato.status.error", Color.RED); //$NON-NLS-1$
+    private final static Color WARNING_COLOR = Theme.color("Rubato.status.warning", Color.ORANGE); //$NON-NLS-1$
+    private final static Color INFO_COLOR    = Theme.color("Rubato.status.ok", Color.GREEN); //$NON-NLS-1$
     
     private final static int TIMEOUT = 5000;
     

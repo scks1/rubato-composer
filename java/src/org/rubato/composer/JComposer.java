@@ -1622,9 +1622,9 @@ public class JComposer extends JFrame implements Observer {
     public static final int STATUS_WARNING = 1;
     public static final int STATUS_ERROR   = 2;
     public static final Color[] statusColor = new Color[] {
-            Color.BLACK,            // info color
-            new Color(215, 117, 6), // warning color
-            Color.RED               // error color
+            Theme.color("Rubato.status.info", Color.BLACK),               // info color //$NON-NLS-1$
+            Theme.color("Rubato.status.warning", new Color(215, 117, 6)), // warning color //$NON-NLS-1$
+            Theme.color("Rubato.status.error", Color.RED)                 // error color //$NON-NLS-1$
     };
     private Action statusClearAction = new AbstractAction() {
         public void actionPerformed(ActionEvent e) {

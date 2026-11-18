@@ -19,6 +19,8 @@
 
 package org.rubato.composer.rubette;
 
+import org.rubato.composer.Theme;
+
 import java.awt.*;
 import java.awt.geom.GeneralPath;
 import java.awt.geom.Line2D;
@@ -187,7 +189,7 @@ public class JLink extends JPanel {
         Graphics2D g2d = (Graphics2D)g;
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                              RenderingHints.VALUE_ANTIALIAS_ON);
-        g2d.setColor(Color.BLACK);
+        g2d.setColor(lineColor);
         if (type == ZIGZAG) {
             int midY = (srcY+destY)/2;
             g2d.drawLine(srcX, srcY, srcX, midY);
@@ -229,4 +231,6 @@ public class JLink extends JPanel {
     public static int LINE   = 0;
     public static int ZIGZAG = 1;
     public static int CURVE  = 2;
+
+    private static final Color lineColor = Theme.color("Rubato.canvas.line", Color.BLACK); //$NON-NLS-1$
 }

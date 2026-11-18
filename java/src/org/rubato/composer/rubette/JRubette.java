@@ -19,6 +19,8 @@
 
 package org.rubato.composer.rubette;
 
+import org.rubato.composer.Theme;
+
 import static org.rubato.composer.Utilities.installEscapeKey;
 
 import java.awt.*;
@@ -71,6 +73,7 @@ public final class JRubette extends JPanel
         else {
             nameLabel = new JLabel(model.getName(), model.getIcon(), SwingConstants.CENTER);            
         }
+        nameLabel.setForeground(foregroundColor);
         nameLabel.setBounds(MARGIN_LEFT+5, wy, size.width-MARGIN_RIGHT-MARGIN_LEFT-10, nameLabel.getPreferredSize().height);
         add(nameLabel);
 
@@ -79,6 +82,7 @@ public final class JRubette extends JPanel
         if (model.hasInfo()) {
             infoLabel = new JLabel("", SwingConstants.CENTER); //$NON-NLS-1$
             infoLabel.setText(getInfo());
+            infoLabel.setForeground(foregroundColor);
             infoLabel.setBounds(MARGIN_LEFT+5, wy, size.width-MARGIN_RIGHT-MARGIN_LEFT-10, infoLabel.getPreferredSize().height);
             add(infoLabel);
             wy += infoLabel.getHeight()+5;
@@ -554,6 +558,10 @@ public final class JRubette extends JPanel
         // background color
         g2d.setColor(getModel().isPassThrough()?passthroughColor:backgroundColor);
         g2d.setColor(inselection?inselectionColor:g2d.getColor());
+        if (Theme.isFlat()) {
+            paintFlat(g2d);
+            return;
+        }
         int x = MARGIN_LEFT;
         int y = MARGIN_TOP;
         g2d.fillRect(MARGIN_LEFT,
@@ -597,6 +605,27 @@ public final class JRubette extends JPanel
                          MARGIN_TOP,
                          getWidth()-MARGIN_RIGHT-MARGIN_LEFT-2,
                          getHeight()-MARGIN_TOP-MARGIN_BOTTOM-1);
+        }
+    }
+
+
+    /**
+     * Paints the box as a flat fill with a one-pixel border, the FlatLaf
+     * themes' replacement for the classic bevel.
+     */
+    private void paintFlat(Graphics2D g2d) {
+        int w = getWidth()-MARGIN_RIGHT-MARGIN_LEFT-1;
+        int h = getHeight()-MARGIN_TOP-MARGIN_BOTTOM;
+        g2d.fillRect(MARGIN_LEFT, MARGIN_TOP, w, h);
+        g2d.setColor(selected?selectionColor:borderColor);
+        g2d.drawRect(MARGIN_LEFT, MARGIN_TOP, w-1, h-1);
+        if (selected) {
+            g2d.drawRect(MARGIN_LEFT+1, MARGIN_TOP+1, w-3, h-3);
+        }
+        if (highlighted) {
+            g2d.setColor(problemColor);
+            g2d.drawRect(MARGIN_LEFT, MARGIN_TOP, w-1, h-1);
+            g2d.drawRect(MARGIN_LEFT+1, MARGIN_TOP+1, w-3, h-3);
         }
     }
 
@@ -1025,17 +1054,22 @@ public final class JRubette extends JPanel
 
     // colors
     
-    private static final Color backgroundColor      = new Color(255, 228, 181);
+    private static final Color backgroundColor      = Theme.color("Rubato.rubette.background", new Color(255, 228, 181)); //$NON-NLS-1$
     private static final Color backgroundLightColor = new Color(255, 242, 198);
     private static final Color backgroundDarkColor  = new Color(241, 205, 155);
 
-    private static final Color passthroughColor      = new Color(255, 130,  71);
+    private static final Color passthroughColor      = Theme.color("Rubato.rubette.passthrough", new Color(255, 130,  71)); //$NON-NLS-1$
     private static final Color passthroughLightColor = new Color(255, 152, 111);
     private static final Color passthroughDarkColor  = new Color(241, 120,  60);
 
-    private static final Color inselectionColor      = new Color(159, 121, 238);
+    private static final Color inselectionColor      = Theme.color("Rubato.rubette.inselection", new Color(159, 121, 238)); //$NON-NLS-1$
     private static final Color inselectionLightColor = new Color(171, 130, 255);
     private static final Color inselectionDarkColor  = new Color(137, 104, 205);
+
+    private static final Color borderColor     = Theme.color("Rubato.rubette.border", Color.BLACK); //$NON-NLS-1$
+    private static final Color foregroundColor = Theme.color("Rubato.rubette.foreground", Color.BLACK); //$NON-NLS-1$
+    private static final Color selectionColor  = Theme.color("Rubato.canvas.selection", Color.BLACK); //$NON-NLS-1$
+    private static final Color problemColor    = Theme.color("Rubato.canvas.problem", Color.RED); //$NON-NLS-1$
 
     private static final Border emptyBorder = BorderFactory.createEmptyBorder(5, 5, 5, 5);
 }
