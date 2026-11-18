@@ -44,6 +44,9 @@ public class DragPreview {
 	private final List<BigBangObject> orderedObjects;
 	private final Map<BigBangObject,double[]> baseValues;
 	private final Map<BigBangObject,double[]> previewValues;
+	//per entry of orderedObjects: its base and preview values, its parent's, and whether it is mapped
+	private final double[][] base, preview, parentBase, parentPreview;
+	private final boolean[] mapped;
 	
 	private DragPreview(String[] valueNames, int[] instanceNumbers, boolean relativeToParents, Set<BigBangObject> mappedObjects,
 			List<BigBangObject> orderedObjects, Map<BigBangObject,double[]> baseValues) {
@@ -56,6 +59,31 @@ public class DragPreview {
 		this.previewValues = new IdentityHashMap<BigBangObject,double[]>();
 		for (BigBangObject currentObject : orderedObjects) {
 			this.previewValues.put(currentObject, baseValues.get(currentObject).clone());
+		}
+		//update() runs on every drag event, so it reads these arrays instead of the maps
+		int count = orderedObjects.size();
+		this.base = new double[count][];
+		this.preview = new double[count][];
+		this.parentBase = new double[count][];
+		this.parentPreview = new double[count][];
+		this.mapped = new boolean[count];
+		for (int i = 0; i < count; i++) {
+			BigBangObject currentObject = orderedObjects.get(i);
+			this.base[i] = baseValues.get(currentObject);
+			this.preview[i] = this.previewValues.get(currentObject);
+			this.mapped[i] = mappedObjects.contains(currentObject);
+			BigBangObject parent = currentObject.getParent();
+			if (parent != null) {
+				if (baseValues.containsKey(parent)) {
+					this.parentBase[i] = baseValues.get(parent);
+					this.parentPreview[i] = this.previewValues.get(parent);
+				} else {
+					//an unchanged parent: no displacement, but its position anchors a relative map.
+					//the preview shows the objects as they were when the drag started, parents included
+					this.parentBase[i] = getValues(parent, valueNames, instanceNumbers);
+					this.parentPreview[i] = this.parentBase[i];
+				}
+			}
 		}
 	}
 	
@@ -149,22 +177,11 @@ public class DragPreview {
 	 * {a, b, c, d, e, f}.
 	 */
 	public void update(double[] affine) {
-		for (BigBangObject currentObject : this.orderedObjects) {
-			double[] base = this.baseValues.get(currentObject);
-			double[] preview = this.previewValues.get(currentObject);
-			double[] parentBase = null, parentPreview = null;
-			BigBangObject parent = currentObject.getParent();
-			if (parent != null) {
-				parentBase = this.baseValues.get(parent);
-				parentPreview = this.previewValues.get(parent);
-				if (parentBase == null) {
-					//an unchanged parent: no displacement, but its position anchors a relative map
-					parentBase = getValues(parent, this.valueNames, this.instanceNumbers);
-					parentPreview = parentBase;
-				}
-			}
+		for (int i = 0; i < this.base.length; i++) {
+			double[] base = this.base[i];
+			double[] parentBase = this.parentBase[i], parentPreview = this.parentPreview[i];
 			double x = base[0], y = base[1];
-			if (this.mappedObjects.contains(currentObject)) {
+			if (this.mapped[i]) {
 				double cx = 0, cy = 0;
 				if (this.relativeToParents) {
 					cx = parentBase[0];
@@ -178,8 +195,8 @@ public class DragPreview {
 				x += parentPreview[0] - parentBase[0];
 				y += parentPreview[1] - parentBase[1];
 			}
-			preview[0] = x;
-			preview[1] = y;
+			this.preview[i][0] = x;
+			this.preview[i][1] = y;
 		}
 	}
 	
@@ -207,13 +224,30 @@ public class DragPreview {
 	 * Returns the previewed value of the given name and instance number, or null if the preview
 	 * leaves the value as it is.
 	 */
+	public int indexOf(String valueName, int instanceNumber) {
+		for (int i = 0; i < this.valueNames.length; i++) {
+			if (instanceNumber == this.instanceNumbers[i] && valueName.equals(this.valueNames[i])) {
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	/**
+	 * Returns the array that holds the previewed values of the given object, in the order of the
+	 * value names, or null if the preview leaves the object as it is. update() overwrites the array
+	 * in place, so callers may keep it for the lifetime of this preview but must not change it.
+	 */
+	double[] getValueArray(BigBangObject object) {
+		return this.previewValues.get(object);
+	}
+	
 	public Double getValue(BigBangObject object, String valueName, int instanceNumber) {
-		double[] values = this.previewValues.get(object);
-		if (values != null) {
-			for (int i = 0; i < this.valueNames.length; i++) {
-				if (instanceNumber == this.instanceNumbers[i] && valueName.equals(this.valueNames[i])) {
-					return values[i];
-				}
+		//most values a view reads are not previewed: compare the names before looking up the object
+		for (int i = 0; i < this.valueNames.length; i++) {
+			if (instanceNumber == this.instanceNumbers[i] && valueName.equals(this.valueNames[i])) {
+				double[] values = this.previewValues.get(object);
+				return values != null ? values[i] : null;
 			}
 		}
 		return null;

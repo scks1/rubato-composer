@@ -25,6 +25,9 @@ public class DisplayObject implements Comparable<DisplayObject> {
 	private Rectangle2D rectangle;
 	private Point2D center;
 	private boolean isSelected;
+	//the preview last asked for this object's values, and its value array for the object, or null
+	private DragPreview lastPreview;
+	private double[] lastPreviewValues;
 	
 	private float currentHue, currentOpacity;
 	private float currentRed, currentBlue, currentGreen;
@@ -45,10 +48,20 @@ public class DisplayObject implements Comparable<DisplayObject> {
 		if (this.display != null && this.display.getDisplayObjects() != null) {
 			DragPreview preview = this.display.getDisplayObjects().getDragPreview();
 			if (preview != null) {
-				Double previewValue = preview.getValue(this.bbObject, valueName, nameInstanceNumber);
-				if (previewValue != null) {
-					return previewValue;
+				int previewIndex = preview.indexOf(valueName, nameInstanceNumber);
+				if (previewIndex >= 0) {
+					//a preview updates its value arrays in place, so one lookup per preview suffices
+					if (preview != this.lastPreview) {
+						this.lastPreview = preview;
+						this.lastPreviewValues = preview.getValueArray(this.bbObject);
+					}
+					if (this.lastPreviewValues != null) {
+						return this.lastPreviewValues[previewIndex];
+					}
 				}
+			} else if (this.lastPreview != null) {
+				this.lastPreview = null;
+				this.lastPreviewValues = null;
 			}
 		}
 		return this.bbObject.getNthValue(valueName, nameInstanceNumber);
