@@ -39,6 +39,10 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <vendored.version>2018.11</vendored.version>
     <main.class>org.rubato.composer.Composer</main.class>
+    <flatlaf.version>3.8</flatlaf.version>
+    <commons-math3.version>3.2</commons-math3.version>
+    <xerces.version>2.6.2</xerces.version>
+    <dependency-plugin.version>3.11.0</dependency-plugin.version>
   </properties>
 
   <repositories>
@@ -63,13 +67,13 @@
     <dependency>
       <groupId>com.formdev</groupId>
       <artifactId>flatlaf</artifactId>
-      <version>3.8</version>
+      <version>${flatlaf.version}</version>
     </dependency>
     <!-- Maven Central; class files identical to the vendored jars -->
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-math3</artifactId>
-      <version>3.2</version>
+      <version>${commons-math3.version}</version>
     </dependency>
     <dependency>
       <groupId>net.sourceforge.collections</groupId>
@@ -110,7 +114,7 @@
     <dependency>
       <groupId>xerces</groupId>
       <artifactId>xercesImpl</artifactId>
-      <version>2.6.2</version>
+      <version>${xerces.version}</version>
     </dependency>
 
     <!-- Vendored jars without a Central release, from java/jar/repo -->
@@ -271,6 +275,59 @@
 
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>${dependency-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>copy-separate-jars</id>
+            <phase>package</phase>
+            <goals><goal>copy</goal></goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib</outputDirectory>
+              <artifactItems>
+                <artifactItem>
+                  <groupId>com.formdev</groupId>
+                  <artifactId>flatlaf</artifactId>
+                  <version>${flatlaf.version}</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.apache.commons</groupId>
+                  <artifactId>commons-math3</artifactId>
+                  <version>${commons-math3.version}</version>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>xerces</groupId>
+                  <artifactId>xercesImpl</artifactId>
+                  <version>${xerces.version}</version>
+                </artifactItem>
+              </artifactItems>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>copy-separate-jar-licenses</id>
+            <phase>package</phase>
+            <goals><goal>copy-resources</goal></goals>
+            <configuration>
+              <outputDirectory>${project.build.directory}/lib/licenses</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>java/licenses</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.6.2</version>
         <executions>
@@ -281,6 +338,15 @@
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <shadedArtifactAttached>true</shadedArtifactAttached>
               <shadedClassifierName>all</shadedClassifierName>
+              <!-- Apache-licensed libraries stay separate jars in target/lib
+                   (see LICENSING.md); the manifest's Class-Path finds them. -->
+              <artifactSet>
+                <excludes>
+                  <exclude>com.formdev:flatlaf</exclude>
+                  <exclude>org.apache.commons:commons-math3</exclude>
+                  <exclude>xerces:xercesImpl</exclude>
+                </excludes>
+              </artifactSet>
               <filters>
                 <filter>
                   <artifact>*:*</artifact>
@@ -297,9 +363,8 @@
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>${main.class}</mainClass>
-                  <!-- FlatLaf ships Java 9+ variants of its HiDPI image classes -->
                   <manifestEntries>
-                    <Multi-Release>true</Multi-Release>
+                    <Class-Path>lib/flatlaf-${flatlaf.version}.jar lib/commons-math3-${commons-math3.version}.jar lib/xercesImpl-${xerces.version}.jar</Class-Path>
                   </manifestEntries>
                 </transformer>
               </transformers>

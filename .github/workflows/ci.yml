@@ -47,7 +47,10 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: rubato-composer-jar
-          path: target/rubato-composer-*-all.jar
+          # The jar finds the Apache-licensed libraries in lib/ next to it.
+          path: |
+            target/rubato-composer-*-all.jar
+            target/lib/
           if-no-files-found: error
 
   ant:
