@@ -117,6 +117,17 @@ public abstract class AbstractTransformation extends AbstractOperation {
 		return this.model.getDenotatorManager().addTransformation(objectPaths, anchorPath, transformation);
 	}
 	
+	/**
+	 * Returns the morphism that execute() applies to the coordinates of the transformed objects.
+	 */
+	public ModuleMorphism getModuleMorphism() {
+		return this.transformation;
+	}
+	
+	public boolean isCopyAndTransform() {
+		return this.copyAndTransform;
+	}
+	
 	public int[] getXYViewParameters() {
 		return this.transformationPaths.get(0).getXYCoordinates();
 	}

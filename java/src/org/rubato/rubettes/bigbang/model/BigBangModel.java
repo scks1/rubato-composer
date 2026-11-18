@@ -74,6 +74,7 @@ public class BigBangModel extends Model {
 		this.denotators = new BigBangDenotatorManager();
 		this.setInputActive(true);
 		this.objects = new BigBangObjects(this.denotators.getForm());
+		this.objects.setNewTransformationPreviewCheck(this::canPreviewNewTransformation);
 		this.undoManager = new UndoManager();
 		this.reset();
 	}
@@ -119,6 +120,7 @@ public class BigBangModel extends Model {
 			this.reset();
 			this.denotators.setForm(form);
 			this.objects = new BigBangObjects(this.denotators.getForm());
+			this.objects.setNewTransformationPreviewCheck(this::canPreviewNewTransformation);
 			if (this.controller != null) {
 				this.objects.setController(this.controller);
 			}
@@ -514,6 +516,22 @@ public class BigBangModel extends Model {
 	 */
 	private synchronized void updateAfterModifying(AbstractOperation modifiedOperation) {
 		this.replayFrom(this.getReplayStart(modifiedOperation));
+	}
+	
+	/**
+	 * Returns true if a transformation started now would be appended after the last operation of
+	 * the path the objects show and mapped directly: no operation or state is selected, no
+	 * insertion state is set, no wallpaper or alteration is open and the graph is not being
+	 * animated. A view can then preview a drag from the values the objects hold and add the
+	 * transformation once, when the drag ends.
+	 */
+	public boolean canPreviewNewTransformation() {
+		return this.operationGraph.getSelectedOperation() == null
+				&& this.operationGraph.getSelectedCompositionState() == null
+				&& this.operationGraph.getInsertionState() == null
+				&& !this.denotators.isBuildingWallpaperOrAlteration()
+				&& (this.animator == null || !this.animator.isAlive())
+				&& this.objects.getObjectsAt(null) != null;
 	}
 	
 	public void setIncrementalReplay(boolean incrementalReplay) {

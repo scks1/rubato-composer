@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.BooleanSupplier;
 
 import org.rubato.math.yoneda.Form;
 import org.rubato.math.yoneda.SimpleForm;
@@ -32,6 +33,8 @@ public class BigBangObjects {
 	private HashMap<AbstractOperation,Map<DenotatorPath,BigBangObject>> objectsMaps;
 	private BigBangLayers layers;
 	private List<Double> minValues, maxValues;
+	//answers whether a new transformation would be appended after everything the objects show
+	private BooleanSupplier newTransformationPreviewCheck;
 	
 	public BigBangObjects(Form baseForm) {
 		this.baseForm = baseForm;
@@ -53,6 +56,18 @@ public class BigBangObjects {
 		this.clearObjects();
 		this.minValues = new ArrayList<Double>();
 		this.maxValues = new ArrayList<Double>();
+	}
+	
+	public void setNewTransformationPreviewCheck(BooleanSupplier check) {
+		this.newTransformationPreviewCheck = check;
+	}
+	
+	/**
+	 * Returns true if a transformation started now would become the last operation of the path
+	 * whose result these objects hold, so that a view may preview it from the current values.
+	 */
+	public boolean canPreviewNewTransformation() {
+		return this.newTransformationPreviewCheck != null && this.newTransformationPreviewCheck.getAsBoolean();
 	}
 	
 	public void setController(BigBangController controller) {

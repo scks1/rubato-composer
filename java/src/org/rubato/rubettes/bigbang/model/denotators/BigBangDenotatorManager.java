@@ -146,6 +146,14 @@ public class BigBangDenotatorManager {
 		}
 	}
 	
+	/**
+	 * Returns true while a wallpaper or an alteration is open, so that a new transformation would
+	 * be added to it instead of being mapped directly.
+	 */
+	public boolean isBuildingWallpaperOrAlteration() {
+		return this.currentWallpaper != null || this.currentAlteration != null;
+	}
+	
 	public Denotator getComposition() {
 		return this.composition;
 	}
