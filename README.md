@@ -30,7 +30,7 @@ which generates tar.gz files with latest `src`, `bin`, and `api` annotated with 
 
 ## Licensing
 
-Rubato Composer is GPL-2.0-only. FlatLaf, Apache Commons Math and Xerces ship as separate jars in `lib/` next to `rubato.jar`; see [LICENSING.md](LICENSING.md).
+Rubato Composer is GPL-2.0-only. FlatLaf, Apache Commons Math, Xerces and collections-generic ship as separate jars in `lib/` next to `rubato.jar`; see [LICENSING.md](LICENSING.md).
 
 ## Notes
 

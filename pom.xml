@@ -42,6 +42,7 @@
     <flatlaf.version>3.8</flatlaf.version>
     <commons-math3.version>3.2</commons-math3.version>
     <xerces.version>2.6.2</xerces.version>
+    <collections-generic.version>4.01</collections-generic.version>
     <dependency-plugin.version>3.11.0</dependency-plugin.version>
   </properties>
 
@@ -78,7 +79,7 @@
     <dependency>
       <groupId>net.sourceforge.collections</groupId>
       <artifactId>collections-generic</artifactId>
-      <version>4.01</version>
+      <version>${collections-generic.version}</version>
     </dependency>
     <dependency>
       <groupId>net.sf.jung</groupId>
@@ -300,6 +301,11 @@
                   <artifactId>xercesImpl</artifactId>
                   <version>${xerces.version}</version>
                 </artifactItem>
+                <artifactItem>
+                  <groupId>net.sourceforge.collections</groupId>
+                  <artifactId>collections-generic</artifactId>
+                  <version>${collections-generic.version}</version>
+                </artifactItem>
               </artifactItems>
             </configuration>
           </execution>
@@ -345,6 +351,7 @@
                   <exclude>com.formdev:flatlaf</exclude>
                   <exclude>org.apache.commons:commons-math3</exclude>
                   <exclude>xerces:xercesImpl</exclude>
+                  <exclude>net.sourceforge.collections:collections-generic</exclude>
                 </excludes>
               </artifactSet>
               <filters>
@@ -364,7 +371,7 @@
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>${main.class}</mainClass>
                   <manifestEntries>
-                    <Class-Path>lib/flatlaf-${flatlaf.version}.jar lib/commons-math3-${commons-math3.version}.jar lib/xercesImpl-${xerces.version}.jar</Class-Path>
+                    <Class-Path>lib/flatlaf-${flatlaf.version}.jar lib/commons-math3-${commons-math3.version}.jar lib/xercesImpl-${xerces.version}.jar lib/collections-generic-${collections-generic.version}.jar</Class-Path>
                   </manifestEntries>
                 </transformer>
               </transformers>
