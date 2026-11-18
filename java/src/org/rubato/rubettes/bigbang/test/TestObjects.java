@@ -40,8 +40,9 @@ public class TestObjects {
 	
 	public final Form SOUND_SCORE_FORM, SOUND_NODE_FORM, SOUND_NOTE_FORM, MODULATORS_FORM, HARMONIC_SPECTRUM_FORM, GENERIC_SOUND_FORM;
 	public final Form MACRO_SCORE_FORM = Repository.systemRepository().getForm("MacroScore");
-	public final PowerForm GENERAL_SCORE_FORM = (PowerForm)Repository.systemRepository().getForm("GeneralScore");
-	public final ColimitForm GENERAL_NOTE_FORM = (ColimitForm)Repository.systemRepository().getForm("NoteOrRest");
+	//GeneralScore and NoteOrRest come from CoolFormRegistrant, so the constructor looks them up after registering
+	public final PowerForm GENERAL_SCORE_FORM;
+	public final ColimitForm GENERAL_NOTE_FORM;
 	public final Module RATIONAL_TRIPLE_MODULE = Repository.systemRepository().getModule("Triples of rationals"); 
 	public final SimpleForm RATIONAL_TRIPLE_FORM = new SimpleForm(NameDenotator.make("RationalTriple"), RATIONAL_TRIPLE_MODULE);
 	public final PowerForm RATIONAL_TRIPLES_FORM = new PowerForm(NameDenotator.make("RationalTriples"), RATIONAL_TRIPLE_FORM);
@@ -76,6 +77,8 @@ public class TestObjects {
 	
 	public TestObjects() {
 		new CoolFormRegistrant().registerAllTheCoolStuff();
+		this.GENERAL_SCORE_FORM = (PowerForm)Repository.systemRepository().getForm("GeneralScore");
+		this.GENERAL_NOTE_FORM = (ColimitForm)Repository.systemRepository().getForm("NoteOrRest");
 		this.HARMONIC_SPECTRUM_FORM = Repository.systemRepository().getForm("HarmonicSpectrum");
 		this.SOUND_SCORE_FORM = Repository.systemRepository().getForm("SoundScore");
 		this.SOUND_NODE_FORM = Repository.systemRepository().getForm("SoundNode");
