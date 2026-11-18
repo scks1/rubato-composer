@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.TreeSet;
 
 import org.rubato.rubettes.bigbang.model.BigBangModel;
 import org.rubato.rubettes.bigbang.model.operations.AbstractOperation;
@@ -159,7 +158,7 @@ public class BigBangOperationGraph extends DirectedSparseMultigraph<CompositionS
 		CompositionState newState = this.insertNewCompositionStateAfter(state);
 		
 		//reconnect edges to new state
-		for (AbstractOperation currentOperation : new TreeSet<AbstractOperation>(this.getOutEdges(state))) {
+		for (AbstractOperation currentOperation : new ArrayList<AbstractOperation>(this.getOutEdges(state))) {
 			CompositionState currentEndpoint = this.getEndpoints(currentOperation).getSecond();
 			this.removeEdge(currentOperation);
 			this.addEdge(currentOperation, newState, currentEndpoint, EdgeType.DIRECTED);
