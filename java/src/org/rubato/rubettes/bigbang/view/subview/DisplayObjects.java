@@ -525,7 +525,8 @@ public class DisplayObjects {
 	
 	private void paintConnectors(AbstractPainter painter, Set<DisplayObject> notes) {
 		for (DisplayObject currentObject : notes) {
-			if (currentObject.isVisible()) {
+			//the parent lookup is the expensive part, so ask first whether the object draws connectors at all
+			if (currentObject.paintsConnectors()) {
 				DisplayObject currentParent = this.getParent(currentObject);
 				if (currentParent != null && currentParent.isVisible()) {
 					currentObject.paintConnectors(painter, currentParent.getCenter().getX(), currentParent.getCenter().getY());
@@ -551,9 +552,12 @@ public class DisplayObjects {
 	}
 	
 	private synchronized void paintSelectedObjects(AbstractPainter painter) {
-		//avoid concurrent modification exception..
-		for (DisplayObject currentObject : new TreeSet<DisplayObject>(this.objects)) {
-			if (this.selectedObjects.contains(currentObject)) {
+		//paints the present objects that are selected, in the order of objects. selectedObjects has the
+		//same ordering and is usually much smaller, so walk it and find each object among the present ones.
+		//the copy avoids a concurrent modification exception
+		for (DisplayObject currentSelected : new TreeSet<DisplayObject>(this.selectedObjects)) {
+			DisplayObject currentObject = this.objects.floor(currentSelected);
+			if (currentObject != null && currentObject.compareTo(currentSelected) == 0) {
 				currentObject.paint(painter);
 			}
 		}

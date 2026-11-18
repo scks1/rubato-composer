@@ -178,10 +178,17 @@ public class DisplayObject implements Comparable<DisplayObject> {
 	}
 	
 	/**
+	 * @return true if paintConnectors draws a line for this object
+	 */
+	public boolean paintsConnectors() {
+		return this.display != null && this.display.satellitesConnected() && this.isVisible();
+	}
+	
+	/**
 	 * Paints a line that connects this object to the given point (x/y)  
 	 */
 	public void paintConnectors(AbstractPainter painter, double x, double y) {
-		if (this.display != null && this.isVisible() && this.display.satellitesConnected()) {
+		if (this.paintsConnectors()) {
 			/*if (relation == DenotatorPath.SATELLITE) {
 				painter.setColor(Color.black);
 			} else {*/
