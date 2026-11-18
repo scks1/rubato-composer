@@ -61,6 +61,13 @@ public class JNetwork extends JLayeredPane
         addMouseListener(this);
         addMouseMotionListener(this);
 
+        // the canvas has no caret, so it shows keyboard focus with a ring
+        setFocusable(true);
+        addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) { repaint(); }
+            public void focusLost(FocusEvent e) { repaint(); }
+        });
+
         getInputMap().put(KeyStroke.getKeyStroke("ctrl D"), "duplicate"); //$NON-NLS-1$ //$NON-NLS-2$
         getActionMap().put("duplicate", new AbstractAction () { //$NON-NLS-1$
             public void actionPerformed(ActionEvent e) {
@@ -912,6 +919,20 @@ public class JNetwork extends JLayeredPane
         private Color lineColor = Theme.color("Rubato.canvas.selectionLine", new Color(205, 201, 165)); //$NON-NLS-1$
     }
     
+
+    public void paint(Graphics g) {
+        super.paint(g);
+        if (isFocusOwner()) {
+            Rectangle r = getVisibleRect();
+            Graphics2D g2 = (Graphics2D)g.create();
+            g2.setColor(Theme.color("Component.focusColor", new Color(99, 130, 191))); //$NON-NLS-1$
+            int w = Theme.scale(2);
+            g2.setStroke(new BasicStroke(w));
+            g2.drawRect(r.x+w/2, r.y+w/2, r.width-w, r.height-w);
+            g2.dispose();
+        }
+    }
+
 
     protected NetworkModel      model        = null;
     // Link back to the containing JComposer
