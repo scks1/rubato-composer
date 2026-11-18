@@ -42,9 +42,11 @@
       <!--zipfileset excludes="META-INF/**/*" src="jar/LeapJava.jar" /-->
       <zipfileset src="jar/repo/org/rubato/vendored/mt4j/2018.11/mt4j-2018.11.jar"/>
       <zipfileset src="jar/xercesImpl.jar"/>
+      <zipfileset src="jar/flatlaf-3.8.jar" excludes="module-info.class,META-INF/versions/*/module-info.class,META-INF/MANIFEST.MF"/>
       <manifest>
         <attribute name="Built-By" value="Florian Thalmann"/>
         <attribute name="Main-Class" value="org.rubato.composer.Composer"/>
+        <attribute name="Multi-Release" value="true"/>
         <!--attribute name="Class-Path" value="jar/LeapJava.jar"/-->
       </manifest>
     </jar>
