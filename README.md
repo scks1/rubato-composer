@@ -12,7 +12,7 @@ Former repository: https://sourceforge.net/projects/rubatocomposer/
 
 Download the latest release [here](https://github.com/rubato-composer/rubato-composer/releases).
 
-The `rubato-bin-YYYYMMDD.tar.gz` contains a Java archive `rubato.jar` which can be run by double-clicking it or by running
+The `rubato-bin-YYYYMMDD.tar.gz` contains a Java archive `rubato.jar` and a `lib/` folder of libraries it needs. Keep them together. The jar can be run by double-clicking it or by running
 ```bash
 $ java -jar rubato.jar
 ```
@@ -27,6 +27,10 @@ Clone the project, move to the folder, then run
 $ ant
 ```
 which generates tar.gz files with latest `src`, `bin`, and `api` annotated with the current date.
+
+## Licensing
+
+Rubato Composer is GPL-2.0-only. FlatLaf, Apache Commons Math and Xerces ship as separate jars in `lib/` next to `rubato.jar`; see [LICENSING.md](LICENSING.md).
 
 ## Notes
 
