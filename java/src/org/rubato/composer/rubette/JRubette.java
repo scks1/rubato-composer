@@ -82,6 +82,7 @@ public final class JRubette extends JPanel
         if (model.hasInfo()) {
             infoLabel = new JLabel("", SwingConstants.CENTER); //$NON-NLS-1$
             infoLabel.setText(getInfo());
+            infoLabel.setToolTipText(getInfo());
             infoLabel.setForeground(foregroundColor);
             infoLabel.setBounds(MARGIN_LEFT+5, wy, size.width-MARGIN_RIGHT-MARGIN_LEFT-10, infoLabel.getPreferredSize().height);
             add(infoLabel);
@@ -948,6 +949,7 @@ public final class JRubette extends JPanel
         }
         if (model.hasInfo()) {
             infoLabel.setText(getInfo());
+            infoLabel.setToolTipText(getInfo());
         }
         if (inConnectorCount != model.getRubette().getInCount()) {
             resizeInConnectors(model.getRubette().getInCount());
@@ -1047,7 +1049,8 @@ public final class JRubette extends JPanel
     private static final int MARGIN_LEFT     = 0;
     private static final int MARGIN_RIGHT    = 0;
     private static final int CONNECTOR_WIDTH = 8;
-    private static final int TWIDTH           = 120;
+    // FlatLaf's default font is wider than Metal's
+    private static final int TWIDTH           = Theme.isFlat() ? Theme.scale(148) : 120;
     private static final int THEIGHT          = 130;
 
     private Dimension size = new Dimension(TWIDTH, THEIGHT);

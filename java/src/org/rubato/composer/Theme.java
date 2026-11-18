@@ -155,5 +155,15 @@ public final class Theme {
     }
 
 
+    /**
+     * Scales a size in pixels by FlatLaf's user interface scale factor, which
+     * follows the font size (flatlaf.uiScale). Returns <code>size</code>
+     * unchanged without FlatLaf.
+     */
+    public static int scale(int size) {
+        return flat ? com.formdev.flatlaf.util.UIScale.scale(size) : size;
+    }
+
+
     private static final Logger logger = Logger.getLogger("org.rubato.composer"); //$NON-NLS-1$
 }

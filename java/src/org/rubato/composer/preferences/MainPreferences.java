@@ -37,7 +37,10 @@ public class MainPreferences extends JPreferencesPanel {
 
     protected void createLayout() {
         themeBox = new JComboBox(themeNames);
-        themeBox.setSelectedIndex(Math.max(0, java.util.Arrays.asList(Theme.NAMES).indexOf(userPrefs.getTheme())));
+        // a -Drubato.theme override is the theme on screen, so show it
+        String shownTheme = (System.getProperty("rubato.theme") != null) //$NON-NLS-1$
+            ? Theme.getInstalled() : userPrefs.getTheme();
+        themeBox.setSelectedIndex(Math.max(0, java.util.Arrays.asList(Theme.NAMES).indexOf(shownTheme)));
         addPreference(Messages.getString("MainPreferences.theme"), themeBox); //$NON-NLS-1$
 
         zigzagBox = new JComboBox(linkTypes);
