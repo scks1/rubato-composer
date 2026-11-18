@@ -37,7 +37,7 @@ public class JScoreDisplay
         this.duration = duration;
         this.width = (int)(duration*stretch);
         setOpaque(true);
-        setBackground(Color.WHITE);
+        setBackground(BG_COLOR);
         if (width < VIEW_HEIGHT) { width = VIEW_HEIGHT; }
         currentSize = new Dimension(width, VIEW_HEIGHT);
         setSize(currentSize);
@@ -156,7 +156,7 @@ public class JScoreDisplay
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D)g;
-        g.setColor(Color.WHITE);
+        g.setColor(BG_COLOR);
         g.fillRect(0, 0, width, getHeight());
         drawPosition(g2d);
         drawNotes(g2d);
@@ -167,7 +167,7 @@ public class JScoreDisplay
         if (notes == null) {
             return;
         }
-        g.setColor(Color.LIGHT_GRAY);
+        g.setColor(LINE_COLOR);
         for (int i = 1; i < (width/(4*stretch)); i++) {
             g.drawLine(i*stretch*4, 0, i*stretch*4, getHeight());
         }
@@ -185,7 +185,7 @@ public class JScoreDisplay
     
     private void drawPosition(Graphics2D g) {
         if (state == State.PLAY || state == State.PAUSE) {
-            g.setColor(Color.BLACK);
+            g.setColor(POSITION_COLOR);
             g.drawLine(currentPos, 0, currentPos, getHeight());
             if (state == State.PLAY) {
                 g.drawImage(playImage, currentPos, 0, null);
@@ -291,6 +291,13 @@ public class JScoreDisplay
     private static final Dimension MINIMUM_SIZE  = new Dimension(VIEW_HEIGHT, VIEW_HEIGHT);
     private Dimension currentSize = MINIMUM_SIZE;
     
+    private static final Color BG_COLOR =
+        org.rubato.composer.Theme.color("Rubato.view.background", Color.WHITE); //$NON-NLS-1$
+    private static final Color LINE_COLOR =
+        org.rubato.composer.Theme.color("Rubato.view.gridline", Color.LIGHT_GRAY); //$NON-NLS-1$
+    private static final Color POSITION_COLOR =
+        org.rubato.composer.Theme.color("Rubato.view.foreground", Color.BLACK); //$NON-NLS-1$
+
     private static final Color[][] voiceLoudnessColors;
     private static final int colorCount = 50;
     private static final int voiceCount = 16;

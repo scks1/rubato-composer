@@ -224,9 +224,13 @@ public class Selection {
     private Rectangle        bounds = new Rectangle(0, 0, 0, 0);
     private boolean          selected = false;
     
-    protected final static Color POINT_COLOR = Color.BLACK;
-    private final static Color BG_COLOR = new Color(0.0f, 0.0f, 0.0f, 0.2f);
-    private final static Color FG_COLOR = new Color(0.0f, 0.0f, 0.0f, 0.6f);
+    private final static Color BASE_COLOR =
+        org.rubato.composer.Theme.color("Rubato.view.foreground", Color.BLACK); //$NON-NLS-1$
+    protected final static Color POINT_COLOR = BASE_COLOR;
+    private final static Color BG_COLOR =
+        new Color(BASE_COLOR.getRed(), BASE_COLOR.getGreen(), BASE_COLOR.getBlue(), 51);
+    private final static Color FG_COLOR =
+        new Color(BASE_COLOR.getRed(), BASE_COLOR.getGreen(), BASE_COLOR.getBlue(), 153);
     private final static Color SELECTED_BG_COLOR = new Color(0.5f, 0.0f, 0.0f, 0.2f);
     private final static Color SELECTED_FG_COLOR = new Color(0.5f, 0.0f, 0.0f, 0.6f);
     private final static int POINT_SIZE = 7;

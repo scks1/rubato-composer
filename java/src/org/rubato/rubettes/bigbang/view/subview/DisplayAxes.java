@@ -3,6 +3,10 @@ package org.rubato.rubettes.bigbang.view.subview;
 import java.util.List;
 
 public class DisplayAxes {
+
+	// axes and labels follow the theme's view foreground (black without FlatLaf)
+	private static final float[] AXES_RGBA = org.rubato.composer.Theme
+		.color("Rubato.view.foreground", java.awt.Color.BLACK).getRGBComponents(null); //$NON-NLS-1$
 	
 	private DisplayContents display;
 	private List<String> axisNames;
@@ -15,7 +19,7 @@ public class DisplayAxes {
 	public void paint(AbstractPainter painter) {
 		int currentWidth = this.display.getCurrentWidth();
 		int currentHeight = this.display.getCurrentHeight();
-		painter.setColor(new float[]{0,0,0,1});
+		painter.setColor(AXES_RGBA);
         //x-axis
 		painter.drawLine(0, currentHeight-1, currentWidth-1, currentHeight-1);
         String xName = this.getAxisName(0);
