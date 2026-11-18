@@ -56,15 +56,15 @@ public class DisplayPaintTest extends TestCase {
 	}
 	
 	//paints at several zooms and positions, so objects lie inside, across and outside the clip,
-	//with and without connectors, a selection and a drag preview. a selected anchor is left out:
-	//DisplayObject.paintAnchorSelection passes a colour without opacity to setColor, which throws
-	//an ArrayIndexOutOfBoundsException with or without culling
+	//with and without connectors, a selection with a selected anchor, and a drag preview
 	private void comparePaints(Denotator score) {
 		BigBangModel model = new BigBangModel();
 		model.setOrAddComposition(score.copy());
 		DisplayObjects displayObjects = new DisplayObjects(model.getObjects());
 		displayObjects.addObjects(model.getObjects().getObjectsAt(null));
 		DisplayContents contents = this.display(model, displayObjects);
+		contents.centerView();
+		DisplayObject anchor = displayObjects.getObjectAt(this.firstCenter(displayObjects, model));
 		int compared = 0;
 		double[][] zooms = {{5, 5}, {20, 8}, {60, 30}};
 		int[][] positions = {{20, 660}, {-40, 300}, {150, 900}, {-300, 1400}};
@@ -75,9 +75,12 @@ public class DisplayPaintTest extends TestCase {
 				for (int variant = 0; variant < 4; variant++) {
 					contents.setSatellitesConnected(variant % 2 == 1);
 					displayObjects.deselectAllObjects();
+					//a click where there is no object clears the selected anchor
+					displayObjects.selectOrDeselectAnchorObject(new Point2D(-100000, -100000));
 					displayObjects.setDragPreview(null);
 					if (variant >= 2) {
 						this.selectEveryThird(model, displayObjects);
+						displayObjects.setSelectedAnchor(anchor);
 						displayObjects.setDragPreview(this.preview(model, 3 * zoom[0], -2));
 					}
 					contents.setObjects(displayObjects);
@@ -144,6 +147,50 @@ public class DisplayPaintTest extends TestCase {
 		}
 		//every view in these checks shows at least the axes
 		assertTrue(message + ": nothing painted", painted > 0);
+	}
+	
+	public void testHueColoursMatchAwtHsbColours() {
+		int checked = 0;
+		for (float h = -0.5f; h <= 1.6f; h += 0.0371f) {
+			for (float sat = 0; sat <= 1.0001f; sat += 0.125f) {
+				for (float b = 0; b <= 1.0001f; b += 0.1f) {
+					float[] rgba = DisplayObject.getRGBfromCurrentHue(h, Math.min(sat, 1), Math.min(b, 1));
+					assertEquals("four components", 4, rgba.length);
+					assertEquals("opaque", 1f, rgba[3]);
+					java.awt.Color expected = java.awt.Color.getHSBColor(h, Math.min(sat, 1), Math.min(b, 1));
+					java.awt.Color actual = new java.awt.Color(rgba[0], rgba[1], rgba[2], rgba[3]);
+					String at = "h " + h + " s " + sat + " b " + b;
+					assertEquals(at, expected.getRed(), actual.getRed(), 1);
+					assertEquals(at, expected.getGreen(), actual.getGreen(), 1);
+					assertEquals(at, expected.getBlue(), actual.getBlue(), 1);
+					checked++;
+				}
+			}
+		}
+		assertTrue(checked > 4000);
+	}
+	
+	public void testSelectedAnchorIsPainted() {
+		BigBangModel model = new BigBangModel();
+		model.setOrAddComposition(this.objects.multiLevelSoundScore.copy());
+		DisplayObjects displayObjects = new DisplayObjects(model.getObjects());
+		displayObjects.addObjects(model.getObjects().getObjectsAt(null));
+		DisplayContents contents = this.display(model, displayObjects);
+		contents.centerView();
+		BufferedImage without = this.paint(contents, true);
+		DisplayObject anchor = displayObjects.getObjectAt(this.firstCenter(displayObjects, model));
+		displayObjects.setSelectedAnchor(anchor);
+		contents.setObjects(displayObjects);
+		BufferedImage with = this.paint(contents, true);
+		int changed = 0;
+		for (int x = 0; x < WIDTH; x++) {
+			for (int y = 0; y < HEIGHT; y++) {
+				if (without.getRGB(x, y) != with.getRGB(x, y)) {
+					changed++;
+				}
+			}
+		}
+		assertTrue("the anchor triangle changed some pixels", changed > 0);
 	}
 	
 	public void testMayReachOnlyRejectsRectanglesOutsideTheClip() {

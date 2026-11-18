@@ -141,22 +141,26 @@ public class DisplayObject implements Comparable<DisplayObject> {
 	}
 	
 	//TODO if doesnt work take code from awt.Color.HSBtoRGB(..
-	private float[] getRGBfromCurrentHue(float h, float s, float b) {
-		float c = (1-Math.abs(2*b-1))*s;
-		float x = c*(1-Math.abs(((h*6)%2)-1));
-	
-		if (h < 1.0/6) {
-			return new float[]{c,x,0};
-		} else if (h < 2.0/6) {
-			return new float[]{x,c,0};
-		} else if (h < 3.0/6) {
-			return new float[]{0,c,x};
-		} else if (h < 4.0/6) {
-			return new float[]{0,x,c};
-		} else if (h < 5.0/6) {
-			return new float[]{x,0,c};
-		} else {
-			return new float[]{c,0,x};
+	//returns an opaque rgba colour for hue h, saturation s and brightness b, all in [0,1] with h taken
+	//modulo 1. it computes what java.awt.Color.getHSBColor(h, s, b) gave before the android-compatible
+	//rewrite, without using awt
+	public static float[] getRGBfromCurrentHue(float h, float s, float b) {
+		if (s == 0) {
+			return new float[]{b, b, b, 1};
+		}
+		float sector = (float)(h - Math.floor(h)) * 6;
+		int i = (int)Math.floor(sector);
+		float f = sector - i;
+		float p = b * (1 - s);
+		float q = b * (1 - s * f);
+		float t = b * (1 - s * (1 - f));
+		switch (i) {
+			case 0: return new float[]{b, t, p, 1};
+			case 1: return new float[]{q, b, p, 1};
+			case 2: return new float[]{p, b, t, 1};
+			case 3: return new float[]{p, q, b, 1};
+			case 4: return new float[]{t, p, b, 1};
+			default: return new float[]{b, p, q, 1};
 		}
 	}
 	
