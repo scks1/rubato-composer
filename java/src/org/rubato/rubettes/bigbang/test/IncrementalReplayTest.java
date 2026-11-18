@@ -86,7 +86,8 @@ public class IncrementalReplayTest extends TestCase {
 		System.out.println("IncrementalReplayTest seeds " + firstSeed + ".." + (firstSeed + seeds - 1) + ": "
 				+ compared + " steps compared, " + incrementalUpdates + " incremental updates, "
 				+ broken + " sequences ended by graph exceptions");
-		assertTrue("steps compared: " + compared, compared >= seeds * steps / 2);
+		assertEquals("sequences ended by exceptions", 0, broken);
+		assertEquals("steps compared", seeds * steps, compared);
 		assertTrue("incremental updates: " + incrementalUpdates, incrementalUpdates > compared / 3);
 	}
 
@@ -192,10 +193,8 @@ public class IncrementalReplayTest extends TestCase {
 		void apply(BigBangModel model);
 	}
 
-	//BigBangOperationGraph throws on some removals and on undoing them (a ConcurrentModificationException
-	//in combineStates, an IndexOutOfBoundsException in insertOperation), and leaves itself in a state that
-	//depends on hash order. A sequence that hits one is checked for the same exception in both models
-	//and then ends.
+	//both models must either succeed or throw the same exception. a sequence that throws ends there and
+	//counts as a failure in runSeeds
 	private void both(Edit edit) {
 		RuntimeException incrementalException = null, fullException = null;
 		try {
