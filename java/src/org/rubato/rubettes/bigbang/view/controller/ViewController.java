@@ -83,6 +83,8 @@ public class ViewController extends Controller {
 	public static final String FLATTEN_OBJECTS = "flattenSelectedObjects";
 	
 	//score manipulation - transformations
+	public static final String BEGIN_DRAG_GESTURE = "beginDragGesture";
+	public static final String END_DRAG_GESTURE = "endDragGesture";
 	public static final String TRANSLATE_OBJECTS = "translateSelectedObjects";
 	public static final String ROTATE_OBJECTS = "rotateSelectedObjects";
 	public static final String SCALE_OBJECTS = "scaleSelectedObjects";
@@ -234,6 +236,14 @@ public class ViewController extends Controller {
 	
 	public void modifyRotationAngle(Double angle) {
 		this.callModelMethod(ViewController.MODIFY_ROTATION, angle);
+	}
+	
+	public void beginDragGesture() {
+		this.callModelMethod(ViewController.BEGIN_DRAG_GESTURE);
+	}
+	
+	public void endDragGesture() {
+		this.callModelMethod(ViewController.END_DRAG_GESTURE);
 	}
 	
 	public void translateSelectedObjects(Point2D center, Point2D endPoint, boolean copyAndTranslate, boolean startNewTransformation) {

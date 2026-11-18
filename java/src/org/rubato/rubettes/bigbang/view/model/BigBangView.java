@@ -12,6 +12,8 @@ import org.rubato.math.matrix.RMatrix;
 import org.rubato.rubettes.bigbang.controller.BigBangController;
 import org.rubato.rubettes.bigbang.model.BigBangObject;
 import org.rubato.rubettes.bigbang.model.BigBangObjects;
+import org.rubato.rubettes.bigbang.model.DenotatorValueExtractor;
+import org.rubato.rubettes.bigbang.model.operations.AffineTransformation;
 import org.rubato.rubettes.bigbang.model.Model;
 import org.rubato.rubettes.bigbang.model.denotators.TransformationPaths;
 import org.rubato.rubettes.bigbang.model.denotators.TransformationProperties;
@@ -71,6 +73,19 @@ public abstract class BigBangView extends Model implements View {
 	protected DisplayObjects displayObjects;
 	protected DisplayTool displayTool;
 	protected AbstractOperation selectedOperation;
+	
+	/**
+	 * False if -Drubato.bigbang.dragPreview=false is set: every drag update then goes to the model.
+	 */
+	public static final boolean DRAG_PREVIEW_ENABLED = !"false".equalsIgnoreCase(System.getProperty("rubato.bigbang.dragPreview"));
+	
+	//a mouse drag of a new transformation: NONE outside a gesture, UNDECIDED until its first
+	//update, then PREVIEW (shown here, sent on release) or PASSTHROUGH (sent on every update)
+	private enum DragGesture { NONE, UNDECIDED, PREVIEW, PASSTHROUGH }
+	private DragGesture dragGesture = DragGesture.NONE;
+	private DragPreview dragPreview;
+	//sends the last previewed transformation to the model
+	private Runnable dragRelease;
 	
 	public BigBangView(BigBangController controller) {
 		this.controller = controller;
@@ -444,33 +459,173 @@ public abstract class BigBangView extends Model implements View {
 	}
 	
 	public void translateSelectedObjects(Point2D center, Point2D endingPoint, Boolean copyAndTransform, Boolean startNewTransformation) {
-		TransformationProperties properties = this.getLocalTransformationProperties(center, endingPoint, copyAndTransform, startNewTransformation);
-		this.controller.translateObjects(properties);
+		boolean preview = this.previewsDragUpdate(copyAndTransform);
+		TransformationProperties properties = this.getLocalTransformationProperties(center, endingPoint, copyAndTransform, preview || startNewTransformation);
+		if (preview) {
+			this.showDragPreview(new TranslationTransformation(null, properties), () -> this.controller.translateObjects(properties));
+		} else {
+			this.controller.translateObjects(properties);
+		}
 	}
 	
 	public void rotateSelectedObjects(Point2D center, Point2D startPoint, Point2D endPoint, Double angle, Boolean copyAndTransform, Boolean startNewTransformation) {
-		TransformationProperties properties = this.getLocalTransformationProperties(center, endPoint, copyAndTransform, startNewTransformation);
-		this.controller.rotateObjects(properties, new double[]{startPoint.getX(),startPoint.getY()}, angle);
+		boolean preview = this.previewsDragUpdate(copyAndTransform);
+		TransformationProperties properties = this.getLocalTransformationProperties(center, endPoint, copyAndTransform, preview || startNewTransformation);
+		double[] startingPoint = new double[]{startPoint.getX(),startPoint.getY()};
+		if (preview) {
+			this.showDragPreview(new RotationTransformation(null, properties, startingPoint, angle), () -> this.controller.rotateObjects(properties, startingPoint, angle));
+		} else {
+			this.controller.rotateObjects(properties, startingPoint, angle);
+		}
 	}
 	
 	public void scaleSelectedObjects(Point2D center, Point2D endPoint, double[] scaleFactors, Boolean copyAndTransform, Boolean startNewTransformation) {
-		TransformationProperties properties = this.getLocalTransformationProperties(center, endPoint, copyAndTransform, startNewTransformation);
-		this.controller.scaleObjects(properties, scaleFactors);
+		boolean preview = this.previewsDragUpdate(copyAndTransform);
+		TransformationProperties properties = this.getLocalTransformationProperties(center, endPoint, copyAndTransform, preview || startNewTransformation);
+		if (preview) {
+			this.showDragPreview(new ScalingTransformation(null, properties, scaleFactors), () -> this.controller.scaleObjects(properties, scaleFactors));
+		} else {
+			this.controller.scaleObjects(properties, scaleFactors);
+		}
 	}
 	
 	public void reflectSelectedObjects(Point2D center, Point2D endPoint, double[] reflectionVector, Boolean copyAndTransform, Boolean startNewTransformation) {
-		TransformationProperties properties = this.getLocalTransformationProperties(center, endPoint, copyAndTransform, startNewTransformation);
-		this.controller.reflectObjects(properties, reflectionVector);
+		boolean preview = this.previewsDragUpdate(copyAndTransform);
+		TransformationProperties properties = this.getLocalTransformationProperties(center, endPoint, copyAndTransform, preview || startNewTransformation);
+		if (preview) {
+			this.showDragPreview(new ReflectionTransformation(null, properties, reflectionVector), () -> this.controller.reflectObjects(properties, reflectionVector));
+		} else {
+			this.controller.reflectObjects(properties, reflectionVector);
+		}
 	}
 	
 	public void shearSelectedObjects(Point2D center, Point2D endPoint, double[] shearingFactors, Boolean copyAndTransform, Boolean startNewTransformation) {
-		TransformationProperties properties = this.getLocalTransformationProperties(center, endPoint, copyAndTransform, startNewTransformation);
-		this.controller.shearObjects(properties, shearingFactors);
+		boolean preview = this.previewsDragUpdate(copyAndTransform);
+		TransformationProperties properties = this.getLocalTransformationProperties(center, endPoint, copyAndTransform, preview || startNewTransformation);
+		if (preview) {
+			this.showDragPreview(new ShearingTransformation(null, properties, shearingFactors), () -> this.controller.shearObjects(properties, shearingFactors));
+		} else {
+			this.controller.shearObjects(properties, shearingFactors);
+		}
 	}
 	
 	public void affineTransformSelectedObjects(Point2D center, Point2D endPoint, double[] shift, RMatrix transform, Boolean copyAndTransform, Boolean startNewTransformation) {
-		TransformationProperties properties = this.getLocalTransformationProperties(center, endPoint, copyAndTransform, startNewTransformation);
-		this.controller.affineTransformObjects(properties, shift, transform);
+		boolean preview = this.previewsDragUpdate(copyAndTransform);
+		TransformationProperties properties = this.getLocalTransformationProperties(center, endPoint, copyAndTransform, preview || startNewTransformation);
+		if (preview) {
+			this.showDragPreview(new AffineTransformation(null, properties, shift, transform), () -> this.controller.affineTransformObjects(properties, shift, transform));
+		} else {
+			this.controller.affineTransformObjects(properties, shift, transform);
+		}
+	}
+	
+	/**
+	 * Called by the mouse adapters of the transformation modes when a drag of a new
+	 * transformation may start. Other input, such as Leap Motion or multitouch, never calls it,
+	 * so its updates reach the model as before.
+	 */
+	public void beginDragGesture() {
+		this.endDragGesture();
+		if (BigBangView.DRAG_PREVIEW_ENABLED) {
+			this.dragGesture = DragGesture.UNDECIDED;
+		}
+	}
+	
+	/**
+	 * Ends a drag gesture. A previewed transformation is now added to the model, once, with the
+	 * parameters of the last update.
+	 */
+	public void endDragGesture() {
+		DragGesture gesture = this.dragGesture;
+		this.dragGesture = DragGesture.NONE;
+		if (gesture == DragGesture.PREVIEW) {
+			this.sendPreviewedTransformation();
+		}
+	}
+	
+	public boolean isPreviewingDrag() {
+		return this.dragGesture == DragGesture.PREVIEW;
+	}
+	
+	private void sendPreviewedTransformation() {
+		Runnable release = this.dragRelease;
+		this.dragRelease = null;
+		this.dragPreview = null;
+		if (this.displayObjects != null) {
+			this.displayObjects.setDragPreview(null);
+		}
+		if (release != null) {
+			//the model's COMPOSITION event replaces the preview with the result
+			release.run();
+		} else if (this.displayObjects != null) {
+			this.firePropertyChange(ViewController.DISPLAY_OBJECTS, null, this.displayObjects);
+		}
+	}
+	
+	/*
+	 * Decides whether the current drag update is shown as a preview. The first update of a gesture
+	 * decides for the whole gesture. If copying is switched on during a previewed gesture, the
+	 * transformation previewed so far goes to the model and the rest of the gesture updates it.
+	 */
+	private boolean previewsDragUpdate(boolean copyAndTransform) {
+		if (this.dragGesture == DragGesture.UNDECIDED) {
+			this.dragPreview = this.createDragPreview(copyAndTransform);
+			this.dragGesture = this.dragPreview != null ? DragGesture.PREVIEW : DragGesture.PASSTHROUGH;
+		} else if (this.dragGesture == DragGesture.PREVIEW && copyAndTransform) {
+			this.sendPreviewedTransformation();
+			this.dragGesture = DragGesture.PASSTHROUGH;
+		}
+		return this.dragGesture == DragGesture.PREVIEW;
+	}
+	
+	/*
+	 * Returns a preview for a new transformation of the selected objects in the shown x and y
+	 * coordinates, or null where the preview could differ from the operation: copies, forms with
+	 * several object types, coordinates other than two plain values, a selected operation or
+	 * state, an insertion state, an open wallpaper or alteration, and a running animation.
+	 */
+	private DragPreview createDragPreview(boolean copyAndTransform) {
+		if (copyAndTransform || this.displayObjects == null || this.displayObjects.getObjectTypes().size() != 1) {
+			return null;
+		}
+		BigBangObjects objects = this.displayObjects.getBigBangObjects();
+		if (!objects.canPreviewNewTransformation()) {
+			return null;
+		}
+		int[] xy = this.factsViewState.getViewParameters().getSelectedXYViewParameters();
+		List<String> valueNames = this.displayObjects.getCoordinateSystemValueNames();
+		String[] names = new String[2];
+		int[] instanceNumbers = new int[2];
+		for (int i = 0; i < 2; i++) {
+			if (xy[i] < 0 || xy[i] >= valueNames.size()) {
+				return null;
+			}
+			names[i] = valueNames.get(xy[i]);
+			if (names[i].equals(DenotatorValueExtractor.SATELLITE_LEVEL) || names[i].equals(DenotatorValueExtractor.SIBLING_NUMBER)
+					|| names[i].equals(DenotatorValueExtractor.COLIMIT_INDEX)) {
+				return null;
+			}
+			instanceNumbers[i] = this.displayObjects.getInstanceNumberOfCoordinateValueName(xy[i]);
+		}
+		if (xy[0] == xy[1]) {
+			return null;
+		}
+		BigBangObject anchor = this.displayObjects.getSelectedBigBangAnchor();
+		return DragPreview.create(objects, this.displayObjects.getSelectedBigBangObjects(), anchor != null, names, instanceNumbers);
+	}
+	
+	private void showDragPreview(AbstractTransformation transformation, Runnable release) {
+		this.dragRelease = release;
+		try {
+			this.dragPreview.update(transformation.getModuleMorphism());
+		} catch (IllegalArgumentException e) {
+			//not an affine map of the plane: send it and the rest of the gesture to the model
+			this.sendPreviewedTransformation();
+			this.dragGesture = DragGesture.PASSTHROUGH;
+			return;
+		}
+		this.displayObjects.setDragPreview(this.dragPreview);
+		this.firePropertyChange(ViewController.DISPLAY_OBJECTS, null, this.displayObjects);
 	}
 	
 	public void shapeSelectedObjects(TreeMap<Integer,Integer> locations, Boolean copyAndTransform, Boolean startNewTransformation) {

@@ -42,6 +42,15 @@ public class DisplayObject implements Comparable<DisplayObject> {
 	}
 	
 	public Double getNthValue(String valueName, int nameInstanceNumber) {
+		if (this.display != null && this.display.getDisplayObjects() != null) {
+			DragPreview preview = this.display.getDisplayObjects().getDragPreview();
+			if (preview != null) {
+				Double previewValue = preview.getValue(this.bbObject, valueName, nameInstanceNumber);
+				if (previewValue != null) {
+					return previewValue;
+				}
+			}
+		}
 		return this.bbObject.getNthValue(valueName, nameInstanceNumber);
 	}
 	

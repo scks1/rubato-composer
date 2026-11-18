@@ -121,6 +121,8 @@ public class BigBangSwingView extends BigBangView {
 	}
 	
 	public void setDisplayMode(DisplayModeAdapter newMode) {
+		//a mode change ends a drag whose release would go to the old mode's adapter
+		this.endDragGesture();
 		if (newMode instanceof TemporaryDisplayMode) {
 			((TemporaryDisplayMode)newMode).setPreviousDisplayMode(this.displayMode);
 		}

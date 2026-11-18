@@ -1,5 +1,6 @@
 package org.rubato.rubettes.bigbang.view.subview;
 
+import org.rubato.rubettes.bigbang.view.model.DragPreview;
 import java.util.ArrayList;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
@@ -38,6 +39,8 @@ public class DisplayObjects {
 	private int indexOfActiveObjectType;
 	private List<Integer> activeColimitCoordinates;
 	private int activeSatelliteLevel;
+	//values shown instead of the objects' own while a drag is previewed
+	private DragPreview dragPreview;
 	
 	public DisplayObjects(BigBangObjects bbObjects) {
 		this.bbObjects = bbObjects;
@@ -245,6 +248,18 @@ public class DisplayObjects {
 	
 	
 	//------------------------
+	
+	public BigBangObjects getBigBangObjects() {
+		return this.bbObjects;
+	}
+	
+	public void setDragPreview(DragPreview dragPreview) {
+		this.dragPreview = dragPreview;
+	}
+	
+	public DragPreview getDragPreview() {
+		return this.dragPreview;
+	}
 	
 	public void setDisplay(DisplayContents display) {
 		for (DisplayObject currentObject : this.objects) {

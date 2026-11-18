@@ -44,6 +44,8 @@ public abstract class ObjectTransformationAdapter extends MouseInputAdapter {
 	public void mousePressed(MouseEvent event) {
 		if (event.getButton() == MouseEvent.BUTTON1 && !this.inModificationMode) {
 			this.updateStartingPoint(event.getPoint().x, event.getPoint().y);
+			//the view may preview the drag and send the transformation to the model on release
+			this.controller.beginDragGesture();
 		}
 	}
 	
@@ -61,6 +63,9 @@ public abstract class ObjectTransformationAdapter extends MouseInputAdapter {
 				this.initDisplayTool();
 				this.controller.clearDisplayTool();
 			}
+		}
+		if (!this.inModificationMode) {
+			this.controller.endDragGesture();
 		}
 	}
 	
