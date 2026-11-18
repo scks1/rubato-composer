@@ -202,6 +202,25 @@ public class BigBangObject implements Comparable<BigBangObject> {
 		return null;
 	}
 	
+	/**
+	 * Returns the nth value with the given name from the values being collected
+	 * in the current extraction (see addValues), falling back to the parent's
+	 * values in the same way as getNthValue. DenotatorValueExtractor uses this
+	 * to add relative child values to their parent's freshly extracted values.
+	 */
+	public Double getNthPreliminaryValue(String valueName, int n) {
+		int valueIndex = this.objectType.getIndexOfNthInstanceOfValueName(valueName, n);
+		if (valueIndex != -1 && valueIndex < this.preliminaryValues.size()) {
+			Double value = this.preliminaryValues.get(valueIndex);
+			if (value != null) {
+				return value;
+			}
+		} else if (this.parents.get(null) != null) {
+			return this.parents.get(null).getNthPreliminaryValue(valueName, n);
+		}
+		return null;
+	}
+	
 	public DenotatorPath getTopDenotatorPath() {
 		DenotatorPath topDenotatorPath = this.getTopDenotatorPathAt(null);
 		if (topDenotatorPath != null) {

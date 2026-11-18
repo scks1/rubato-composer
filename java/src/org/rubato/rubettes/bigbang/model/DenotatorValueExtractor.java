@@ -162,7 +162,7 @@ public class DenotatorValueExtractor {
 			double value = ((RElement)currentElement.cast(RRing.ring)).getValue();
 			int nextIndex = object.getCurrentOccurrencesOfValueName(valueName);
 			if (parent != null) {
-				Double parentValue = parent.getNthValue(valueName, nextIndex);
+				Double parentValue = parent.getNthPreliminaryValue(valueName, nextIndex);
 				if (parentValue != null) {
 					value += parentValue;
 				}
