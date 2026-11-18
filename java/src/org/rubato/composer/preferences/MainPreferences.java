@@ -25,6 +25,7 @@ import java.awt.event.ActionListener;
 
 import javax.swing.*;
 
+import org.rubato.composer.Theme;
 import org.rubato.math.arith.Rational;
 
 public class MainPreferences extends JPreferencesPanel {
@@ -35,6 +36,13 @@ public class MainPreferences extends JPreferencesPanel {
 
 
     protected void createLayout() {
+        themeBox = new JComboBox(themeNames);
+        // a -Drubato.theme override is the theme on screen, so show it
+        String shownTheme = (System.getProperty("rubato.theme") != null) //$NON-NLS-1$
+            ? Theme.getInstalled() : userPrefs.getTheme();
+        themeBox.setSelectedIndex(Math.max(0, java.util.Arrays.asList(Theme.NAMES).indexOf(shownTheme)));
+        addPreference(Messages.getString("MainPreferences.theme"), themeBox); //$NON-NLS-1$
+
         zigzagBox = new JComboBox(linkTypes);
         zigzagBox.setSelectedIndex(userPrefs.getLinkType());
         addPreference(Messages.getString("MainPreferences.defaultlink"), zigzagBox); //$NON-NLS-1$
@@ -65,11 +73,12 @@ public class MainPreferences extends JPreferencesPanel {
         
         showProgressButton= new JCheckBox();
         showProgressButton.setSelected(userPrefs.getShowProgress());
-        addPreference("Show progress dialog:", showProgressButton);
+        addPreference(Messages.getString("MainPreferences.showprogress"), showProgressButton); //$NON-NLS-1$
     }
     
     
     public void apply() {
+        userPrefs.setTheme(Theme.NAMES[themeBox.getSelectedIndex()]);
         userPrefs.setLinkType(zigzagBox.getSelectedIndex());
         userPrefs.setGeometrySaved(saveGeometryButton.isSelected());
         userPrefs.setAskBeforeLeaving(askBeforeLeavingButton.isSelected());
@@ -84,12 +93,19 @@ public class MainPreferences extends JPreferencesPanel {
     }
     
     
+    private final static String[] themeNames = {
+        Messages.getString("MainPreferences.themelight"), //$NON-NLS-1$
+        Messages.getString("MainPreferences.themedark"), //$NON-NLS-1$
+        Messages.getString("MainPreferences.themeclassic") //$NON-NLS-1$
+    };
+
     private final static String[] linkTypes = {
         Messages.getString("MainPreferences.line"), //$NON-NLS-1$
         Messages.getString("MainPreferences.zigzag"), //$NON-NLS-1$
         Messages.getString("MainPreferences.curve") //$NON-NLS-1$
     };
     
+    private   JComboBox  themeBox;
     private   JComboBox  zigzagBox;
     private   JCheckBox  saveGeometryButton;
     private   JCheckBox  askBeforeLeavingButton;

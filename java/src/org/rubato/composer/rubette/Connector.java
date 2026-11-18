@@ -19,6 +19,8 @@
 
 package org.rubato.composer.rubette;
 
+import org.rubato.composer.Theme;
+
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -166,7 +168,7 @@ public class Connector {
     public void paint(Graphics2D g) {
         g.setColor(stateColor[state]);
         g.fillRect(r.x, r.y, r.width, r.height);
-        g.setColor(Color.BLACK);
+        g.setColor(outlineColor);
         g.drawRect(r.x, r.y, r.width, r.height);
        
     }
@@ -199,5 +201,9 @@ public class Connector {
     
     private ArrayList<JLink> links = new ArrayList<JLink>();
     
-    private final static Color stateColor[] = new Color[] { Color.BLUE, Color.RED };
+    private final static Color stateColor[] = new Color[] {
+        Theme.color("Rubato.connector.state0", Color.BLUE), //$NON-NLS-1$
+        Theme.color("Rubato.connector.state1", Color.RED)   //$NON-NLS-1$
+    };
+    private final static Color outlineColor = Theme.color("Rubato.canvas.line", Color.BLACK); //$NON-NLS-1$
 }

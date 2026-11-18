@@ -328,5 +328,5 @@ public class JNote
     private final static Border    emptyBorder = BorderFactory.createEmptyBorder();
     private final static Border    marginBorder = BorderFactory.createEmptyBorder(10, 10, 10, 10);
     private final static Border    lineBorder = BorderFactory.createLineBorder(Color.BLACK);
-    private final static Font      titleFont = new Font("sans", Font.BOLD, 16); //$NON-NLS-1$
+    private final static Font      titleFont = org.rubato.composer.Theme.font(Font.BOLD, 16f/13f, new Font("sans", Font.BOLD, 16)); //$NON-NLS-1$
 }

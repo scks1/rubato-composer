@@ -19,6 +19,8 @@
 
 package org.rubato.composer.view2d;
 
+import org.rubato.composer.Theme;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
@@ -751,13 +753,19 @@ public class View2D
     public Cursor infoCursor   = null;
     
     // the backgroung color
-    private static final Color BG_COLOR    = Color.WHITE;
+    private static final Color BG_COLOR    = Theme.color("Rubato.view.background", Color.WHITE); //$NON-NLS-1$
     // the color of the axes
-    private static final Color AXES_COLOR  = Color.GRAY;
+    private static final Color AXES_COLOR  = Theme.color("Rubato.view.axes", Color.GRAY); //$NON-NLS-1$
     // the color of the ticks
-    private static final Color TICK_COLOR  = Color.GRAY;
-    // the color of the ticks
-    private static final Color GRID_COLOR  = new Color(0.0f, 0.0f, 1.0f, 0.3f);
+    private static final Color TICK_COLOR  = AXES_COLOR;
+    // the color of the grid crosses
+    private static final Color GRID_COLOR  = Theme.isFlat()
+        ? withAlpha(Theme.color("Rubato.view.grid", Color.BLUE), 0.45f) //$NON-NLS-1$
+        : new Color(0.0f, 0.0f, 1.0f, 0.3f);
+
+    private static Color withAlpha(Color c, float alpha) {
+        return new Color(c.getRed(), c.getGreen(), c.getBlue(), Math.round(alpha*255));
+    }
     
     // the size of the grid crosses
     private static final int GRID_SIZE = 5;

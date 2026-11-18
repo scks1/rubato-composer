@@ -22,16 +22,28 @@
     </javac>
   </target>
 
+  <!-- Apache-licensed libraries ship as separate jars in ${dist}/lib, next to
+       their license files, instead of being unpacked into rubato.jar.
+       See LICENSING.md at the repository root. -->
+  <property name="dist.classpath"
+            value="lib/flatlaf-3.8.jar lib/commons-math3-3.2.jar lib/xercesImpl-2.6.2.jar lib/collections-generic-4.01.jar"/>
+
   <target name="dist" depends="compile">
     <mkdir dir="${dist}"/>
+    <mkdir dir="${dist}/lib/licenses"/>
+    <copy file="jar/flatlaf-3.8.jar" todir="${dist}/lib"/>
+    <copy file="jar/commons-math3-3.2.jar" todir="${dist}/lib"/>
+    <copy file="jar/xercesImpl.jar" tofile="${dist}/lib/xercesImpl-2.6.2.jar"/>
+    <copy file="jar/collections-generic-4.01.jar" todir="${dist}/lib"/>
+    <copy todir="${dist}/lib/licenses">
+      <fileset dir="licenses"/>
+    </copy>
     <jar destfile="${dist}/rubato.jar" index="yes">
       <fileset dir="${build}">
         <exclude name="**/test/*"/>
         <exclude name="**/*Test.class"/>
         <exclude name="**/*.java"/>
       </fileset>
-      <zipfileset src="jar/collections-generic-4.01.jar"/>
-      <zipfileset src="jar/commons-math3-3.2.jar"/>
       <zipfileset src="jar/repo/org/rubato/vendored/processing-core/2018.11/processing-core-2018.11.jar"/>
       <zipfileset src="jar/repo/org/rubato/vendored/jportaudio/2018.11/jportaudio-2018.11.jar"/>
       <zipfileset src="jar/repo/org/rubato/vendored/jsyn/2018.11/jsyn-2018.11.jar"/>
@@ -41,10 +53,10 @@
       <zipfileset src="jar/jung-visualization-2.0.1.jar"/>
       <!--zipfileset excludes="META-INF/**/*" src="jar/LeapJava.jar" /-->
       <zipfileset src="jar/repo/org/rubato/vendored/mt4j/2018.11/mt4j-2018.11.jar"/>
-      <zipfileset src="jar/xercesImpl.jar"/>
       <manifest>
         <attribute name="Built-By" value="Florian Thalmann"/>
         <attribute name="Main-Class" value="org.rubato.composer.Composer"/>
+        <attribute name="Class-Path" value="${dist.classpath}"/>
         <!--attribute name="Class-Path" value="jar/LeapJava.jar"/-->
       </manifest>
     </jar>

@@ -74,6 +74,7 @@
       <tarfileset dir="java/dist"
                   prefix="rubato-bin-${DSTAMP}">
         <include name="rubato.jar"/>
+        <include name="lib/**"/>
       </tarfileset>
       <tarfileset dir="."
                   prefix="rubato-bin-${DSTAMP}">
@@ -81,6 +82,7 @@
         <include name="AUTHORS"/>
         <include name="README"/>
         <include name="BUGS"/>
+        <include name="LICENSING.md"/>
       </tarfileset>
       <tarfileset dir="docs"
                   prefix="rubato-bin-${DSTAMP}/doc">

@@ -75,13 +75,42 @@ public final class Utilities {
 
 
     public static Border makeTitledBorder(String title) {
+        if (Theme.isFlat()) {
+            // the look and feel's own titled border
+            return BorderFactory.createTitledBorder(title);
+        }
         return BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), title);
+    }
+
+
+    /**
+     * Returns a one-pixel line border in the theme's component border color,
+     * or in <code>classic</code> without FlatLaf.
+     */
+    public static Border makeLineBorder(Color classic) {
+        return BorderFactory.createLineBorder(Theme.color("Component.borderColor", classic)); //$NON-NLS-1$
+    }
+
+
+    /**
+     * Returns the background for text fields and read-only value labels.
+     */
+    public static Color textBackground() {
+        return Theme.color("TextField.background", Color.WHITE); //$NON-NLS-1$
+    }
+
+
+    /**
+     * Returns the foreground for error messages.
+     */
+    public static Color errorForeground() {
+        return Theme.color("Rubato.status.error", Color.RED); //$NON-NLS-1$
     }
     
     
     public final static String NULL_STRING = ""; //$NON-NLS-1$
     
-    public final static Color ERROR_BG_COLOR = new Color(1.0f, 0.6f, 0.0f);
+    public final static Color ERROR_BG_COLOR = Theme.color("Rubato.entry.errorBackground", new Color(1.0f, 0.6f, 0.0f)); //$NON-NLS-1$
    
     private Utilities() { /* pure static class */ }
 }

@@ -61,6 +61,13 @@ public class JNetwork extends JLayeredPane
         addMouseListener(this);
         addMouseMotionListener(this);
 
+        // the canvas has no caret, so it shows keyboard focus with a ring
+        setFocusable(true);
+        addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) { repaint(); }
+            public void focusLost(FocusEvent e) { repaint(); }
+        });
+
         getInputMap().put(KeyStroke.getKeyStroke("ctrl D"), "duplicate"); //$NON-NLS-1$ //$NON-NLS-2$
         getActionMap().put("duplicate", new AbstractAction () { //$NON-NLS-1$
             public void actionPerformed(ActionEvent e) {
@@ -908,10 +915,24 @@ public class JNetwork extends JLayeredPane
         
         private Rectangle rect = new Rectangle();
         
-        private Color fillColor = new Color(255, 250, 205);        
-        private Color lineColor = new Color(205, 201, 165);        
+        private Color fillColor = Theme.color("Rubato.canvas.selectionFill", new Color(255, 250, 205)); //$NON-NLS-1$
+        private Color lineColor = Theme.color("Rubato.canvas.selectionLine", new Color(205, 201, 165)); //$NON-NLS-1$
     }
     
+
+    public void paint(Graphics g) {
+        super.paint(g);
+        if (isFocusOwner()) {
+            Rectangle r = getVisibleRect();
+            Graphics2D g2 = (Graphics2D)g.create();
+            g2.setColor(Theme.color("Component.focusColor", new Color(99, 130, 191))); //$NON-NLS-1$
+            int w = Theme.scale(2);
+            g2.setStroke(new BasicStroke(w));
+            g2.drawRect(r.x+w/2, r.y+w/2, r.width-w, r.height-w);
+            g2.dispose();
+        }
+    }
+
 
     protected NetworkModel      model        = null;
     // Link back to the containing JComposer
@@ -938,7 +959,7 @@ public class JNetwork extends JLayeredPane
     private DropTarget dropTarget;
     private ChangeObservable changeObservable = new ChangeObservable();
 
-    private final static Color backgroundColor = Color.WHITE;
+    private final static Color backgroundColor = Theme.color("Rubato.canvas.background", Color.WHITE); //$NON-NLS-1$
 
     private final static Dimension PREFERRED_SIZE = new Dimension(1500, 1500);
     private final static Dimension MINIMUM_SIZE = new Dimension(200, 200);

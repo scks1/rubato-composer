@@ -141,7 +141,7 @@ class JGraphSelectDialog extends JDialog implements ActionListener {
     private JTextField   yField;
 
     private Border paddingBorder = BorderFactory.createEmptyBorder(5, 5, 5, 5);
-    private Border lineBorder = BorderFactory.createLineBorder(Color.BLACK);
+    private Border lineBorder = org.rubato.composer.Utilities.makeLineBorder(Color.BLACK);
     
     public static void main(String[] args) {
         JFrame frame = new JFrame();

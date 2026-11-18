@@ -19,9 +19,14 @@
 
 package org.rubato.composer.icons;
 
+import java.awt.Toolkit;
+import java.awt.image.FilteredImageSource;
+import java.awt.image.RGBImageFilter;
 import java.net.URL;
 
 import javax.swing.ImageIcon;
+
+import org.rubato.composer.Theme;
 
 @SuppressWarnings("nls")
 public class Icons {
@@ -64,16 +69,66 @@ public class Icons {
 
     
     public static ImageIcon loadIcon(Object obj, String name) {
-        URL imageURL;
-        imageURL = obj.getClass().getResource(name);
-        return new ImageIcon(imageURL);
+        return loadIcon(obj.getClass(), name);
     }
     
     
     public static ImageIcon loadIcon(Class<?> cls, String name) {
         URL imageURL;
         imageURL = cls.getResource(name);
-        return new ImageIcon(imageURL);
+        ImageIcon icon = new ImageIcon(imageURL);
+        if (name.startsWith("splash")) {
+            // the splash window lays its parts out in fixed pixels
+            return icon;
+        }
+        if (Theme.isDark()) {
+            icon = forDarkBackground(icon);
+        }
+        return scaled(icon);
+    }
+
+
+    /**
+     * Returns <code>icon</code> scaled by the user interface scale factor
+     * (flatlaf.uiScale). Whole factors replicate pixels so the bitmap icons
+     * stay sharp; other factors use smooth scaling.
+     */
+    public static ImageIcon scaled(ImageIcon icon) {
+        int w = icon.getIconWidth(), h = icon.getIconHeight();
+        int sw = Theme.scale(w), sh = Theme.scale(h);
+        if (w <= 0 || h <= 0 || (sw == w && sh == h)) {
+            return icon;
+        }
+        boolean whole = (sw % w == 0) && (sh % h == 0);
+        return new ImageIcon(icon.getImage().getScaledInstance(sw, sh,
+            whole ? java.awt.Image.SCALE_REPLICATE : java.awt.Image.SCALE_SMOOTH));
+    }
+
+
+    /**
+     * Returns a copy of <code>icon</code> for a dark background. The icons
+     * are drawn in black and gray for a light background, so the filter
+     * inverts the lightness of dark, unsaturated pixels and leaves colored
+     * pixels and transparency alone.
+     */
+    public static ImageIcon forDarkBackground(ImageIcon icon) {
+        RGBImageFilter filter = new RGBImageFilter() {
+            { canFilterIndexColorModel = true; }
+            public int filterRGB(int x, int y, int argb) {
+                int a = argb >>> 24;
+                int r = (argb >> 16) & 0xff, g = (argb >> 8) & 0xff, b = argb & 0xff;
+                int max = Math.max(r, Math.max(g, b));
+                int min = Math.min(r, Math.min(g, b));
+                if (a == 0 || max - min > 48 || max > 140) {
+                    return argb;
+                }
+                // dark gray or black: mirror the lightness around the middle
+                int r2 = 255 - r*3/4 - 32, g2 = 255 - g*3/4 - 32, b2 = 255 - b*3/4 - 32;
+                return (a << 24) | (r2 << 16) | (g2 << 8) | b2;
+            }
+        };
+        return new ImageIcon(Toolkit.getDefaultToolkit().createImage(
+            new FilteredImageSource(icon.getImage().getSource(), filter)));
     }
 
     

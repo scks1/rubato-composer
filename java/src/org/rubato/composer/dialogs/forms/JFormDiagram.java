@@ -73,7 +73,7 @@ public class JFormDiagram
         fromList.setCellRenderer(new FormCellRenderer());
         fromList.addListSelectionListener(this);
         fromList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        fromList.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        fromList.setBorder(org.rubato.composer.Utilities.makeLineBorder(Color.GRAY));
         gridbag.setConstraints(fromList, c);
         lists.add(fromList);
 
@@ -92,7 +92,7 @@ public class JFormDiagram
         toList.setCellRenderer(new FormCellRenderer());
         toList.addListSelectionListener(this);
         toList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        toList.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        toList.setBorder(org.rubato.composer.Utilities.makeLineBorder(Color.GRAY));
         toList.repaint();
         gridbag.setConstraints(toList, c);
         lists.add(toList);

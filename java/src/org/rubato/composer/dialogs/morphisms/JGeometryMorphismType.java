@@ -51,7 +51,7 @@ public class JGeometryMorphismType extends JMorphismType implements ActionListen
         geometryPanel.setLayout(new BorderLayout());
         geometryPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 0, 0));
         geometryView = new JGeometryView();
-        geometryView.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        geometryView.setBorder(org.rubato.composer.Utilities.makeLineBorder(Color.BLACK));
         geometryPanel.add(geometryView, BorderLayout.CENTER);
         add(geometryPanel, BorderLayout.CENTER);
     }

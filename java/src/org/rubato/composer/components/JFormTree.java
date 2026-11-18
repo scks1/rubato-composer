@@ -71,7 +71,7 @@ public class JFormTree
         formTree.addTreeSelectionListener(this);
         formTree.setCellRenderer(new FormCellRenderer());
         add(formTree, BorderLayout.CENTER);
-        setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        setBorder(org.rubato.composer.Utilities.makeLineBorder(Color.GRAY));
     }
     
     

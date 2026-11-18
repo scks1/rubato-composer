@@ -225,7 +225,7 @@ public class JComposer extends JFrame implements Observer {
 
         fileMenu.addSeparator();
         
-        JMenu recentFilesItem = new JMenu("Recent Files");
+        JMenu recentFilesItem = new JMenu(Messages.getString("JComposer.recentfiles")); //$NON-NLS-1$
         fileMenu.add(recentFilesItem);
         recentFiles = new RecentFiles(recentFilesItem);
         recentFiles.setAction(new AbstractAction() {
@@ -247,7 +247,7 @@ public class JComposer extends JFrame implements Observer {
         menuBar.add(fileMenu);
 
         // Edit menu
-        JMenu editMenu = new JMenu("Edit");
+        JMenu editMenu = new JMenu(Messages.getString("JComposer.edit")); //$NON-NLS-1$
         editMenu.setMnemonic(KeyEvent.VK_E);
         
         final JMenuItem cutItem = new JMenuItem(cutAction);
@@ -412,7 +412,7 @@ public class JComposer extends JFrame implements Observer {
         messageLog = new JMessageLog();
         bottomTabs.addTab(Messages.getString("JComposer.messagelog"), messageLog); //$NON-NLS-1$
         
-        bottomPanel.setPreferredSize(new Dimension(0, 150));
+        bottomPanel.setPreferredSize(new Dimension(0, Theme.scale(150)));
         return bottomPanel;
     }
 
@@ -434,7 +434,7 @@ public class JComposer extends JFrame implements Observer {
         networkList.setShowAction(showNetworkAction);
         rightTabs.addTab(Messages.getString("JComposer.networks"), networkList); //$NON-NLS-1$
         
-        rightPanel.setPreferredSize(new Dimension(200, 0));
+        rightPanel.setPreferredSize(new Dimension(Theme.scale(200), 0));
         return rightPanel;
     }
     
@@ -1332,7 +1332,7 @@ public class JComposer extends JFrame implements Observer {
     
     
     public Dimension getPreferredSize() {
-        return PREFERRED_SIZE;
+        return new Dimension(Theme.scale(PREFERRED_SIZE.width), Theme.scale(PREFERRED_SIZE.height));
     }
     
 
@@ -1622,9 +1622,9 @@ public class JComposer extends JFrame implements Observer {
     public static final int STATUS_WARNING = 1;
     public static final int STATUS_ERROR   = 2;
     public static final Color[] statusColor = new Color[] {
-            Color.BLACK,            // info color
-            new Color(215, 117, 6), // warning color
-            Color.RED               // error color
+            Theme.color("Rubato.status.info", Color.BLACK),               // info color //$NON-NLS-1$
+            Theme.color("Rubato.status.warning", new Color(215, 117, 6)), // warning color //$NON-NLS-1$
+            Theme.color("Rubato.status.error", Color.RED)                 // error color //$NON-NLS-1$
     };
     private Action statusClearAction = new AbstractAction() {
         public void actionPerformed(ActionEvent e) {

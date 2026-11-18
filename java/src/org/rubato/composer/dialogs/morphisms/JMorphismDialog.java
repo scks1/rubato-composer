@@ -95,7 +95,7 @@ public class JMorphismDialog
         else {
             JTextField domainLabel = new JTextField(domain.toVisualString());
             domainLabel.setEditable(false);
-            domainLabel.setBackground(Color.WHITE);
+            domainLabel.setBackground(org.rubato.composer.Utilities.textBackground());
             Box domainBox = new Box(BoxLayout.Y_AXIS);
             domainBox.add(domainLabel);
             domainBox.setBorder(domainBorder);
@@ -115,7 +115,7 @@ public class JMorphismDialog
         else {
             JTextField codomainLabel = new JTextField(codomain.toVisualString());
             codomainLabel.setEditable(false);
-            codomainLabel.setBackground(Color.WHITE);
+            codomainLabel.setBackground(org.rubato.composer.Utilities.textBackground());
             Box codomainBox = new Box(BoxLayout.Y_AXIS);
             codomainBox.add(codomainLabel);
             codomainBox.setBorder(codomainBorder);
@@ -552,7 +552,7 @@ public class JMorphismDialog
     
     private void setError(String string) {
         JLabel error = new JLabel(string);
-        error.setForeground(Color.RED);
+        error.setForeground(org.rubato.composer.Utilities.errorForeground());
         setMorphismPanel(error);
     }
     
@@ -560,7 +560,7 @@ public class JMorphismDialog
     private void setResult(String string) {
         JTextField result = new JTextField(string);
         result.setEditable(false);
-        result.setBackground(Color.WHITE);
+        result.setBackground(org.rubato.composer.Utilities.textBackground());
         setMorphismPanel(result);
     }
     

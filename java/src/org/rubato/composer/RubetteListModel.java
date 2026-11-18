@@ -138,8 +138,8 @@ class RubetteListModel extends DefaultListModel {
         private final Border groupBorder = BorderFactory.createEmptyBorder(2, 0, 2, 0);
     }
 
-    protected final static Color groupBg = Color.GRAY;
-    protected final static Color groupFg = Color.WHITE;
+    protected final static Color groupBg = Theme.color("Rubato.group.background", Color.GRAY); //$NON-NLS-1$
+    protected final static Color groupFg = Theme.color("Rubato.group.foreground", Color.WHITE); //$NON-NLS-1$
 }
 
 

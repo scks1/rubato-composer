@@ -79,7 +79,7 @@ public final class JDenotatorDialog
         else {
             JTextField formLabel = new JTextField(form.toString());
             formLabel.setEditable(false);
-            formLabel.setBackground(Color.WHITE);
+            formLabel.setBackground(org.rubato.composer.Utilities.textBackground());
             Box formBox = new Box(BoxLayout.Y_AXIS);
             formBox.add(formLabel);
             formBox.setBorder(formBorder);

@@ -15,7 +15,7 @@ public class AWTPainter extends AbstractPainter {
 	
 	public AWTPainter(Graphics g) {
 		this.g = g;
-		this.g.setFont(new Font("Lucida Grande", Font.PLAIN, 10));
+		this.g.setFont(org.rubato.composer.Theme.font(Font.PLAIN, 10f/13f, new Font("Lucida Grande", Font.PLAIN, 10)));
 	}
 	
 	@Override

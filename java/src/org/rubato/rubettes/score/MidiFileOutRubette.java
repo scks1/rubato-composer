@@ -125,7 +125,7 @@ public class MidiFileOutRubette extends AbstractRubette {
             fileNameField = new JTextField(getMidiFileName());
             fileNameField.setEditable(false);
             fileNameField.setOpaque(true);
-            fileNameField.setBackground(Color.WHITE);
+            fileNameField.setBackground(org.rubato.composer.Utilities.textBackground());
             fileBox.add(fileNameField);
 
             fileBox.add(Box.createHorizontalStrut(5));
