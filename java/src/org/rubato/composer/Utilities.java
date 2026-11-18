@@ -84,6 +84,15 @@ public final class Utilities {
 
 
     /**
+     * Returns a one-pixel line border in the theme's component border color,
+     * or in <code>classic</code> without FlatLaf.
+     */
+    public static Border makeLineBorder(Color classic) {
+        return BorderFactory.createLineBorder(Theme.color("Component.borderColor", classic)); //$NON-NLS-1$
+    }
+
+
+    /**
      * Returns the background for text fields and read-only value labels.
      */
     public static Color textBackground() {

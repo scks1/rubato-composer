@@ -73,7 +73,7 @@ public class WallpaperRubette extends AbstractRubette implements ActionListener 
         setInCount(1);
         setOutCount(1);
         this.morphismsTable = new JWallpaperDimensionsTable(this);
-        this.morphismsTable.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        this.morphismsTable.setBorder(org.rubato.composer.Utilities.makeLineBorder(Color.BLACK));
         this.simpleFormFinder = new SimpleFormFinder(null);
     }
 

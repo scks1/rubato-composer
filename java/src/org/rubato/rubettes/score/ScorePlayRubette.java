@@ -179,7 +179,7 @@ public final class ScorePlayRubette extends AbstractRubette implements
             view.add(scrollPane, BorderLayout.CENTER);
 
             Box sliderPanel = new Box(BoxLayout.X_AXIS);
-            sliderPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(Color.BLACK), "Tempo factor"));
+            sliderPanel.setBorder(new TitledBorder(org.rubato.composer.Utilities.makeLineBorder(Color.BLACK), "Tempo factor"));
 
             tempoSlider = new JSlider();
             tempoSlider.setMaximum(MAX_FACTOR);
