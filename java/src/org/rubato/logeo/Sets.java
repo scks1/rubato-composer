@@ -21,6 +21,7 @@ package org.rubato.logeo;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.RandomAccess;
 import java.util.List;
 
 import org.rubato.base.RubatoException;
@@ -488,8 +489,15 @@ public final class Sets {
     // Private methods
     //
 
+    /** Copies a list that is not random access, since the merge helpers index into both inputs. */
+    static private List<Denotator> randomAccess(List<Denotator> list) {
+        return (list instanceof RandomAccess) ? list : new ArrayList<Denotator>(list);
+    }
+
     static private List<Denotator> mergeLists(List<Denotator> list1, List<Denotator> list2) {
-        LinkedList<Denotator> newList = new LinkedList<Denotator>();
+        list1 = randomAccess(list1);
+        list2 = randomAccess(list2);
+        ArrayList<Denotator> newList = new ArrayList<Denotator>(list1.size() + list2.size());
         int count1 = list1.size();
         int count2 = list2.size();
         int i1 = 0;
@@ -525,7 +533,9 @@ public final class Sets {
 
     
     static private List<Denotator> intersectLists(List<Denotator> list1, List<Denotator> list2) {
-        LinkedList<Denotator> newList = new LinkedList<Denotator>();
+        list1 = randomAccess(list1);
+        list2 = randomAccess(list2);
+        ArrayList<Denotator> newList = new ArrayList<Denotator>(list1.size() + list2.size());
         int count1 = list1.size();
         int count2 = list2.size();
         int i1 = 0;
@@ -548,7 +558,9 @@ public final class Sets {
 
 
     static private List<Denotator> differenceLists(List<Denotator> list1, List<Denotator> list2) {
-        LinkedList<Denotator> newList = new LinkedList<Denotator>();
+        list1 = randomAccess(list1);
+        list2 = randomAccess(list2);
+        ArrayList<Denotator> newList = new ArrayList<Denotator>(list1.size() + list2.size());
         int count1 = list1.size();
         int count2 = list2.size();
         int i1 = 0;
@@ -578,7 +590,9 @@ public final class Sets {
 
 
     static private List<Denotator> symmetricdiffLists(List<Denotator> list1, List<Denotator> list2) {
-        LinkedList<Denotator> newList = new LinkedList<Denotator>();
+        list1 = randomAccess(list1);
+        list2 = randomAccess(list2);
+        ArrayList<Denotator> newList = new ArrayList<Denotator>(list1.size() + list2.size());
         int count1 = list1.size();
         int count2 = list2.size();
         int i1 = 0;
