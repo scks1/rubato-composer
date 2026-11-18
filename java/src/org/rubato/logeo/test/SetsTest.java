@@ -98,4 +98,32 @@ public class SetsTest extends TestCase {
         // linear merging takes tens of milliseconds here; indexing the LinkedList inputs takes seconds
         assertTrue("union of two " + n + "-note scores took " + ms + " ms", ms < 2000);
     }
+
+    private static List<Denotator> symmetricExpected(PowerDenotator a, PowerDenotator b) {
+        TreeSet<Denotator> sa = new TreeSet<Denotator>(a.getFactors());
+        TreeSet<Denotator> sb = new TreeSet<Denotator>(b.getFactors());
+        TreeSet<Denotator> result = new TreeSet<Denotator>(sa);
+        result.addAll(sb);
+        TreeSet<Denotator> both = new TreeSet<Denotator>(sa);
+        both.retainAll(sb);
+        result.removeAll(both);
+        return sorted(result);
+    }
+
+    public void testSymmetricDifferenceMatchesSortedSets() throws Exception {
+        // overlapping ranges where either side runs past the other
+        int[][] cases = {
+            {0, 60, 2, 0, 90, 3},   // second score extends past the first
+            {0, 90, 3, 0, 60, 2},   // first score extends past the second
+            {0, 4, 1, 10, 14, 1},   // disjoint, second entirely after the first
+            {10, 14, 1, 0, 4, 1},   // disjoint, first entirely after the second
+            {0, 20, 1, 5, 9, 1},    // second inside the first
+            {0, 20, 2, 0, 20, 2},   // identical
+        };
+        for (int[] c : cases) {
+            PowerDenotator a = score(c[0], c[1], c[2]);
+            PowerDenotator b = score(c[3], c[4], c[5]);
+            assertFactors(symmetricExpected(a, b), Sets.symmetric(a, b));
+        }
+    }
 }

@@ -598,18 +598,29 @@ public final class Sets {
         int i1 = 0;
         int i2 = 0;
         while (i1 < count1 && i2 < count2) {
-            while (i1 < count1 && i2 < count2 && list1.get(i1).compareTo(list2.get(i2)) < 0) {
-                newList.add(list1.get(i1));
+            Denotator d1 = list1.get(i1);
+            Denotator d2 = list2.get(i2);
+            int comp = d1.compareTo(d2);
+            if (comp < 0) {
+                newList.add(d1);
                 i1++;
             }
-            while (i1 < count1 && i2 < count2 && list1.get(i1).compareTo(list2.get(i2)) > 0) {
-                newList.add(list2.get(i2));
+            else if (comp > 0) {
+                newList.add(d2);
                 i2++;
             }
-            if (i1 < count1 && i2 < count2 && list1.get(i1).equals(list2.get(i2))) {
+            else {
                 i1++;
                 i2++;
             }
+        }
+        while (i1 < count1) {
+            newList.add(list1.get(i1));
+            i1++;
+        }
+        while (i2 < count2) {
+            newList.add(list2.get(i2));
+            i2++;
         }
         return newList;
     }
