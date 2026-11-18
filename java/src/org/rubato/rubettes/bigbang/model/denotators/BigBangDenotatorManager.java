@@ -386,6 +386,18 @@ public class BigBangDenotatorManager {
 		if (powersetPath != null) {
 			//find all objects that won't be removed
 			List<Denotator> nonRemovedObjects = this.getPowersetOrList(powersetPath).getFactors();
+			//a deletion keeps the paths its objects had when it was created. if an earlier operation now
+			//produces fewer objects (e.g. after its modification ratio was lowered), some of those paths
+			//no longer exist, and there is nothing to delete at them
+			removedObjectsPaths = new ArrayList<DenotatorPath>(removedObjectsPaths);
+			for (Iterator<DenotatorPath> i = removedObjectsPaths.iterator(); i.hasNext();) {
+				if (i.next().getLastIndex() >= nonRemovedObjects.size()) {
+					i.remove();
+				}
+			}
+			if (removedObjectsPaths.isEmpty()) {
+				return new ArrayList<Denotator>();
+			}
 			List<Integer> removedObjectsIndices = new ArrayList<Integer>();
 			for (DenotatorPath currentPath : removedObjectsPaths) {
 				removedObjectsIndices.add(currentPath.getLastIndex());
