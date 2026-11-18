@@ -78,6 +78,47 @@ public class DragPreviewTest extends TestCase {
 		this.runSeeds(score, 201, 4, 30);
 	}
 
+	public void testGesturesOnModulatorsAreNotPreviewed() throws Exception {
+		//SoundNoteGenerator.createFMNodeDenotator sets a Layer coordinate SoundNote lacks, so the
+		//modulators are put together here: four notes with two modulators each
+		org.rubato.rubettes.util.SoundNoteGenerator generator = new org.rubato.rubettes.util.SoundNoteGenerator();
+		org.rubato.math.yoneda.NameDenotator name = org.rubato.math.yoneda.NameDenotator.make("");
+		org.rubato.math.yoneda.PowerForm modulatorsForm = (org.rubato.math.yoneda.PowerForm)
+				org.rubato.base.Repository.systemRepository().getForm("Modulators");
+		List<Denotator> nodes = new ArrayList<Denotator>();
+		for (int i = 0; i < 4; i++) {
+			org.rubato.math.yoneda.LimitDenotator note = this.firstNote(generator, new double[]{i, 60 + 2 * i, 100, 1, 0});
+			List<Denotator> modulators = new ArrayList<Denotator>();
+			modulators.add(this.firstNote(generator, new double[]{0, 20 + i, 10, 0, 0}));
+			modulators.add(this.firstNote(generator, new double[]{0, 50 + i, 10, 0, 0}));
+			note.setFactor(5, new PowerDenotator(name, modulatorsForm, modulators));
+			nodes.add(generator.convertModulatorToNode(note));
+		}
+		Denotator score = new PowerDenotator(name, generator.getSoundScoreForm(), nodes);
+		//the model itself cannot map modulators with these paths (a NullPointerException in
+		//ArbitraryDenotatorMapper), so this checks only that such gestures are not previewed
+		BigBangModel model = new BigBangModel();
+		model.setOrAddComposition(score);
+		BigBangObjects objects = model.getObjects();
+		String[] names = this.names(model);
+		int modulators = 0;
+		for (BigBangObject object : objects.getObjectsAt(null)) {
+			if (!object.getTopDenotatorPath().getEndForm().equals(objects.getObjectTypes().get(0))) {
+				modulators++;
+				TreeSet<BigBangObject> selection = new TreeSet<BigBangObject>();
+				selection.add(object);
+				assertNull(DragPreview.create(objects, selection, false, names, new int[]{0, 0}));
+			}
+		}
+		assertEquals(8, modulators);
+		assertNull("all objects, modulators included", DragPreview.create(objects, new TreeSet<BigBangObject>(), false, names, new int[]{0, 0}));
+	}
+
+	private org.rubato.math.yoneda.LimitDenotator firstNote(org.rubato.rubettes.util.SoundNoteGenerator generator, double[] values) throws Exception {
+		Denotator node = generator.createFlatSoundScore(new double[][]{values}).getFactor(0);
+		return (org.rubato.math.yoneda.LimitDenotator)((org.rubato.math.yoneda.LimitDenotator)node).getFactor(0);
+	}
+
 	public void testPreviewIsUnavailableWhileAStateIsSelected() {
 		this.preview.setOrAddComposition(this.objects.flatSoundScore.copy());
 		this.preview.translateObjects(this.props(this.preview, this.all(this.preview), null, true, 0, 0, 1, 1));

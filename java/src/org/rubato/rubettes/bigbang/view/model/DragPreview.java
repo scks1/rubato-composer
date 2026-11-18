@@ -11,6 +11,7 @@ import org.rubato.math.module.ModuleElement;
 import org.rubato.math.module.RElement;
 import org.rubato.math.module.RProperFreeElement;
 import org.rubato.math.module.morphism.ModuleMorphism;
+import org.rubato.math.yoneda.Form;
 import org.rubato.rubettes.bigbang.model.BigBangObject;
 import org.rubato.rubettes.bigbang.model.BigBangObjects;
 
@@ -70,6 +71,9 @@ public class DragPreview {
 	public static DragPreview create(BigBangObjects objects, Set<BigBangObject> transformedObjects, boolean relativeToParents,
 			String[] valueNames, int[] instanceNumbers) {
 		Set<BigBangObject> shownObjects = objects.getObjectsAt(null);
+		//BigBangMapper maps with the value paths of the first object type only, so objects of other
+		//types, such as modulators, may keep their values: those gestures are not previewed
+		Form mappedType = objects.getObjectTypes().get(0);
 		if (shownObjects == null || shownObjects.isEmpty() || objects.baseFormContainsColimits()) {
 			return null;
 		}
@@ -92,6 +96,9 @@ public class DragPreview {
 				affected |= mapped.contains(ancestor);
 			}
 			if (affected) {
+				if (!mappedType.equals(currentObject.getTopDenotatorPath().getEndForm())) {
+					return null;
+				}
 				double[] values = getValues(currentObject, valueNames, instanceNumbers);
 				if (values == null) {
 					return null;

@@ -580,12 +580,12 @@ public abstract class BigBangView extends Model implements View {
 	
 	/*
 	 * Returns a preview for a new transformation of the selected objects in the shown x and y
-	 * coordinates, or null where the preview could differ from the operation: copies, forms with
-	 * several object types, coordinates other than two plain values, a selected operation or
+	 * coordinates, or null where the preview could differ from the operation: copies, objects of
+	 * other types than the first (see DragPreview), coordinates other than two plain values, a selected operation or
 	 * state, an insertion state, an open wallpaper or alteration, and a running animation.
 	 */
 	private DragPreview createDragPreview(boolean copyAndTransform) {
-		if (copyAndTransform || this.displayObjects == null || this.displayObjects.getObjectTypes().size() != 1) {
+		if (copyAndTransform || this.displayObjects == null) {
 			return null;
 		}
 		BigBangObjects objects = this.displayObjects.getBigBangObjects();
