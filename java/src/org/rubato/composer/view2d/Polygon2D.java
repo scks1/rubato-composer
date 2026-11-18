@@ -24,7 +24,7 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
 
-import sun.awt.geom.Crossings;
+import java.awt.geom.Path2D;
 
 
 public class Polygon2D {
@@ -223,25 +223,19 @@ public class Polygon2D {
         return ((hits & 1) != 0);
     }
 
-    private Crossings getCrossings(double xlo, double ylo,
-                                   double xhi, double yhi) {
-        Crossings cross = new Crossings.EvenOdd(xlo, ylo, xhi, yhi);
-        double lastx = xPoints[nPoints - 1];
-        double lasty = yPoints[nPoints - 1];
-        double curx, cury;
-        
-        // Walk the edges of the polygon
-        for (int i = 0; i < nPoints; i++) {
-            curx = xPoints[i];
-            cury = yPoints[i];
-            if (cross.accumulateLine(lastx, lasty, curx, cury)) {
-                return null;
-            }
-            lastx = curx;
-            lasty = cury;
+    /**
+     * Builds an even-odd path from the vertices, used for the rectangle
+     * tests below (replaces the internal sun.awt.geom.Crossings class,
+     * which JDK 9+ no longer exports).
+     */
+    private Path2D.Double toPath() {
+        Path2D.Double path = new Path2D.Double(Path2D.WIND_EVEN_ODD, nPoints);
+        path.moveTo(xPoints[0], yPoints[0]);
+        for (int i = 1; i < nPoints; i++) {
+            path.lineTo(xPoints[i], yPoints[i]);
         }
-        
-        return cross;
+        path.closePath();
+        return path;
     }
 
 
@@ -255,8 +249,7 @@ public class Polygon2D {
             return false;
         }
         
-        Crossings cross = getCrossings(x, y, x+w, y+h);
-        return (cross == null || !cross.isEmpty());
+        return toPath().intersects(x, y, w, h);
     }
 
     
@@ -270,8 +263,7 @@ public class Polygon2D {
             return false;
         }
         
-        Crossings cross = getCrossings(x, y, x+w, y+h);
-        return (cross != null && cross.covers(y, y+h));
+        return toPath().contains(x, y, w, h);
     }
 
 
