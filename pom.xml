@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Maven build for Rubato Composer, alongside the Ant build in java/build.xml.
+
+  The source tree stays where Ant expects it: java/src holds production code,
+  tests (every **/test/** directory and every *Test.java) and resources side by
+  side. The compiler plugin splits them with include and exclude patterns.
+
+  Libraries come from Maven Central where Central has the same classes as the
+  jar vendored in java/jar. The six jars with no Central release live in a
+  file repository at java/jar/repo (groupId org.rubato.vendored, version
+  2018.11, the date of the last upstream commit). Ant reads the same files, so
+  the tree holds one copy of each jar.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.rubato</groupId>
+  <artifactId>rubato-composer</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>Rubato Composer</name>
+  <description>Rubato Composer is a music software based on the concepts and models of mathematical music theory.</description>
+  <url>https://github.com/rubato-composer/rubato-composer</url>
+  <licenses>
+    <license>
+      <name>GNU General Public License, version 2</name>
+      <url>https://www.gnu.org/licenses/old-licenses/gpl-2.0.html</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <vendored.version>2018.11</vendored.version>
+    <main.class>org.rubato.composer.Composer</main.class>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>rubato-vendored</id>
+      <name>Jars vendored in java/jar/repo</name>
+      <url>file://${project.basedir}/java/jar/repo</url>
+      <releases>
+        <enabled>true</enabled>
+        <checksumPolicy>fail</checksumPolicy>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <dependencies>
+    <!-- Maven Central; class files identical to the vendored jars -->
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-math3</artifactId>
+      <version>3.2</version>
+    </dependency>
+    <dependency>
+      <groupId>net.sourceforge.collections</groupId>
+      <artifactId>collections-generic</artifactId>
+      <version>4.01</version>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.jung</groupId>
+      <artifactId>jung-api</artifactId>
+      <version>2.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.jung</groupId>
+      <artifactId>jung-graph-impl</artifactId>
+      <version>2.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.jung</groupId>
+      <artifactId>jung-algorithms</artifactId>
+      <version>2.0.1</version>
+      <exclusions>
+        <!-- Not in the vendored set or in the Ant-built rubato.jar -->
+        <exclusion>
+          <groupId>colt</groupId>
+          <artifactId>colt</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>concurrent</groupId>
+          <artifactId>concurrent</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>net.sf.jung</groupId>
+      <artifactId>jung-visualization</artifactId>
+      <version>2.0.1</version>
+    </dependency>
+    <dependency>
+      <groupId>xerces</groupId>
+      <artifactId>xercesImpl</artifactId>
+      <version>2.6.2</version>
+    </dependency>
+
+    <!-- Vendored jars without a Central release, from java/jar/repo -->
+    <dependency>
+      <groupId>org.rubato.vendored</groupId>
+      <artifactId>processing-core</artifactId>
+      <version>${vendored.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.rubato.vendored</groupId>
+      <artifactId>jsyn</artifactId>
+      <version>${vendored.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.rubato.vendored</groupId>
+      <artifactId>jportaudio</artifactId>
+      <version>${vendored.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.rubato.vendored</groupId>
+      <artifactId>mt4j</artifactId>
+      <version>${vendored.version}</version>
+    </dependency>
+    <!-- Compile-only, as in Ant: neither jar is merged into rubato.jar -->
+    <dependency>
+      <groupId>org.rubato.vendored</groupId>
+      <artifactId>glulogic-mt</artifactId>
+      <version>${vendored.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.rubato.vendored</groupId>
+      <artifactId>leap-java</artifactId>
+      <version>${vendored.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <sourceDirectory>java/src</sourceDirectory>
+    <testSourceDirectory>java/src</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>java/src</directory>
+        <excludes>
+          <exclude>**/*.java</exclude>
+          <exclude>**/*.class</exclude>
+          <exclude>**/test/**</exclude>
+        </excludes>
+      </resource>
+    </resources>
+
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>3.5.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.5.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.5.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.22.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>3.7.0</version>
+        <executions>
+          <execution>
+            <id>enforce-toolchain</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[21,)</version>
+                </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>[3.9,)</version>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.16.0</version>
+        <configuration>
+          <excludes>
+            <exclude>**/test/**</exclude>
+            <exclude>**/*Test.java</exclude>
+          </excludes>
+          <testIncludes>
+            <testInclude>**/test/**/*.java</testInclude>
+            <testInclude>**/*Test.java</testInclude>
+          </testIncludes>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.6.1</version>
+        <configuration>
+          <includes>
+            <include>**/*Test.java</include>
+          </includes>
+          <excludes>
+            <!-- Needs an audio output device; hangs without one. Run it with
+                 -Djsyn.tests=true (see the with-audio profile). -->
+            <exclude>${jsyn.test.exclude}</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>${main.class}</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.2</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals><goal>shade</goal></goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <shadedClassifierName>all</shadedClassifierName>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>${main.class}</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <profile>
+      <id>without-audio</id>
+      <activation>
+        <property>
+          <name>!jsyn.tests</name>
+        </property>
+      </activation>
+      <properties>
+        <jsyn.test.exclude>**/JSynPlayerTest.java</jsyn.test.exclude>
+      </properties>
+    </profile>
+    <profile>
+      <id>with-audio</id>
+      <activation>
+        <property>
+          <name>jsyn.tests</name>
+        </property>
+      </activation>
+      <properties>
+        <jsyn.test.exclude>none</jsyn.test.exclude>
+      </properties>
+    </profile>
+  </profiles>
+</project>
