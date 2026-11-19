@@ -217,13 +217,40 @@ public class BigBangObjects {
 	}
 	
 	private void removeObjects(AbstractOperation previousOperation, AbstractOperation operation, OperationPathResults pathResults) {
+		//REMOVE if in removedPaths or a satellite of a removed object, which goes with its anchor.
+		//the deepest objects go first, so an object leaves its parent while the parent still has a path
+		List<BigBangObject> removedObjects = new ArrayList<BigBangObject>();
 		for (BigBangObject currentObject : this.objectsMaps.get(previousOperation).values()) {
 			DenotatorPath previousPath = currentObject.getTopDenotatorPathAt(previousOperation);
-			//REMOVE if in removedPaths
-			if (pathResults.getRemovedPaths().contains(previousPath)) {
-				this.removeObject(operation, currentObject);
+			if (BigBangObjects.isRemoved(previousPath, pathResults)) {
+				removedObjects.add(currentObject);
 			}
 		}
+		for (int i = removedObjects.size()-1; i >= 0; i--) {
+			this.removeObject(operation, removedObjects.get(i));
+		}
+	}
+	
+	/**
+	 * @return true if the given path or the path of one of its anchors is among the removed paths
+	 */
+	private static boolean isRemoved(DenotatorPath path, OperationPathResults pathResults) {
+		if (path == null) {
+			return false;
+		}
+		Set<DenotatorPath> removedPaths = pathResults.getRemovedPaths();
+		if (removedPaths.isEmpty()) {
+			return false;
+		}
+		if (removedPaths.contains(path)) {
+			return true;
+		}
+		for (DenotatorPath currentAnchorPath : path.getAnchorPaths()) {
+			if (removedPaths.contains(currentAnchorPath)) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	private void updateObjects(AbstractOperation previousOperation, AbstractOperation operation, OperationPathResults pathResults) {
@@ -235,7 +262,7 @@ public class BigBangObjects {
 				BigBangObject parent = this.getObject(operation, currentValuePath.getAnchorPath());
 				this.updateObject(currentObject, parent, operation, currentValuePath);
 			//KEEP the same if not in changedPath (may have been changed before)
-			} else if (!pathResults.getRemovedPaths().contains(previousPath)) {
+			} else if (!BigBangObjects.isRemoved(previousPath, pathResults)) {
 				BigBangObject previousParent = currentObject.getParentAt(previousOperation);
 				this.updateObject(currentObject, previousParent, operation, previousPath);
 			}

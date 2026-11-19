@@ -184,17 +184,21 @@ public class OperationGraphRandomEditsTest extends TestCase {
 						m.getTransformationGraph().getCurrentlyExecutedOperationsInOrder().get(index)));
 			} else if (choice == 11) {
 				int count = 1 + random.nextInt(2);
-				this.lastStep = "delete " + count + " objects";
+				//0: the first top-level objects. 1: the first objects at any level, which on a score with
+				//satellites is a parent with its first satellite. 2: the last objects at any level, often a
+				//satellite with its own satellite
+				int which = random.nextInt(3);
+				this.lastStep = "delete " + count + " objects (selection " + which + ")";
 				this.both(m -> {
-					//top-level objects only: deleting a parent together with its satellites throws in both models
 					List<BigBangObject> all = new ArrayList<BigBangObject>();
 					for (BigBangObject object : m.getObjects().getObjectsAt(null)) {
-						if (object.getParent() == null) {
+						if (which > 0 || object.getParent() == null) {
 							all.add(object);
 						}
 					}
 					if (all.size() > count) {
-						m.deleteObjects(new TreeSet<BigBangObject>(all.subList(0, count)));
+						List<BigBangObject> selection = which == 2 ? all.subList(all.size() - count, all.size()) : all.subList(0, count);
+						m.deleteObjects(new TreeSet<BigBangObject>(selection));
 					}
 				});
 			}
