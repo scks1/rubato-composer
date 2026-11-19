@@ -75,6 +75,12 @@ public class RubetteLoader {
             catch (InstantiationException e) {
                 setError(Messages.getString("RubetteLoader.couldnotinst"), className);           //$NON-NLS-1$
             }
+            catch (LinkageError e) {
+                // a class the rubette needs is missing or incompatible; the other rubettes still load
+                // String.replace, since TextUtils.replaceStrings treats $ in a class name as a group reference
+                errors.add(Messages.getString("RubetteLoader.linkageerror") //$NON-NLS-1$
+                    .replace("%%1", "\""+className+"\"").replace("%2", String.valueOf(e.getMessage()))); //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+            }
         }
     }
 

@@ -77,8 +77,17 @@ public class Composer implements WindowStateListener {
         }
         
         public void run() {
-            loader.loadBuiltins();
-            loader.loadPlugins();
+            try {
+                loader.loadBuiltins();
+                loader.loadPlugins();
+            }
+            catch (RuntimeException | Error e) {
+                // without this the splash stays up, the window never appears and the process keeps running
+                logger.log(java.util.logging.Level.SEVERE, "Loading the rubettes failed", e); //$NON-NLS-1$
+                System.err.println("Rubato Composer cannot start: loading the rubettes failed: "+e); //$NON-NLS-1$
+                e.printStackTrace();
+                System.exit(1);
+            }
             for (String error : loader.getErrors()) {
                 frame.setStatusError(error);
             }
@@ -201,6 +210,8 @@ public class Composer implements WindowStateListener {
         }
         // the look and feel must be in place before any component exists
         Theme.install();
+        // a missing required jar would otherwise stop the rubette loader with the window never shown
+        RequiredLibraries.checkOrExit();
         Composer composer = new Composer(args);
         composer.start();
     }
