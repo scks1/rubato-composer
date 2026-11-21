@@ -100,3 +100,37 @@ jobs:
       # three modules observable.
       - name: Build the I/O library alone
         run: ant -f java/build.xml io-jar
+
+  agda-spec:
+    name: Agda spec (Agda 2.6.3 from Ubuntu)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # The generator reads forms out of the composer jar.
+      - name: Build the composer jar
+        run: mvn -B -ntp -DskipTests package
+
+      # agda-bin is the compiler; libghc-agda-dev carries the primitive
+      # library under /usr/share/libghc-agda-dev/lib. The spec uses no
+      # other library.
+      - name: Install Agda
+        run: sudo apt-get update && sudo apt-get install -y agda-bin libghc-agda-dev
+
+      - name: Generator diff, positive proofs and negative tests
+        run: spec/agda/run-checks.sh logs/agda-ci
+
+      - name: Upload Agda logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: agda-spec-logs
+          path: logs/agda-ci/
+          if-no-files-found: ignore
