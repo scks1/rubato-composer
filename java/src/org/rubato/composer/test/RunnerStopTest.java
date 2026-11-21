@@ -73,7 +73,9 @@ public class RunnerStopTest extends TestCase {
 		assertTrue("stop returns without waiting for the grace period, took " + stopMillis + " ms", stopMillis < Runner.GRACE_PERIOD_MS);
 		assertTrue("the run is finished after the grace period", this.host.finished.await(Runner.GRACE_PERIOD_MS + 5000, TimeUnit.MILLISECONDS));
 		assertEquals(1, this.host.finishCount.get());
-		assertEquals("the user is told the network was abandoned", 1, this.host.dialogs.size());
+		//the watchdog calls finishRun before showErrorDialog, so wait for the dialog too
+		assertTrue("the user is told the network was abandoned", this.host.dialogShown.await(5, TimeUnit.SECONDS));
+		assertEquals(1, this.host.dialogs.size());
 		assertFalse(this.runner.isRunning());
 		assertTrue("the abandoned thread is a daemon", runaway.daemon);
 		assertTrue("the abandoned thread is still spinning", runaway.thread.isAlive());
@@ -136,6 +138,7 @@ public class RunnerStopTest extends TestCase {
 		final AtomicInteger finishCount = new AtomicInteger();
 		final AtomicInteger progressCount = new AtomicInteger();
 		final List<String> dialogs = new java.util.concurrent.CopyOnWriteArrayList<String>();
+		final CountDownLatch dialogShown = new CountDownLatch(1);
 		public void resetProgressWindow(int max) { }
 		public void addProgressMessage(String msg) { }
 		public void makeProgress(int value) { this.progressCount.incrementAndGet(); }
@@ -143,7 +146,10 @@ public class RunnerStopTest extends TestCase {
 			this.finishCount.incrementAndGet();
 			this.finished.countDown();
 		}
-		public void showErrorDialog(String msg) { this.dialogs.add(msg); }
+		public void showErrorDialog(String msg) {
+			this.dialogs.add(msg);
+			this.dialogShown.countDown();
+		}
 	}
 	
 	private static final class TestRubette extends AbstractRubette {
