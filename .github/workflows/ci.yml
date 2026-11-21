@@ -42,6 +42,7 @@ jobs:
           name: surefire-reports
           path: |
             java/core/target/surefire-reports/
+            java/io/target/surefire-reports/
             java/target/surefire-reports/
           if-no-files-found: ignore
 
@@ -61,6 +62,14 @@ jobs:
           name: rubato-core-jar
           # math, logeo, XML, Scheme and Denotex, with no AWT or Swing
           path: java/core/target/rubato-core-*.jar
+          if-no-files-found: error
+
+      - name: Upload I/O library jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: rubato-io-jar
+          # MusicXML, MIDI files and OSC for Score denotators; needs rubato-core
+          path: java/io/target/rubato-io-*.jar
           if-no-files-found: error
 
   ant:
@@ -86,3 +95,8 @@ jobs:
       # the application fails here.
       - name: Build the core library alone
         run: ant -f java/build.xml core-jar
+
+      # Compiles java/io/src against the core library alone, with the same
+      # three modules observable.
+      - name: Build the I/O library alone
+        run: ant -f java/build.xml io-jar
