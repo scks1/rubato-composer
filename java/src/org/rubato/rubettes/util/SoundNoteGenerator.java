@@ -5,7 +5,6 @@ import java.util.ArrayList;
 
 import org.rubato.base.Repository;
 import org.rubato.base.RubatoException;
-import org.rubato.math.module.DomainException;
 import org.rubato.math.module.ModuleElement;
 import org.rubato.math.module.QElement;
 import org.rubato.math.module.RElement;
@@ -16,7 +15,6 @@ import org.rubato.math.yoneda.LimitDenotator;
 import org.rubato.math.yoneda.LimitForm;
 import org.rubato.math.yoneda.PowerDenotator;
 import org.rubato.math.yoneda.PowerForm;
-import org.rubato.math.yoneda.SimpleDenotator;
 
 public class SoundNoteGenerator extends NoteGenerator {
 	
@@ -24,6 +22,12 @@ public class SoundNoteGenerator extends NoteGenerator {
 	private LimitForm soundNoteForm = (LimitForm) Repository.systemRepository().getForm("SoundNote");
 	private PowerForm modulatorsForm = (PowerForm) Repository.systemRepository().getForm("Modulators");
 	public static final String[] FM_MODELS = {"Carrier only", "Double modulator", "Nested modulator"};
+	
+	/**
+	 * The index of the Modulators coordinate of a SoundNote, which is Onset, Pitch, Loudness,
+	 * Duration, Voice, Modulators (CoolFormRegistrant.registerSoundForms).
+	 */
+	public static final int MODULATORS_INDEX = 5;
 	
 	private String fmModel = FM_MODELS[0];
 	
@@ -44,13 +48,10 @@ public class SoundNoteGenerator extends NoteGenerator {
 	
 	private PowerDenotator convertScoreToSoundScore(PowerDenotator score) {
 		List<Denotator> soundNodes = new ArrayList<Denotator>();
-		try {
-			for (Denotator currentNote: score.getFactors()) {
-				Denotator currentSoundNote = this.convertToSoundNote((LimitDenotator)currentNote, true);
-				this.setLayerToVoice((LimitDenotator)currentSoundNote);
-				soundNodes.add(this.createNodeDenotator(currentSoundNote));
-			}
-		} catch (RubatoException e) { e.printStackTrace(); }
+		for (Denotator currentNote: score.getFactors()) {
+			Denotator currentSoundNote = this.convertToSoundNote((LimitDenotator)currentNote, true);
+			soundNodes.add(this.createNodeDenotator(currentSoundNote));
+		}
 		return this.createSoundScore(soundNodes);
 	}
 	
@@ -93,10 +94,8 @@ public class SoundNoteGenerator extends NoteGenerator {
 	}
 	
 	private LimitDenotator convertToSoundNote(LimitDenotator note, boolean withModulators) {
-		List<Denotator> coordinates = note.getFactors();
-		try {
-			coordinates.add(new SimpleDenotator(this.emptyName, this.layerForm, new ZElement(0)));
-		} catch (DomainException e) { e.printStackTrace(); }
+		//a Note is Onset, Pitch, Loudness, Duration, Voice; a SoundNote adds Modulators
+		List<Denotator> coordinates = new ArrayList<Denotator>(note.getFactors());
 		return this.createSpecificNoteDenotator(coordinates, withModulators);
 	}
 	
@@ -106,7 +105,7 @@ public class SoundNoteGenerator extends NoteGenerator {
 	
 	public LimitDenotator createSpecificNoteDenotator(List<Denotator> coordinates, boolean withModulators) {
 		try {
-			if (coordinates.size() < 7) {
+			if (coordinates.size() < SoundNoteGenerator.MODULATORS_INDEX+1) {
 				if (withModulators) {
 					coordinates.add(this.createStandardModulators());
 				} else {
@@ -124,8 +123,7 @@ public class SoundNoteGenerator extends NoteGenerator {
 	public LimitDenotator createFMNodeDenotator(double[] noteValues) {
 		try {
 			LimitDenotator note = this.createNoteDenotator(noteValues);
-			note.setFactor(6, this.createStandardModulators());
-			//note.setFactor(6, this.createEmptyModulators());
+			note.setFactor(SoundNoteGenerator.MODULATORS_INDEX, this.createStandardModulators());
 			return this.createNodeDenotator(note);
 			//this takes a lot of time compared to the other operations
 		} catch (RubatoException e) {
@@ -142,7 +140,7 @@ public class SoundNoteGenerator extends NoteGenerator {
 				if (this.fmModel.equals(SoundNoteGenerator.FM_MODELS[1])) {
 					modulators.add(this.createModulatorNoteDenotator(50, 10));
 				} else if (this.fmModel.equals(SoundNoteGenerator.FM_MODELS[2])) {
-					((LimitDenotator)modulators.get(0)).setFactor(6, this.createSecondLevelModulators());
+					((LimitDenotator)modulators.get(0)).setFactor(SoundNoteGenerator.MODULATORS_INDEX, this.createSecondLevelModulators());
 				}
 			}
 			return new PowerDenotator(this.emptyName, this.modulatorsForm, modulators);
@@ -172,7 +170,6 @@ public class SoundNoteGenerator extends NoteGenerator {
 		coordinates.add(this.createSimpleDenotator(this.loudnessForm, modulatorLoudness));
 		coordinates.add(this.createSimpleDenotator(this.durationForm, new RElement(0)));
 		coordinates.add(this.createSimpleDenotator(this.voiceForm, new ZElement(0)));
-		coordinates.add(this.createSimpleDenotator(this.layerForm, new ZElement(0)));
 		coordinates.add(this.createEmptyModulators());
 		//this takes a lot of time compared to the other operations
 		return new LimitDenotator(this.emptyName, this.soundNoteForm, coordinates);
