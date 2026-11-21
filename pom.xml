@@ -2,17 +2,20 @@
 <!--
   Maven build for Rubato Composer, alongside the Ant build in java/build.xml.
 
-  Two modules:
+  Three modules:
   - java/core (rubato-core): the headless core library. It holds the
     mathematics (org.rubato.math), forms and denotators, logeo, the XML file
     format, Rubato Scheme, the Denotex reader and the repository. It uses no
     AWT or Swing and depends on no other library; its build compiles it with
     only the java.base, java.xml and java.logging modules observable.
+  - java/io (rubato-io): MusicXML, Standard MIDI File and Open Sound
+    Control input and output for denotators of form Score. It depends on
+    rubato-core alone and compiles with the same three JDK modules.
   - java (rubato-composer): the Swing application, rubettes and BigBang. It
-    depends on rubato-core and builds the runnable jar,
+    depends on rubato-core and rubato-io and builds the runnable jar,
     java/target/rubato-composer-<version>-all.jar, with java/target/lib/.
 
-  Run "mvn verify" here to build and test both.
+  Run "mvn verify" here to build and test all three.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -36,6 +39,7 @@
 
   <modules>
     <module>java/core</module>
+    <module>java/io</module>
     <module>java</module>
   </modules>
 

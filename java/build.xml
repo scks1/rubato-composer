@@ -8,11 +8,14 @@
   </path>
 
   <!-- core/src holds the headless core library (math, forms and denotators,
-       logeo, XML, Scheme, Denotex, the repository); src holds the
-       application. Both compile in place and both go into rubato.jar.
-       The core-jar target builds the core library on its own. -->
+       logeo, XML, Scheme, Denotex, the repository); io/src holds rubato-io
+       (MusicXML, Standard MIDI Files and OSC for Score denotators); src holds
+       the application. All three compile in place and go into rubato.jar.
+       The core-jar and io-jar targets build the two libraries on their own. -->
   <property name="core.src" value="core/src"/>
   <property name="core.build" value="build/core-classes"/>
+  <property name="io.src" value="io/src"/>
+  <property name="io.build" value="build/io-classes"/>
   <property name="src" value="src"/>
   <property name="build" value="${src}"/>
   <property name="dist" value="dist"/>
@@ -23,7 +26,7 @@
   </target>
 
   <target name="compile" depends="init">
-    <javac srcdir="${core.src}:${src}" release="21" encoding="UTF-8" debug="on" includeantruntime="false">
+    <javac srcdir="${core.src}:${io.src}:${src}" release="21" encoding="UTF-8" debug="on" includeantruntime="false">
        <classpath refid="project.jars"/>
     </javac>
   </target>
@@ -46,6 +49,23 @@
         <exclude name="**/*.java"/>
         <exclude name="**/*.class"/>
       </fileset>
+    </jar>
+  </target>
+
+  <!-- Compiles rubato-io alone against the core library built by core-jar,
+       with the same three modules observable, so rubato-io cannot use the
+       application, AWT, Swing or javax.sound.midi. -->
+  <target name="io-jar" depends="core-jar">
+    <mkdir dir="${io.build}"/>
+    <javac srcdir="${io.src}" destdir="${io.build}" encoding="UTF-8" debug="on" includeantruntime="false">
+      <exclude name="**/test/**"/>
+      <exclude name="**/*Test.java"/>
+      <classpath location="${core.build}"/>
+      <compilerarg line="--release 21 --limit-modules java.base,java.xml,java.logging"/>
+    </javac>
+    <mkdir dir="${dist}/io"/>
+    <jar destfile="${dist}/io/rubato-io.jar">
+      <fileset dir="${io.build}"/>
     </jar>
   </target>
 
@@ -72,6 +92,11 @@
         <exclude name="**/*.java"/>
         <exclude name="org/rubato/test/**"/>
       </fileset>
+      <fileset dir="${io.src}">
+        <exclude name="**/test/*"/>
+        <exclude name="**/*Test.class"/>
+        <exclude name="**/*.java"/>
+      </fileset>
       <fileset dir="${build}">
         <exclude name="**/test/*"/>
         <exclude name="**/*Test.class"/>
@@ -97,7 +122,7 @@
 
   <target name="doc">
     <mkdir dir="${doc}"/>
-    <javadoc sourcepath="${core.src}:${src}" 
+    <javadoc sourcepath="${core.src}:${io.src}:${src}" 
 	     destdir="${doc}" 
              access="public"
              author="true"
@@ -122,6 +147,7 @@
     <delete>
       <fileset dir="${build}" includes="**/*.class"/>
       <fileset dir="${core.src}" includes="**/*.class"/>
+      <fileset dir="${io.src}" includes="**/*.class"/>
     </delete>
   </target>
 </project>
