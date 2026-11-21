@@ -11,15 +11,19 @@ import org.rubato.math.module.morphism.CompositionException;
 import org.rubato.math.module.morphism.ModuleMorphism;
 import org.rubato.math.module.morphism.RFreeAffineMorphism;
 import org.rubato.math.yoneda.Denotator;
+import org.rubato.math.yoneda.Form;
 import org.rubato.rubettes.bigbang.model.OperationPathResults;
 import org.rubato.rubettes.util.ArbitraryDenotatorMapper;
 import org.rubato.rubettes.util.DenotatorPath;
+import org.rubato.rubettes.util.FormValueFinder;
 
 public class BigBangMapper extends BigBangManipulator {
 	
 	private ModuleMorphism morphism;
 	private boolean copyAndMap;
 	private boolean relative;
+	//the object forms in the order of transformationPaths, found when first needed
+	private List<Form> objectTypes;
 	
 	public BigBangMapper(BigBangDenotatorManager denotatorManager, BigBangTransformation transformation) {
 		super(denotatorManager, transformation.getTransformationPaths());
@@ -33,15 +37,11 @@ public class BigBangMapper extends BigBangManipulator {
 	 * @return the resulting newPaths
 	 */
 	public OperationPathResults mapCategorizedObjects(Set<DenotatorPath> objectPaths) {
-		//TODO REALLY CHECK WHAT HAPPENS WITHOUT CATEGORIZED OBJECTS
-		//for (int i = 0; i < objectPaths.size(); i++) {
-		this.mapObjects(new ArrayList<DenotatorPath>(objectPaths), this.transformationPaths.get(0));
-		//}
-		//return this.denotatorManager.getCurrentNewPaths();
+		this.mapObjects(new ArrayList<DenotatorPath>(objectPaths));
 		return this.denotatorManager.getPathResults();
 	}
 	
-	private void mapObjects(List<DenotatorPath> objectPaths, TransformationPaths transformationPaths) {
+	private void mapObjects(List<DenotatorPath> objectPaths) {
 		//TODO check if still necessary
 		objectPaths = this.denotatorManager.sortAndReverse(objectPaths);
 		
@@ -49,12 +49,12 @@ public class BigBangMapper extends BigBangManipulator {
 		if (objectPathsIterator.hasNext()) {
 			DenotatorPath firstOfNextSiblings = objectPathsIterator.next();
 			while (firstOfNextSiblings != null) {
-				firstOfNextSiblings = this.mapAndAddNextSiblings(firstOfNextSiblings, objectPathsIterator, transformationPaths);
+				firstOfNextSiblings = this.mapAndAddNextSiblings(firstOfNextSiblings, objectPathsIterator);
 			}
 		}
 	}
 	
-	private DenotatorPath mapAndAddNextSiblings(DenotatorPath firstSiblingPath, Iterator<DenotatorPath> objectPathsIterator, TransformationPaths transformationPaths) {
+	private DenotatorPath mapAndAddNextSiblings(DenotatorPath firstSiblingPath, Iterator<DenotatorPath> objectPathsIterator) {
 		//PerformanceCheck.startTask(".first_sib");
 		List<Denotator> siblings = new ArrayList<Denotator>();
 		List<DenotatorPath> siblingsPaths = new ArrayList<DenotatorPath>();
@@ -68,7 +68,7 @@ public class BigBangMapper extends BigBangManipulator {
 		ModuleMorphism siblingsMorphism = this.morphism;
 		if (this.relative) {
 			Denotator siblingsAnchor = this.denotatorManager.getAbsoluteObject(siblingsAnchorPath);
-			siblingsMorphism = this.generateRelativeMorphism(this.extractValues(siblingsAnchor, transformationPaths));
+			siblingsMorphism = this.generateRelativeMorphism(this.extractValues(siblingsAnchor, this.getPathsFor(siblingsAnchor)));
 		}
 		
 		DenotatorPath currentSiblingPath = firstSiblingPath;
@@ -82,11 +82,11 @@ public class BigBangMapper extends BigBangManipulator {
 					siblings.add(currentSibling);
 				}
 			} else {
-				this.mapAndReplaceOrAdd(siblings, siblingsAnchorPath, siblingsPaths, siblingsMorphism, transformationPaths);
+				this.mapAndReplaceOrAdd(siblings, siblingsAnchorPath, siblingsPaths, siblingsMorphism);
 				return currentSiblingPath;
 			}
 		}
-		this.mapAndReplaceOrAdd(siblings, siblingsAnchorPath, siblingsPaths, siblingsMorphism, transformationPaths);
+		this.mapAndReplaceOrAdd(siblings, siblingsAnchorPath, siblingsPaths, siblingsMorphism);
 		return null;
 	}
 	
@@ -94,26 +94,63 @@ public class BigBangMapper extends BigBangManipulator {
 	 * Maps the given objects and adds them to the given anchorPath (they should thus originally be siblings).
 	 * Returns a list with all the 
 	 */
-	private void mapAndReplaceOrAdd(List<Denotator> objects, DenotatorPath anchorPath, List<DenotatorPath> siblingsPaths, ModuleMorphism morphism, TransformationPaths transformationPaths) {
+	private void mapAndReplaceOrAdd(List<Denotator> objects, DenotatorPath anchorPath, List<DenotatorPath> siblingsPaths, ModuleMorphism morphism) {
 		if (objects.size() > 0) {
 			List<Denotator> mappedObjects = new ArrayList<Denotator>();
-			ArbitraryDenotatorMapper mapper = new ArbitraryDenotatorMapper(morphism, transformationPaths);
+			//siblings can be of different types, e.g. satellites and modulators of one note
+			java.util.Map<TransformationPaths,ArbitraryDenotatorMapper> mappers = new java.util.IdentityHashMap<TransformationPaths,ArbitraryDenotatorMapper>();
+			List<DenotatorPath> mappedPaths = new ArrayList<DenotatorPath>();
 			for (int i = 0; i < objects.size(); i++) {
 				Denotator currentObject = objects.get(i);
+				TransformationPaths paths = this.getPathsFor(currentObject);
+				ArbitraryDenotatorMapper mapper = mappers.get(paths);
+				if (mapper == null) {
+					mapper = new ArbitraryDenotatorMapper(morphism, paths);
+					mappers.put(paths, mapper);
+				}
 				try {
 					mappedObjects.add(mapper.getMappedDenotator(currentObject));
+					mappedPaths.add(siblingsPaths.get(i));
 				} catch (RubatoException e) {
 					e.printStackTrace();
 				}
 			}
-			if (!this.copyAndMap) {
-				this.denotatorManager.replaceSiblingObjects(mappedObjects, siblingsPaths);
-			} else {
-				//TODO: ADD THEM AS THE SAME TYPE AS THEIR ORIGINAL!! MODULATOR OR SATELLITE! FIGURE OUT POWERSET INDEX!!
-				DenotatorPath powersetPath = anchorPath.getPowersetPath(0);
-				this.denotatorManager.addObjectsToParent(mappedObjects, powersetPath);
+			if (mappedObjects.isEmpty()) {
+				return;
+			}
+			//objects of one anchor can sit in different powersets, e.g. its satellites and its
+			//modulators, so each run of objects goes back to the powerset it came from
+			int start = 0;
+			for (int i = 1; i <= mappedObjects.size(); i++) {
+				if (i == mappedObjects.size() || !mappedPaths.get(i).getParentPath().equals(mappedPaths.get(start).getParentPath())) {
+					List<Denotator> run = mappedObjects.subList(start, i);
+					if (!this.copyAndMap) {
+						this.denotatorManager.replaceSiblingObjects(new ArrayList<Denotator>(run), new ArrayList<DenotatorPath>(mappedPaths.subList(start, i)));
+					} else {
+						this.denotatorManager.addObjectsToParent(new ArrayList<Denotator>(run), mappedPaths.get(start).getParentPath());
+					}
+					start = i;
+				}
 			}
 		}
+	}
+	
+	/*
+	 * Returns the transformation paths for the type of the given object. BigBangView passes one
+	 * TransformationPaths per object type, in the order FormValueFinder finds the types. A list
+	 * with a single entry, as in transformations saved before, applies to all objects.
+	 */
+	private TransformationPaths getPathsFor(Denotator object) {
+		if (this.transformationPaths.size() > 1 && object != null) {
+			if (this.objectTypes == null) {
+				this.objectTypes = new FormValueFinder(this.denotatorManager.getForm(), true).getObjectForms();
+			}
+			int typeIndex = this.objectTypes.indexOf(object.getForm());
+			if (typeIndex >= 0 && typeIndex < this.transformationPaths.size()) {
+				return this.transformationPaths.get(typeIndex);
+			}
+		}
+		return this.transformationPaths.get(0);
 	}
 	
 	private ModuleMorphism generateRelativeMorphism(double[] anchorLocation) {
