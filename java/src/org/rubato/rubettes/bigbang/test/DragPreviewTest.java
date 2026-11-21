@@ -48,6 +48,8 @@ public class DragPreviewTest extends TestCase {
 	private String lastStep;
 	private int previewsChecked, valuesChecked, fallbacks;
 	private double maxDeviation;
+	//true: one set of transformation paths per object type, built as BigBangView builds them
+	private boolean viewPaths;
 
 	protected void setUp() {
 		this.objects = new TestObjects();
@@ -76,6 +78,69 @@ public class DragPreviewTest extends TestCase {
 		}
 		PowerDenotator score = new org.rubato.rubettes.util.SoundNoteGenerator().createFlatSoundScore(notes);
 		this.runSeeds(score, 201, 4, 30);
+	}
+
+	//carriers with no, two and nested modulators, two of them with a satellite
+	private Denotator fmScore() throws Exception {
+		org.rubato.rubettes.util.SoundNoteGenerator generator = new org.rubato.rubettes.util.SoundNoteGenerator();
+		List<Denotator> nodes = new ArrayList<Denotator>();
+		for (int i = 0; i < 6; i++) {
+			generator.setFMModel(org.rubato.rubettes.util.SoundNoteGenerator.FM_MODELS[i % 3]);
+			Denotator node = generator.createFMNodeDenotator(new double[]{i * 0.5, 60 + 3 * i, 90 + i, 1, i % 2});
+			if (i % 3 == 1) {
+				Denotator satellites = new org.rubato.rubettes.util.SoundNoteGenerator().createFlatSoundScore(new double[][]{{1, 4, -5, 0, 0}});
+				node = generator.createNodeDenotator(((org.rubato.math.yoneda.LimitDenotator)node).getFactor(0), satellites);
+			}
+			nodes.add(node);
+		}
+		return new PowerDenotator(org.rubato.math.yoneda.NameDenotator.make(""), generator.getSoundScoreForm(), nodes);
+	}
+
+	//the paths BigBangView.getXYTransformationPaths builds with x and y on the first two values
+	private List<TransformationPaths> viewPaths(BigBangModel model) {
+		BigBangObjects objects = model.getObjects();
+		List<TransformationPaths> paths = new ArrayList<TransformationPaths>();
+		for (int i = 0; i < objects.getObjectTypes().size(); i++) {
+			TransformationPaths current = new TransformationPaths();
+			current.setXYCoordinates(new int[]{0, 1});
+			paths.add(current);
+		}
+		for (int i = 0; i < 2; i++) {
+			List<List<org.rubato.rubettes.util.DenotatorPath>> current = objects.getAllObjectConfigurationsValuePathsAt(i);
+			for (int j = 0; j < current.size(); j++) {
+				paths.get(j).setDomainPaths(i, current.get(j));
+				paths.get(j).setCodomainPaths(i, current.get(j));
+			}
+		}
+		return paths;
+	}
+
+	//BigBangObject keeps children in sets ordered by path. when a modified gesture reorders the
+	//notes, a modulator's path changes before it leaves its old parent's set
+	public void testModifiedGesturesKeepModulatorsWithTheirNotes() throws Exception {
+		this.viewPaths = true;
+		try {
+			Random r = new Random(5);
+			for (int trial = 0; trial < 100; trial++) {
+				BigBangModel m = new BigBangModel();
+				m.setOrAddComposition(this.fmScore());
+				int kind = r.nextInt(5);
+				double cx = r.nextDouble() * 4 - 2, cy = r.nextDouble() * 4 - 2;
+				int updates = 1 + r.nextInt(3);
+				for (int u = 0; u < updates; u++) {
+					double[] q = {r.nextDouble() * 4 - 2, r.nextDouble() * 4 - 2};
+					this.send(m, kind, this.props(m, new TreeSet<BigBangObject>(), null, u == 0, cx, cy, q[0], q[1]), q);
+					for (BigBangObject o : m.getObjects().getObjectsAt(null)) {
+						for (BigBangObject c : o.getChildren()) {
+							assertSame("trial " + trial + ", update " + u + ": parent of child " + c.getTopDenotatorPath() + " of " + o.getTopDenotatorPath(),
+									o, c.getParent());
+						}
+					}
+				}
+			}
+		} finally {
+			this.viewPaths = false;
+		}
 	}
 
 	public void testGesturesOnModulatorsAreNotPreviewed() throws Exception {
@@ -356,7 +421,8 @@ public class DragPreviewTest extends TestCase {
 
 	private TransformationProperties props(BigBangModel model, TreeSet<BigBangObject> selected, BigBangObject anchor, boolean startNew,
 			double cx, double cy, double dx, double dy) {
-		TransformationProperties p = new TransformationProperties(selected, anchor, Arrays.asList(this.nodePaths), false, startNew);
+		List<TransformationPaths> paths = this.viewPaths ? this.viewPaths(model) : Arrays.asList(this.nodePaths);
+		TransformationProperties p = new TransformationProperties(selected, anchor, paths, false, startNew);
 		p.setCenter(new double[]{cx, cy});
 		p.setEndPoint(new double[]{cx + dx, cy + dy});
 		return p;

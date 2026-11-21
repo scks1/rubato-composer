@@ -74,7 +74,10 @@ public class BigBangObject implements Comparable<BigBangObject> {
 		if (!this.children.containsKey(operation)) {
 			this.children.put(operation, new TreeSet<BigBangObject>());
 		}
-		this.children.get(operation).add(newChild);
+		Set<BigBangObject> children = this.children.get(operation);
+		//the sets are ordered by path and paths change, so an object can sit at a stale position
+		children.removeIf(child -> child == newChild);
+		children.add(newChild);
 	}
 	
 	public boolean hasChildren() {
@@ -85,8 +88,12 @@ public class BigBangObject implements Comparable<BigBangObject> {
 		return this.children.get(operation).size() > 0;
 	}
 	
-	public void removeChild(AbstractOperation operation, BigBangObject newChild) {
-		this.children.get(operation).remove(newChild);
+	public void removeChild(AbstractOperation operation, BigBangObject child) {
+		Set<BigBangObject> children = this.children.get(operation);
+		//TreeSet.remove finds an object by comparing paths, which may have changed since it was added
+		if (children != null && !children.remove(child)) {
+			children.removeIf(current -> current == child);
+		}
 	}
 	
 	public void removeAllChildren(AbstractOperation operation) {

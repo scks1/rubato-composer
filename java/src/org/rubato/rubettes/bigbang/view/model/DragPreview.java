@@ -99,8 +99,9 @@ public class DragPreview {
 	public static DragPreview create(BigBangObjects objects, Set<BigBangObject> transformedObjects, boolean relativeToParents,
 			String[] valueNames, int[] instanceNumbers) {
 		Set<BigBangObject> shownObjects = objects.getObjectsAt(null);
-		//BigBangMapper maps with the value paths of the first object type only, so objects of other
-		//types, such as modulators, may keep their values: those gestures are not previewed
+		//gestures that move objects of another type than the first, such as modulators, are not
+		//previewed: in random gesture sequences on scores with modulators, the objects after a
+		//modified gesture did not always match those of a replay (logs/bugs-2026-11-21/D02)
 		Form mappedType = objects.getObjectTypes().get(0);
 		if (shownObjects == null || shownObjects.isEmpty() || objects.baseFormContainsColimits()) {
 			return null;
