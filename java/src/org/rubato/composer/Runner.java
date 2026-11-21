@@ -22,6 +22,7 @@ package org.rubato.composer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import org.rubato.base.Rubette;
@@ -33,16 +34,60 @@ import org.rubato.util.TextUtils;
 /**
  * A Runner runs the network previously set using the method setNetwork().
  * 
+ * Stopping is cooperative. The first click on stop sets the flag that
+ * rubettes read through {@link RunInfo#stopped()} and that the runner checks
+ * before each rubette. The second click also interrupts the run thread, which
+ * ends blocking calls such as sleeps and waits. The third click interrupts
+ * again and waits up to {@link #GRACE_PERIOD_MS} for the thread to end. A
+ * thread that is still running after that is abandoned: the runner forgets it,
+ * finishes the run in the user interface and reports that the network was
+ * left running in the background. The run threads are daemon threads, so an
+ * abandoned one does not keep the program alive.
+ * 
  * @author Gérard Milmeister
  */
 public class Runner implements Runnable {
 
     /**
+     * How long the third click on stop waits for the network to end before
+     * abandoning it, in milliseconds.
+     */
+    public static final long GRACE_PERIOD_MS = 2000;
+    
+    
+    /**
+     * The parts of the user interface that a Runner reports to.
+     * JComposer provides them in the program; tests provide their own.
+     */
+    public interface Host {
+        public void resetProgressWindow(int max);
+        public void addProgressMessage(String msg);
+        public void makeProgress(int value);
+        public void finishRun();
+        public void showErrorDialog(String msg);
+    }
+    
+    
+    /**
      * Creates a new runner for the given JComposer.
      */
-    public Runner(JComposer composer) {
-        this.composer = composer;
-        this.runInfo = new RunnerRunInfo(composer);
+    public Runner(final JComposer composer) {
+        this(new Host() {
+            public void resetProgressWindow(int max) { composer.resetProgressWindow(max); }
+            public void addProgressMessage(String msg) { composer.addProgressMessage(msg); }
+            public void makeProgress(int value) { composer.makeProgress(value); }
+            public void finishRun() { composer.finishRun(); }
+            public void showErrorDialog(String msg) { composer.showErrorDialog(msg); }
+        });
+    }
+    
+    
+    /**
+     * Creates a new runner that reports to the given host.
+     */
+    public Runner(Host host) {
+        this.host = host;
+        this.runInfo = new RunnerRunInfo(host);
     }
     
     
@@ -68,35 +113,56 @@ public class Runner implements Runnable {
      * Runs the current network.
      */
     public void run() {
-        composer.resetProgressWindow(dependents.size());
-        for (int i = 0; i < dependents.size(); i++) {
-            if (runInfo.stopped()) { break; }
-            RubetteModel model = dependents.get(i);
-            Rubette rubette = model.getRubette();
-            rubette.clearErrors();
-            try {
-                logger.info(TextUtils.replaceStrings("Running rubette %%1", model.getName())); //$NON-NLS-1$
-                composer.addProgressMessage(TextUtils.replaceStrings("Running rubette %%1", model.getName()));
-                if (model.isPassThrough()) {
-                    rubette.setOutput(0, rubette.getInput(0));
-                }
-                else {
-                    rubette.run(runInfo);
-                    if (rubette.hasErrors()) {
-                        addProblems(rubette.getErrors(), model);
+        //each run keeps its own state, so an abandoned thread that ends later
+        //cannot report into a newer run
+        RunnerRunInfo info = runInfo;
+        List<RubetteModel> list = dependents;
+        LinkedList<Problem> runProblems = problems;
+        try {
+            host.resetProgressWindow(list.size());
+            for (int i = 0; i < list.size(); i++) {
+                if (info.stopped() || Thread.currentThread().isInterrupted()) { break; }
+                RubetteModel model = list.get(i);
+                Rubette rubette = model.getRubette();
+                rubette.clearErrors();
+                try {
+                    logger.info(TextUtils.replaceStrings("Running rubette %%1", model.getName())); //$NON-NLS-1$
+                    info.addProgressMessage(TextUtils.replaceStrings("Running rubette %%1", model.getName()));
+                    if (model.isPassThrough()) {
+                        rubette.setOutput(0, rubette.getInput(0));
                     }
                     else {
-                        rubette.updateView();
+                        rubette.run(info);
+                        if (info.abandoned) {
+                            return;
+                        }
+                        if (rubette.hasErrors()) {
+                            addProblems(runProblems, rubette.getErrors(), model);
+                        }
+                        else if (!info.stopped()) {
+                            rubette.updateView();
+                        }
                     }
                 }
+                catch (Exception e) {
+                    if (info.abandoned) {
+                        return;
+                    }
+                    if (!info.stopped()) {
+                        e.printStackTrace();
+                        addProblem(runProblems, Messages.getString("Runner.exceptionproblem"), model); //$NON-NLS-1$
+                    }
+                }
+                if (!info.abandoned) {
+                    host.makeProgress(i+1);
+                }
             }
-            catch (Exception e) {
-                e.printStackTrace();
-                addProblem(Messages.getString("Runner.exceptionproblem"), model); //$NON-NLS-1$
-            }
-            composer.makeProgress(i+1);
         }
-        composer.finishRun();
+        finally {
+            if (info.claimFinish()) {
+                host.finishRun();
+            }
+        }
     }
     
 
@@ -106,7 +172,12 @@ public class Runner implements Runnable {
      * @param model the RubetteModel where the problem occurred
      */
     public void addProblem(String msg, RubetteModel model) {
-        problems.add(new Problem(msg, network.getJNetwork(), model.getJRubette()));
+        addProblem(problems, msg, model);
+    }
+    
+    
+    private void addProblem(LinkedList<Problem> list, String msg, RubetteModel model) {
+        list.add(new Problem(msg, network.getJNetwork(), model.getJRubette()));
     }
 
     
@@ -116,8 +187,13 @@ public class Runner implements Runnable {
      * @param model the RubetteModel where the problems occurred
      */
     public void addProblems(List<String> msgs, RubetteModel model) {
+        addProblems(problems, msgs, model);
+    }
+    
+    
+    private void addProblems(LinkedList<Problem> list, List<String> msgs, RubetteModel model) {
         for (String msg : msgs) {
-            addProblem(msg, model);
+            addProblem(list, msg, model);
         }
     }
     
@@ -134,47 +210,77 @@ public class Runner implements Runnable {
      * Begins running of the network.
      */
     public void start() {
-        thread = new Thread(this);
-        runInfo.reset();
+        runInfo = new RunnerRunInfo(host);
         problems = new LinkedList<Problem>();
         nrClicked = 0;
+        thread = new Thread(this, "rubato-network-runner"); //$NON-NLS-1$
+        thread.setDaemon(true);
         thread.start();
+    }
+    
+    
+    /**
+     * Returns true if the thread of the latest run has not ended and has
+     * not been abandoned.
+     */
+    public boolean isRunning() {
+        return thread != null && thread.isAlive() && !runInfo.abandoned;
     }
     
 
     /**
      * Stops running of the network.
      */
-    @SuppressWarnings("deprecation")
     public void stop() {
-        if (nrClicked < 2) {
-            runInfo.stop();
-            nrClicked++;
+        if (thread == null || runInfo.abandoned) {
+            return;
         }
-        else {
-            // at the third click on stop button, force the thread to stop
-            thread.stop();
-            //composer.showProgessWindow(false);
-            composer.finishRun();            
-            composer.showErrorDialog("The execution of the network has been forcibly halted.");
+        final Thread current = thread;
+        final RunnerRunInfo info = runInfo;
+        info.stop();
+        nrClicked++;
+        if (nrClicked >= 2) {
+            current.interrupt();
+        }
+        if (nrClicked == 3) {
+            // at the third click on stop, wait briefly for the thread to end,
+            // without blocking the caller, and abandon it if it does not
+            Thread watchdog = new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        current.join(GRACE_PERIOD_MS);
+                    }
+                    catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+                    if (current.isAlive() && info.claimFinish()) {
+                        info.abandoned = true;
+                        logger.warning("Abandoned a network that did not stop"); //$NON-NLS-1$
+                        host.finishRun();
+                        host.showErrorDialog(Messages.getString("Runner.abandoned")); //$NON-NLS-1$
+                    }
+                }
+            }, "rubato-network-stop"); //$NON-NLS-1$
+            watchdog.setDaemon(true);
+            watchdog.start();
         }
     }
     
     
-    private JComposer     composer;
+    private Host          host;
     private Thread        thread;
     private NetworkModel  network;
     private ArrayList<RubetteModel> dependents;
-    private LinkedList<Problem> problems;    
-    private RunnerRunInfo runInfo;
+    private LinkedList<Problem> problems = new LinkedList<Problem>();    
+    private volatile RunnerRunInfo runInfo;
     private int           nrClicked = 0;     
     
-    private final Logger logger = Logger.getLogger("org.rubato.composer.runner"); //$NON-NLS-1$
+    private static final Logger logger = Logger.getLogger("org.rubato.composer.runner"); //$NON-NLS-1$
     
-    protected class RunnerRunInfo implements RunInfo {
+    protected static class RunnerRunInfo implements RunInfo {
         
-        public RunnerRunInfo(JComposer c) {
-            jcomposer = c;
+        public RunnerRunInfo(Host h) {
+            host = h;
         }
         
         public boolean stopped() {
@@ -190,10 +296,24 @@ public class Runner implements Runnable {
         }
         
         public void addMessage(RubetteModel rubette, String msg) {
-            jcomposer.addProgressMessage(rubette.getName()+": "+msg);
+            addProgressMessage(rubette.getName()+": "+msg);
         }
         
-        private boolean stop;
-        private JComposer jcomposer;
+        void addProgressMessage(String msg) {
+            if (!abandoned) {
+                host.addProgressMessage(msg);
+            }
+        }
+        
+        //whichever ends the run first, the run thread or the stop watchdog,
+        //reports it to the host
+        boolean claimFinish() {
+            return finished.compareAndSet(false, true);
+        }
+        
+        private volatile boolean stop;
+        volatile boolean abandoned;
+        private final AtomicBoolean finished = new AtomicBoolean(false);
+        private Host host;
     }
 }
