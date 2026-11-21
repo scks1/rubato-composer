@@ -52,6 +52,7 @@ import org.rubato.composer.preferences.UserPreferences;
 import org.rubato.composer.rubette.JRubette;
 import org.rubato.composer.rubette.RubetteModel;
 import org.rubato.rubettes.builtin.MacroRubette;
+import org.rubato.rubettes.builtin.MacroRubetteXMLReader;
 import org.rubato.util.TextUtils;
 import org.rubato.xml.XMLReader;
 import org.rubato.xml.XMLWriter;
@@ -682,12 +683,12 @@ public class JComposer extends JFrame implements Observer {
                 }
                 
                 // get all parsed rubettes
-                for (Rubette arubette : reader.getRubettes()) {
+                for (Rubette arubette : MacroRubetteXMLReader.getRubettes(reader)) {
                     manager.addRubette(arubette);
                 }
                 
                 // get all parsed networks
-                for (NetworkModel model : reader.getNetworks()) {
+                for (NetworkModel model : NetworkXMLReader.getNetworks(reader)) {
                     // create a new JNetwork component
                     JNetwork jnetwork = model.createJNetwork(this);
                     if (jnetwork != null) {
@@ -749,7 +750,7 @@ public class JComposer extends JFrame implements Observer {
                     }
 
                     // get all parsed networks
-                    for (NetworkModel model : reader.getNetworks()) {
+                    for (NetworkModel model : NetworkXMLReader.getNetworks(reader)) {
                         // create a new JNetwork component
                         JNetwork jnetwork = model.createJNetwork(this);
                         if (jnetwork != null) {

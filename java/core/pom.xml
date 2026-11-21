@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  rubato-core: the headless core library of Rubato Composer (see the parent
+  pom at the repository root). Sources, tests and resources sit side by side
+  in src, laid out as in the application module.
+
+  The compiler sees only the java.base, java.xml and java.logging modules, so
+  code here cannot use AWT, Swing or any other desktop API; the application's
+  classes are not on its class path either. HeadlessBoundaryTest checks the
+  compiled classes as well.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.rubato</groupId>
+    <artifactId>rubato-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>rubato-core</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Rubato Composer core</name>
+  <description>Forms, denotators, module morphisms, the Rubato XML format and Rubato Scheme, without a user interface.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>src</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>src</directory>
+        <excludes>
+          <exclude>**/*.java</exclude>
+          <exclude>**/*.class</exclude>
+          <exclude>**/test/**</exclude>
+        </excludes>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <compilerArgs>
+                <arg>--limit-modules</arg>
+                <arg>java.base,java.xml,java.logging</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <!-- the compiler records its module options here; they are a
+               build detail, not something the jar's users need -->
+          <excludes>
+            <exclude>META-INF/jpms.args</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

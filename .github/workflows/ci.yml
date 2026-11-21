@@ -40,7 +40,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: surefire-reports
-          path: target/surefire-reports/
+          path: |
+            java/core/target/surefire-reports/
+            java/target/surefire-reports/
           if-no-files-found: ignore
 
       - name: Upload runnable jar
@@ -49,8 +51,16 @@ jobs:
           name: rubato-composer-jar
           # The jar finds the Apache-licensed libraries in lib/ next to it.
           path: |
-            target/rubato-composer-*-all.jar
-            target/lib/
+            java/target/rubato-composer-*-all.jar
+            java/target/lib/
+          if-no-files-found: error
+
+      - name: Upload core library jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: rubato-core-jar
+          # math, logeo, XML, Scheme and Denotex, with no AWT or Swing
+          path: java/core/target/rubato-core-*.jar
           if-no-files-found: error
 
   ant:
@@ -70,3 +80,9 @@ jobs:
 
       - name: Build rubato.jar
         run: ant -f java/build.xml dist
+
+      # Compiles java/core/src alone with only java.base, java.xml and
+      # java.logging observable, so a core class that uses AWT, Swing or
+      # the application fails here.
+      - name: Build the core library alone
+        run: ant -f java/build.xml core-jar

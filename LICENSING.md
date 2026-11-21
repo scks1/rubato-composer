@@ -14,7 +14,7 @@ Rubato depends on four libraries whose licenses the Free Software Foundation lis
 The builds no longer unpack these libraries into Rubato's own jar. Each library ships unchanged as its own jar in `lib/`, and its license and notice files sit in `lib/licenses/<library>/`. The `Class-Path` entry in Rubato's jar manifest names the four jars, so `java -jar rubato.jar` still finds them.
 
 - Ant: `ant -f java/build.xml dist` writes `java/dist/rubato.jar` and `java/dist/lib/`.
-- Maven: `mvn package` writes `target/rubato-composer-<version>-all.jar` and `target/lib/`.
+- Maven: `mvn package` writes `java/target/rubato-composer-<version>-all.jar` and `java/target/lib/`, and the core library as `java/core/target/rubato-core-<version>.jar`, which needs no other jar.
 - Keep the jar and its `lib/` directory together when you copy or package Rubato.
 
 Rubato runs without some of these jars:

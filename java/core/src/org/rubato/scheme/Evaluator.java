@@ -25,7 +25,7 @@ import static org.rubato.scheme.Token.*;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.rubato.composer.RunInfo;
+import org.rubato.base.StopSignal;
 import org.rubato.util.TextUtils;
 
 
@@ -77,7 +77,7 @@ public class Evaluator {
      * The evaluator periodically checks this object and
      * terminates whenever <code>runInfo.stopped()</code> is true. 
      */
-    public void setRunInfo(RunInfo runInfo) {
+    public void setRunInfo(StopSignal runInfo) {
         this.runInfo = runInfo;
     }
     
@@ -634,7 +634,7 @@ public class Evaluator {
     private Label cont;
     
     private boolean finished;
-    private RunInfo runInfo;
+    private StopSignal runInfo;
     
     private List<Label>    labelStack = new LinkedList<Label>();
     private List<SExpr>    regStack = new LinkedList<SExpr>();

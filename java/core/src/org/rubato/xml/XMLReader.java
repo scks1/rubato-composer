@@ -33,13 +33,10 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.rubato.base.Repository;
 import org.rubato.base.RubatoDictionary;
-import org.rubato.base.Rubette;
-import org.rubato.composer.network.NetworkModel;
 import org.rubato.math.module.Module;
 import org.rubato.math.module.ModuleElement;
 import org.rubato.math.module.morphism.ModuleMorphism;
 import org.rubato.math.yoneda.*;
-import org.rubato.rubettes.builtin.MacroRubette;
 import org.w3c.dom.*;
 import org.xml.sax.*;
 
@@ -194,8 +191,7 @@ public final class XMLReader implements RubatoDictionary {
         moduleMorphisms = new HashMap<String,ModuleMorphism>();
         forms           = new HashMap<String,Form>();
         denotators      = new HashMap<String,Denotator>();
-        networks        = new LinkedList<NetworkModel>();
-        rubettes        = new LinkedList<Rubette>();
+        elementObjects  = new HashMap<String,List<Object>>();
         schemeCode      = ""; //$NON-NLS-1$
 
         formsToBeResolved = new LinkedList<Form>();
@@ -243,14 +239,14 @@ public final class XMLReader implements RubatoDictionary {
             else if (name.equals(FORM)) {
                 parseFormDefinition((Element)node);                
             }
-            else if (name.equals(NETWORK)) {
-                parseNetworkDefinition((Element)node);                
-            }
-            else if (name.equals(RUBETTE)) {
-                parseRubetteDefinition((Element)node);                
-            }
             else if (name.equals(SCHEME)) {
                 parseSchemeCode((Element)node);                
+            }
+            else if (getElementReader(name) != null) {
+                parseApplicationElement(getElementReader(name), (Element)node);
+            }
+            else if (name.equals(NETWORK) || name.equals(RUBETTE)) {
+                setError("No reader for toplevel element <%1> is available, since the composer application is not loaded", name);
             }
             else {
                 setError("Toplevel element <%1> not recognized", name);
@@ -694,31 +690,19 @@ public final class XMLReader implements RubatoDictionary {
     
     
     /**
-     * Parses toplevel network definition.
-     * The parsed network is put into the <i>networks</i> list.
+     * Parses a toplevel element, such as a network or a macro rubette,
+     * with the reader the application registered for it.
+     * The result is added to the list for that element name.
      */
-    private void parseNetworkDefinition(Element networkNode) {
-        NetworkModel model = NetworkModel.fromXML(this, networkNode);
-        if (model != null) {
-            networks.add(model);
-        }
-    }
-    
-
-    /**
-     * Parses toplevel (network) rubette definition.
-     * The parsed rubette is put into the <i>rubette</i> list.
-     */
-    private void parseRubetteDefinition(Element rubetteNode) {
-        String name = rubetteNode.getAttribute("name"); //$NON-NLS-1$
-        if (name.length() == 0) {
-            setError("Rubette must have a name");
-        }
-        else {
-            MacroRubette rubette = new MacroRubette();
-            MacroRubette nrubette = (MacroRubette)rubette.fromXML(this, rubetteNode);
-            nrubette.setName(name);
-            rubettes.add(nrubette);
+    private void parseApplicationElement(XMLElementReader elementReader, Element node) {
+        Object object = elementReader.fromXML(this, node);
+        if (object != null) {
+            List<Object> objects = elementObjects.get(node.getNodeName());
+            if (objects == null) {
+                objects = new LinkedList<Object>();
+                elementObjects.put(node.getNodeName(), objects);
+            }
+            objects.add(object);
         }
     }
     
@@ -1078,18 +1062,54 @@ public final class XMLReader implements RubatoDictionary {
     
 
     /**
-     * Returns the parsed networks as a list.
+     * Returns the objects that the registered XMLElementReader for the
+     * given toplevel element name read, in document order.
+     * The composer application reads networks ("Network") and macro
+     * rubettes ("Rubette") this way.
+     * @return the list of objects, empty if there were none
      */
-    public List<NetworkModel> getNetworks() {
-        return networks;
+    public List<Object> getElementObjects(String elementName) {
+        List<Object> objects = elementObjects.get(elementName);
+        if (objects == null) {
+            return new LinkedList<Object>();
+        }
+        return objects;
     }
     
     
     /**
-     * Returns the parsed rubettes as a list.
+     * Registers a reader for a toplevel element. It replaces any reader
+     * registered earlier for the same element name, including one found
+     * through java.util.ServiceLoader.
      */
-    public List<Rubette> getRubettes() {
-        return rubettes;
+    public static void registerElementReader(XMLElementReader elementReader) {
+        synchronized (XMLReader.class) {
+            loadElementReaders();
+            elementReaders.put(elementReader.getElementName(), elementReader);
+        }
+    }
+    
+    
+    /**
+     * Returns the reader for the given toplevel element name, or null.
+     */
+    public static XMLElementReader getElementReader(String elementName) {
+        synchronized (XMLReader.class) {
+            loadElementReaders();
+            return elementReaders.get(elementName);
+        }
+    }
+    
+    
+    //finds the readers listed in META-INF/services/org.rubato.xml.XMLElementReader
+    //files on the class path, once
+    private static void loadElementReaders() {
+        if (elementReaders == null) {
+            elementReaders = new HashMap<String,XMLElementReader>();
+            for (XMLElementReader elementReader : ServiceLoader.load(XMLElementReader.class, XMLReader.class.getClassLoader())) {
+                elementReaders.put(elementReader.getElementName(), elementReader);
+            }
+        }
     }
     
     
@@ -1185,8 +1205,7 @@ public final class XMLReader implements RubatoDictionary {
     private HashMap<String,Module>         modules;
     private HashMap<String,ModuleMorphism> moduleMorphisms;
     private HashMap<String,ModuleElement>  elements;
-    private LinkedList<NetworkModel>       networks;
-    private LinkedList<Rubette>            rubettes;
+    private HashMap<String,List<Object>>   elementObjects;
     private String                         schemeCode;
 
     private boolean            error = false;
@@ -1200,4 +1219,6 @@ public final class XMLReader implements RubatoDictionary {
 
     private Reader reader = null;
     private File   file   = null;
+    
+    private static HashMap<String,XMLElementReader> elementReaders = null;
 }

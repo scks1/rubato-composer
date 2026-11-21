@@ -19,6 +19,7 @@
 
 package org.rubato.composer;
 
+import org.rubato.base.StopSignal;
 import org.rubato.composer.rubette.RubetteModel;
 
 /**
@@ -26,7 +27,7 @@ import org.rubato.composer.rubette.RubetteModel;
  * 
  * @author Gérard Milmeister
  */
-public interface RunInfo {
+public interface RunInfo extends StopSignal {
    
     /**
      * Returns true iff the current running network has been stopped.
