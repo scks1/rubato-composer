@@ -2,7 +2,8 @@
 <!--
   Maven build of the Rubato Composer application, alongside the Ant build in
   build.xml. The parent pom at the repository root builds it after the
-  headless core library in core/ (artifact rubato-core), which it depends on.
+  headless core library in core/ (artifact rubato-core) and rubato-io in io/,
+  which it depends on.
 
   The source tree stays where Ant expects it: src holds production code,
   tests (every **/test/** directory and every *Test.java) and resources side by
@@ -68,6 +69,13 @@
     <dependency>
       <groupId>org.rubato</groupId>
       <artifactId>rubato-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- java/io: MusicXML, MIDI file and OSC input and output. The shaded
+         jar includes it, as the Ant build puts io/src into rubato.jar. -->
+    <dependency>
+      <groupId>org.rubato</groupId>
+      <artifactId>rubato-io</artifactId>
       <version>${project.version}</version>
     </dependency>
     <!-- Maven Central; look and feel (Apache-2.0), installed at startup by
