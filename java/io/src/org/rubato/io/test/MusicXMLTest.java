@@ -211,16 +211,23 @@ public class MusicXMLTest extends TestCase {
 	}
 
 	/**
-	 * Validates the writer's output against the MusicXML 4.0 XSD when the
-	 * system property musicxml.xsd names a local copy of musicxml.xsd (with
-	 * xml.xsd and xlink.xsd beside it). The schema is not in the repository.
+	 * Validates the writer's output against the MusicXML 4.0 XSD in
+	 * schema/musicxml-4.0 (with xml.xsd and xlink.xsd beside it). The system
+	 * property musicxml.xsd can name another copy. A missing schema fails the
+	 * test instead of skipping it.
 	 */
 	public void testOutputIsValidAgainstTheMusicXML40Schema() throws Exception {
 		String xsd = System.getProperty("musicxml.xsd");
 		if (xsd == null) {
-			System.out.println("MusicXMLTest: musicxml.xsd not set, schema validation skipped");
-			return;
+			for (String candidate : new String[] { "schema/musicxml-4.0/musicxml.xsd", "java/io/schema/musicxml-4.0/musicxml.xsd" }) {
+				if (new File(candidate).isFile()) {
+					xsd = candidate;
+					break;
+				}
+			}
 		}
+		assertNotNull("MusicXML 4.0 schema not found; expected schema/musicxml-4.0/musicxml.xsd in the rubato-io module", xsd);
+		assertTrue("no schema at " + xsd, new File(xsd).isFile());
 		final File dir = new File(xsd).getParentFile();
 		SchemaFactory sf = SchemaFactory.newDefaultInstance();
 		sf.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "file");
