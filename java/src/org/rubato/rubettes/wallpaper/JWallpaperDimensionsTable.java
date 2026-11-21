@@ -113,6 +113,9 @@ public class JWallpaperDimensionsTable
 	 * values of this table.
 	 */
 	public JComponent getMorphismsView() {
+		if (this.rubette.getSimpleForms() == null) {
+			return new JWallpaperViewPanel("No input form is set. Choose one in the properties to see the wallpaper.");
+		}
 		if (this.updateTempAttributes()) {
 			return new JWallpaperViewPanel(this);
 		} else {

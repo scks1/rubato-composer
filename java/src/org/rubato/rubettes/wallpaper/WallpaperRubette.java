@@ -474,6 +474,10 @@ public class WallpaperRubette extends AbstractRubette implements ActionListener 
 		WallpaperRubette loadedRubette = new WallpaperRubette();
         loadedRubette.init();
 		Element child = XMLReader.getChild(element, FORM);
+		if (child == null) {
+			//toXML writes nothing for a rubette whose input form is not set
+			return loadedRubette;
+		}
 		loadedRubette.setInputForm((PowerForm)reader.parseAndResolveForm(child));
 		
 		child = XMLReader.getNextSibling(child, MORPHISM);

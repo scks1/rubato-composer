@@ -26,6 +26,7 @@ import java.util.List;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingConstants;
 
 import org.rubato.math.yoneda.SimpleForm;
 
@@ -53,6 +54,16 @@ public class JWallpaperViewPanel extends JPanel implements ActionListener {
 		this.setLayout(new BorderLayout());
 		this.add(this.view, BorderLayout.CENTER);
 		this.add(this.makeSelectCoordinatesPanel(), BorderLayout.SOUTH);
+		this.setSize(300, 380);
+	}
+	
+	/**
+	 * Creates a JWallpaperViewPanel that shows the given message instead of a wallpaper.
+	 */
+	public JWallpaperViewPanel(String message) {
+		this.setLayout(new BorderLayout());
+		JLabel label = new JLabel(message, SwingConstants.CENTER);
+		this.add(label, BorderLayout.CENTER);
 		this.setSize(300, 380);
 	}
 	
