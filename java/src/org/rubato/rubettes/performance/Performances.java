@@ -198,7 +198,7 @@ public final class Performances {
                  .append(f(s.loudEnd)).append(", linear in E (39.43).\n");
             }
             if (s.articulation != 1) {
-                leaf = leaf.articulationOperator(s.articulation, "articulation");
+                leaf = leaf.articulationOperator(s.articulation, "dilation");
                 r.append("Articulation: durations dilated by ").append(f(s.articulation)).append(" (Example 51).\n");
             }
         }
@@ -255,7 +255,7 @@ public final class Performances {
             out.add(new ScoreNote(2 * p.onset, n.pitch, loud, 2 * p.duration, n.voice));
         }
         r.append("Stemma (Def. 107): ").append(stemma.size()).append(" nodes, ").append(stemma.leaves().size())
-         .append(" leaves.\n");
+         .append(stemma.leaves().size() == 1 ? " leaf.\n" : " leaves.\n");
         tree(mother, "  ", r);
         r.append("Performed ").append(input.size()).append(" notes in ").append(f(last - first)).append(" s");
         r.append(" (score span ").append(f(e1 - e0)).append(" quarters).\n");
