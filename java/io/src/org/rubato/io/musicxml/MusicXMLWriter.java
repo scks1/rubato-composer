@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.rubato.io.PartInfo;
 import org.rubato.io.ScoreNote;
 import org.rubato.math.arith.Rational;
 import org.rubato.math.yoneda.Denotator;
@@ -36,9 +37,11 @@ import org.rubato.math.yoneda.Denotator;
  * https://www.w3.org/2021/06/musicxml40/):
  * <ul>
  * <li>Each Voice value becomes a part with id {@code V<voice>} and name
- *     "Voice &lt;voice&gt;". Voices 0 to 15 also get a midi-instrument with
- *     midi-channel voice+1, since MidiReader reads the channel as Voice and
- *     MusicXML numbers channels from 1.</li>
+ *     "Voice &lt;voice&gt;", or the name given with {@link #setPart}.
+ *     Voices 0 to 15 also get a midi-instrument with midi-channel
+ *     voice+1, since MidiReader reads the channel as Voice and MusicXML
+ *     numbers channels from 1; a part given a program, volume or pan gets
+ *     them in its midi-instrument.</li>
  * <li>Onset and Duration count quarter notes, and the divisions element
  *     gives divisions per quarter note, so a position in divisions is
  *     onset times divisions. The writer picks the smallest divisions that
@@ -93,6 +96,7 @@ public final class MusicXMLWriter {
     private int tempo = DEFAULT_TEMPO;
     private final List<String> warnings = new ArrayList<String>();
     private int untyped = 0;
+    private final TreeMap<Integer, PartInfo> partInfos = new TreeMap<Integer, PartInfo>();
 
     /** Sets the time signature written in the first measure. */
     public void setTime(int beats, int beatType) {
@@ -115,6 +119,23 @@ public final class MusicXMLWriter {
             throw new IllegalArgumentException("tempo out of range: " + microsecondsPerQuarter);
         }
         this.tempo = microsecondsPerQuarter;
+    }
+
+    /**
+     * Sets the name and MIDI settings of the part of a Voice: the name goes
+     * into part-name and instrument-name, the program (plus 1, since
+     * MusicXML numbers programs from 1), volume (as a percentage of 127)
+     * and pan (in degrees, see {@link PartInfo#panDegrees}) into the
+     * part's midi-instrument. Settings for a Voice with no notes are not
+     * written. {@code null} removes the settings.
+     */
+    public void setPart(int voice, PartInfo part) {
+        if (part == null) {
+            this.partInfos.remove(voice);
+        }
+        else {
+            this.partInfos.put(voice, part);
+        }
     }
 
     /** Quarter notes per minute as written in the file. */
@@ -199,14 +220,29 @@ public final class MusicXMLWriter {
         x.append("  <part-list>\n");
         for (int voice : parts.keySet()) {
             String id = partId(voice);
+            PartInfo info = this.partInfo(voice);
+            String name = info.getName() != null ? escape(info.getName()) : "Voice " + voice;
             x.append("    <score-part id=\"").append(id).append("\">\n");
-            x.append("      <part-name>Voice ").append(voice).append("</part-name>\n");
-            if (voice >= 0 && voice < 16) {
+            x.append("      <part-name>").append(name).append("</part-name>\n");
+            boolean channel = voice >= 0 && voice < 16;
+            if (channel || info.hasMidiSettings()) {
                 x.append("      <score-instrument id=\"").append(id).append("-I1\">\n");
-                x.append("        <instrument-name>Voice ").append(voice).append("</instrument-name>\n");
+                x.append("        <instrument-name>").append(name).append("</instrument-name>\n");
                 x.append("      </score-instrument>\n");
                 x.append("      <midi-instrument id=\"").append(id).append("-I1\">\n");
-                x.append("        <midi-channel>").append(voice + 1).append("</midi-channel>\n");
+                if (channel) {
+                    x.append("        <midi-channel>").append(voice + 1).append("</midi-channel>\n");
+                }
+                if (info.hasProgram()) {
+                    // MusicXML numbers programs from 1, MIDI messages from 0
+                    x.append("        <midi-program>").append(info.getProgram() + 1).append("</midi-program>\n");
+                }
+                if (info.hasVolume()) {
+                    x.append("        <volume>").append(PartInfo.volumePercent(info.getVolume()).toPlainString()).append("</volume>\n");
+                }
+                if (info.hasPan()) {
+                    x.append("        <pan>").append(PartInfo.panDegrees(info.getPan()).toPlainString()).append("</pan>\n");
+                }
                 x.append("      </midi-instrument>\n");
             }
             x.append("    </score-part>\n");
@@ -226,6 +262,26 @@ public final class MusicXMLWriter {
             this.warnings.add(this.untyped + " notes or rests have lengths that no plain, dotted or triplet note value expresses; they are written without a note type");
         }
         return x.toString();
+    }
+
+    private PartInfo partInfo(int voice) {
+        PartInfo info = this.partInfos.get(voice);
+        return info != null ? info : PartInfo.NONE;
+    }
+
+    static String escape(String text) {
+        StringBuilder b = new StringBuilder(text.length());
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            switch (c) {
+                case '&': b.append("&amp;"); break;
+                case '<': b.append("&lt;"); break;
+                case '>': b.append("&gt;"); break;
+                case '"': b.append("&quot;"); break;
+                default: b.append(c);
+            }
+        }
+        return b.toString();
     }
 
     static String partId(int voice) {

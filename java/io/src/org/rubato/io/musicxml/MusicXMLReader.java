@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -32,6 +33,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.rubato.io.PartInfo;
 import org.rubato.io.ScoreNote;
 import org.rubato.math.arith.Rational;
 import org.rubato.math.yoneda.Denotator;
@@ -60,6 +62,9 @@ import org.xml.sax.SAXException;
  *     signature or a senza-misura one ends where its furthest voice ends.
  *     Repeats, endings and jumps are not expanded: the result is the
  *     written order.</li>
+ * <li>Parts: the part-name and the first midi-instrument's program,
+ *     volume and pan of each part, in MIDI units, from
+ *     {@link #getParts()}.</li>
  * <li>Tempo: the first sound element with a tempo attribute, available
  *     from {@link #getTempo()} in microseconds per quarter note; later
  *     tempo changes are reported in the warnings and not read.</li>
@@ -79,6 +84,7 @@ public final class MusicXMLReader {
 
     private final List<String> warnings = new ArrayList<String>();
     private Integer tempo;
+    private final TreeMap<Integer, PartInfo> parts = new TreeMap<Integer, PartInfo>();
     private boolean tempoChangeReported;
 
     /**
@@ -90,6 +96,28 @@ public final class MusicXMLReader {
      */
     public int getTempo() {
         return this.tempo == null ? MusicXMLWriter.DEFAULT_TEMPO : this.tempo;
+    }
+
+    /**
+     * The name and MIDI settings of each part in the last file read, by
+     * Voice: the part-name, and from the part's first midi-instrument the
+     * midi-program minus 1 (MusicXML counts programs from 1), the volume
+     * and the pan converted to MIDI units ({@link PartInfo#panFromDegrees},
+     * {@link PartInfo#volumeFromPercent}). Settings the file does not give
+     * are {@link PartInfo#UNSET}; a part without a part-name has a null
+     * name. When two parts read as one Voice, the first one's entry is kept.
+     */
+    public Map<Integer, PartInfo> getParts() {
+        return Collections.unmodifiableMap(this.parts);
+    }
+
+    /** The part names of the last file read, by Voice; see {@link #getParts()}. */
+    public Map<Integer, String> getPartNames() {
+        TreeMap<Integer, String> names = new TreeMap<Integer, String>();
+        for (Map.Entry<Integer, PartInfo> e : this.parts.entrySet()) {
+            names.put(e.getKey(), e.getValue().getName());
+        }
+        return Collections.unmodifiableMap(names);
     }
 
     /** Whether the last file read gave a tempo. */
@@ -109,6 +137,7 @@ public final class MusicXMLReader {
         this.warnings.clear();
         this.tempo = null;
         this.tempoChangeReported = false;
+        this.parts.clear();
         BufferedInputStream in = new BufferedInputStream(input);
         in.mark(4);
         int b0 = in.read(), b1 = in.read();
@@ -130,6 +159,9 @@ public final class MusicXMLReader {
                 this.warnings.add("Part " + part.getAttribute("id") + " is not in the part-list; it is read as voice " + voices.size());
                 voice = voices.size();
                 voices.put(part.getAttribute("id"), voice);
+                if (!this.parts.containsKey(voice)) {
+                    this.parts.put(voice, PartInfo.NONE);
+                }
             }
             this.readPart(part, voice, notes);
         }
@@ -168,9 +200,43 @@ public final class MusicXMLReader {
                 voice = index;
             }
             voices.put(id, voice);
+            if (!this.parts.containsKey(voice)) {
+                this.parts.put(voice, this.partInfo(sp));
+            }
             index++;
         }
         return voices;
+    }
+
+    private PartInfo partInfo(Element scorePart) {
+        Element nameElement = child(scorePart, "part-name");
+        String name = nameElement == null ? null : nameElement.getTextContent().trim();
+        int program = PartInfo.UNSET, pan = PartInfo.UNSET, volume = PartInfo.UNSET;
+        Element mi = child(scorePart, "midi-instrument");
+        if (mi != null) {
+            try {
+                Element e = child(mi, "midi-program");
+                if (e != null) {
+                    program = Integer.parseInt(e.getTextContent().trim()) - 1;
+                    if (program < 0 || program > 127) {
+                        this.warnings.add("Part " + scorePart.getAttribute("id") + " has midi-program " + (program + 1) + ", outside 1..128; it is not read");
+                        program = PartInfo.UNSET;
+                    }
+                }
+                e = child(mi, "volume");
+                if (e != null) {
+                    volume = PartInfo.volumeFromPercent(new BigDecimal(e.getTextContent().trim()));
+                }
+                e = child(mi, "pan");
+                if (e != null) {
+                    pan = PartInfo.panFromDegrees(new BigDecimal(e.getTextContent().trim()));
+                }
+            }
+            catch (NumberFormatException e) {
+                this.warnings.add("Part " + scorePart.getAttribute("id") + " has a midi-instrument value that cannot be read: " + e.getMessage());
+            }
+        }
+        return new PartInfo(name, program, pan, volume);
     }
 
     /** A note held open by a tie start, keyed by MusicXML voice and pitch. */
