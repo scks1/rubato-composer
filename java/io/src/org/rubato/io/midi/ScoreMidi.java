@@ -17,8 +17,13 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
+import org.rubato.io.PartInfo;
 import org.rubato.io.ScoreNote;
 import org.rubato.math.yoneda.Denotator;
 
@@ -31,8 +36,10 @@ import org.rubato.math.yoneda.Denotator;
  * Off or a Note On with velocity 0 sets the duration of the note in that
  * slot, and a note that never gets an off event keeps duration 0. Onset and
  * Duration are ticks divided by the file's ticks per quarter note, Pitch is
- * the key, Loudness the velocity and Voice the channel. Tempo, programs,
- * controllers and track numbers are not read.
+ * the key, Loudness the velocity and Voice the channel. Tempo and track
+ * numbers are not read; programs and controllers are not part of the
+ * notes, and {@link #readPrograms}, {@link #readControllers} and
+ * {@link #readPart} read them separately.
  * <p>
  * Writing follows the application's MidiPlayer (used by MidiFileOutRubette)
  * except where noted: a format 1 file with 480 ticks per quarter note, a
@@ -51,9 +58,14 @@ import org.rubato.math.yoneda.Denotator;
  * <li>Note Off events carry release velocity 64, the MIDI 1.0 default,
  *     where MidiPlayer repeats the note's loudness.</li>
  * <li>MidiPlayer adds a program change to program 0 on channel 0; this
- *     writer does not. (MidiPlayer's code also adds a System Real-Time Stop
- *     1500 ticks after the last event, but MidiSystem.write leaves it out of
- *     the file; MidiParityTest in the application checks this.)</li>
+ *     writer adds only the programs and controllers set with
+ *     {@link #setProgram}, {@link #setController}, {@link #setPan},
+ *     {@link #setVolume} or {@link #setPart}, at tick 0 at the start of
+ *     the note track: channel by channel, the program first, then the
+ *     controllers in the order they were first set. (MidiPlayer's code
+ *     also adds a System Real-Time Stop 1500 ticks after the last event,
+ *     but MidiSystem.write leaves it out of the file; MidiParityTest in
+ *     the application checks this.)</li>
  * <li>For a negative Voice, MidiPlayer computes Voice % 16, a negative
  *     channel, which ShortMessage.setMessage documents as invalid (not
  *     tested here); this writer uses Math.floorMod, so Voice -1 is
@@ -68,9 +80,16 @@ public final class ScoreMidi {
     public static final int DEFAULT_RESOLUTION = 480;
     public static final int DEFAULT_TEMPO = 500000;
 
+    /** Controller numbers of pan and channel volume (MIDI 1.0). */
+    public static final int PAN = 10, VOLUME = 7;
+
     private int  resolution = DEFAULT_RESOLUTION;
     private int  tempo = DEFAULT_TEMPO;
     private long shift = 0;
+    /** Program per channel; channels without one are absent. */
+    private final TreeMap<Integer, Integer> programs = new TreeMap<Integer, Integer>();
+    /** Controller values per channel, in the order they were first set. */
+    private final TreeMap<Integer, LinkedHashMap<Integer, Integer>> controllers = new TreeMap<Integer, LinkedHashMap<Integer, Integer>>();
 
     public void setResolution(int ticksPerQuarter) {
         if (ticksPerQuarter <= 0 || ticksPerQuarter >= 0x8000) {
@@ -84,6 +103,85 @@ public final class ScoreMidi {
             throw new IllegalArgumentException("tempo out of range: " + microsecondsPerQuarter);
         }
         this.tempo = microsecondsPerQuarter;
+    }
+
+    /**
+     * Sets the program of a channel (0 to 15) to a General MIDI program
+     * number minus 1 (0 to 127), written as a Program Change at tick 0.
+     * {@link PartInfo#UNSET} removes it.
+     */
+    public void setProgram(int channel, int program) {
+        checkChannel(channel);
+        if (program == PartInfo.UNSET) {
+            this.programs.remove(channel);
+            return;
+        }
+        if (program < 0 || program > 127) {
+            throw new IllegalArgumentException("program must be 0..127: " + program);
+        }
+        this.programs.put(channel, program);
+    }
+
+    /** Sets the pan of a channel, controller 10, 0 (left) to 127 (right) with 64 the center. */
+    public void setPan(int channel, int pan) {
+        this.setController(channel, PAN, pan);
+    }
+
+    /** Sets the channel volume, controller 7, 0 to 127. */
+    public void setVolume(int channel, int volume) {
+        this.setController(channel, VOLUME, volume);
+    }
+
+    /**
+     * Sets a controller (0 to 119; 120 to 127 are channel mode messages)
+     * of a channel to a value (0 to 127), written as a Control Change at
+     * tick 0. {@link PartInfo#UNSET} removes it. Controllers are written in
+     * the order they were first set.
+     */
+    public void setController(int channel, int controller, int value) {
+        checkChannel(channel);
+        if (controller < 0 || controller > 119) {
+            throw new IllegalArgumentException("controller must be 0..119: " + controller);
+        }
+        LinkedHashMap<Integer, Integer> map = this.controllers.get(channel);
+        if (value == PartInfo.UNSET) {
+            if (map != null) {
+                map.remove(controller);
+            }
+            return;
+        }
+        if (value < 0 || value > 127) {
+            throw new IllegalArgumentException("controller value must be 0..127: " + value);
+        }
+        if (map == null) {
+            map = new LinkedHashMap<Integer, Integer>();
+            this.controllers.put(channel, map);
+        }
+        map.put(controller, value);
+    }
+
+    /**
+     * Applies the program, pan and volume of a part (those it gives) to the
+     * channel of a Voice, Voice mod 16 as the notes use. The name is not
+     * written: all notes share one track.
+     */
+    public void setPart(int voice, PartInfo part) {
+        int channel = Math.floorMod(voice, 16);
+        if (part.hasProgram()) {
+            this.setProgram(channel, part.getProgram());
+        }
+        if (part.hasPan()) {
+            this.setPan(channel, part.getPan());
+        }
+        if (part.hasVolume()) {
+            this.setVolume(channel, part.getVolume());
+        }
+    }
+
+    private static void checkChannel(int channel) {
+        if (channel < 0 || channel > 15) {
+            throw new IllegalArgumentException("channel must be 0..15: " + channel);
+        }
     }
 
     /** Ticks added to every event by the last write; nonzero only when a note started before 0. */
@@ -132,6 +230,60 @@ public final class ScoreMidi {
         return notes;
     }
 
+    /**
+     * The first program of each channel in a file: index = channel,
+     * {@link PartInfo#UNSET} where the file has no Program Change on it.
+     * "First" means the earliest tick over all tracks, the earlier track
+     * at equal ticks.
+     */
+    public static int[] readPrograms(StandardMidiFile file) {
+        int[] programs = new int[16];
+        long[] ticks = new long[16];
+        java.util.Arrays.fill(programs, PartInfo.UNSET);
+        for (StandardMidiFile.Track track : file.getTracks()) {
+            for (StandardMidiFile.Event e : track.events) {
+                if (e.isChannelMessage() && e.command() == 0xC0) {
+                    int c = e.channel();
+                    if (programs[c] == PartInfo.UNSET || e.tick < ticks[c]) {
+                        programs[c] = e.data1();
+                        ticks[c] = e.tick;
+                    }
+                }
+            }
+        }
+        return programs;
+    }
+
+    /**
+     * The first value of each controller on a channel in a file, by
+     * controller number, "first" as in {@link #readPrograms}.
+     */
+    public static Map<Integer, Integer> readControllers(StandardMidiFile file, int channel) {
+        checkChannel(channel);
+        TreeMap<Integer, Integer> values = new TreeMap<Integer, Integer>();
+        Map<Integer, Long> ticks = new HashMap<Integer, Long>();
+        for (StandardMidiFile.Track track : file.getTracks()) {
+            for (StandardMidiFile.Event e : track.events) {
+                if (e.isChannelMessage() && e.command() == 0xB0 && e.channel() == channel) {
+                    Long t = ticks.get(e.data1());
+                    if (t == null || e.tick < t) {
+                        values.put(e.data1(), e.data2());
+                        ticks.put(e.data1(), e.tick);
+                    }
+                }
+            }
+        }
+        return values;
+    }
+
+    /** The first program, pan and volume of a channel in a file, with no name. */
+    public static PartInfo readPart(StandardMidiFile file, int channel) {
+        Map<Integer, Integer> c = readControllers(file, channel);
+        return new PartInfo(null, readPrograms(file)[channel],
+                c.containsKey(PAN) ? c.get(PAN) : PartInfo.UNSET,
+                c.containsKey(VOLUME) ? c.get(VOLUME) : PartInfo.UNSET);
+    }
+
     private static final class Key {
         final long tick;
         final int key;
@@ -177,6 +329,22 @@ public final class ScoreMidi {
         StandardMidiFile.Track conductor = new StandardMidiFile.Track();
         conductor.events.add(StandardMidiFile.Event.tempo(0, this.tempo));
         StandardMidiFile.Track track = new StandardMidiFile.Track();
+        // channel setup at tick 0, before the notes: per channel, the program, then the controllers
+        TreeMap<Integer, Boolean> channels = new TreeMap<Integer, Boolean>();
+        for (int c : this.programs.keySet()) channels.put(c, Boolean.TRUE);
+        for (int c : this.controllers.keySet()) channels.put(c, Boolean.TRUE);
+        for (int c : channels.keySet()) {
+            Integer program = this.programs.get(c);
+            if (program != null) {
+                track.events.add(StandardMidiFile.Event.channel(0, 0xC0, c, program, 0));
+            }
+            Map<Integer, Integer> values = this.controllers.get(c);
+            if (values != null) {
+                for (Map.Entry<Integer, Integer> v : values.entrySet()) {
+                    track.events.add(StandardMidiFile.Event.channel(0, 0xB0, c, v.getKey(), v.getValue()));
+                }
+            }
+        }
         for (Pending p : events) {
             StandardMidiFile.Event e = p.event;
             track.events.add(new StandardMidiFile.Event(p.tick + this.shift, e.status, -1, e.data));
