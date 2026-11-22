@@ -2,9 +2,13 @@ package org.rubato.rubettes.bigbang.headless;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 
 import org.rubato.math.matrix.RMatrix;
 import org.rubato.math.yoneda.Denotator;
@@ -24,7 +28,8 @@ import org.rubato.rubettes.util.DenotatorPath;
  * same {@link TransformationProperties} the rubette's view builds from a drag:
  * <ol>
  * <li>the transformed objects are the selection, by default every object of
- * the composition;</li>
+ * the composition; a selection cannot be empty, since the model reads an
+ * operation on no objects as one on every object ({@link #select});</li>
  * <li>the transformation acts on the two coordinates chosen with
  * {@link #axes(String, String)}, by default the first two;</li>
  * <li>centers and vectors are given in denotator values, as the view gives them
@@ -139,8 +144,80 @@ public class BigBang {
 		return Collections.unmodifiableSet(new TreeSet<BigBangObject>(objects));
 	}
 	
-	/** Makes later operations act on the given objects only. */
+	/**
+	 * Returns an object's value of a coordinate given by its full name
+	 * ("Onset R") or its form name ("Onset"), resolved as
+	 * {@link #getCoordinateIndex} resolves it, so the names that
+	 * {@link #axes(String, String)} takes work here too. The model's
+	 * {@link BigBangObject#getNthValue} takes full names only. Returns null
+	 * when the object has no such value.
+	 * @throws IllegalArgumentException if no coordinate has the name
+	 */
+	public Double value(BigBangObject object, String name) {
+		List<String> names = this.model.getObjects().getCoordinateSystemValueNames();
+		int index = this.getCoordinateIndex(name);
+		String full = names.get(index);
+		//the n-th coordinate of that name, for names that occur more than once
+		int n = 0;
+		for (int i = 0; i < index; i++) {
+			if (names.get(i).equals(full)) {
+				n++;
+			}
+		}
+		return object.getNthValue(full, n);
+	}
+	
+	/** Returns an immutable view of an object's values as they stand after the last operation. */
+	public NoteValues values(BigBangObject object) {
+		List<String> names = this.model.getObjects().getCoordinateSystemValueNames();
+		Map<String, Double> values = new LinkedHashMap<String, Double>();
+		Map<String, Integer> seen = new HashMap<String, Integer>();
+		for (String name : names) {
+			int n = seen.containsKey(name) ? seen.get(name) + 1 : 0;
+			seen.put(name, n);
+			if (n == 0) {
+				values.put(name, object.getNthValue(name, 0));
+			}
+		}
+		return new NoteValues(object, values);
+	}
+	
+	/** Returns the values of every object, in the order of {@link #getObjects()}. */
+	public List<NoteValues> notes() {
+		List<NoteValues> notes = new ArrayList<NoteValues>();
+		for (BigBangObject object : this.getObjects()) {
+			notes.add(this.values(object));
+		}
+		return Collections.unmodifiableList(notes);
+	}
+	
+	/** Returns the objects whose values pass the test, for {@link #select}; the set may be empty. */
+	public Set<BigBangObject> objectsWhere(Predicate<NoteValues> test) {
+		Set<BigBangObject> objects = new TreeSet<BigBangObject>();
+		for (NoteValues note : this.notes()) {
+			if (test.test(note)) {
+				objects.add(note.getObject());
+			}
+		}
+		return Collections.unmodifiableSet(objects);
+	}
+	
+	/**
+	 * Makes later operations act on the given objects only.
+	 * <p>
+	 * The set must not be empty. The model treats an operation with no
+	 * objects as one on every object, which is what a drag with nothing
+	 * selected does in the rubette's view, so an empty selection here would
+	 * transform the whole composition. Use {@link #selectAll()} to act on
+	 * every object, and check a computed selection for emptiness before
+	 * passing it.
+	 * @throws IllegalArgumentException if objects is null or empty
+	 */
 	public BigBang select(Set<BigBangObject> objects) {
+		if (objects == null || objects.isEmpty()) {
+			throw new IllegalArgumentException("the selection is empty; an operation on no objects would act on every object. "
+				+ "Use selectAll() to act on every object, or skip the operation");
+		}
 		this.selection = new TreeSet<BigBangObject>(objects);
 		return this;
 	}

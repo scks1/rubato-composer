@@ -189,6 +189,9 @@ public class BigBangObject implements Comparable<BigBangObject> {
 	}
 	
 	/**
+	 * @param valueName the value's full name as the coordinate system
+	 * lists it, such as "Onset R"; a form name alone ("Onset") gives null.
+	 * The headless BigBang.value also resolves form names.
 	 * @return the nth value with the given name, n >= 0 like a normal index
 	 */
 	public Double getNthValue(String valueName, int n) {
