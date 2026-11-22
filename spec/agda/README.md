@@ -28,8 +28,12 @@ standard library. Every module uses `--safe --without-K`.
 | `Registry.agda` | the music forms written by hand from the Java sources (`handEnv`) and the proofs about them |
 | `Generated.agda` | written by `gen/ExportAgda.java`: 48 forms reachable from 18 root forms of the Java repository (`javaEnv`), and 10 denotators built by Java code. Do not edit |
 | `GeneratedChecks.agda` | proofs about `Generated.agda` |
-| `adversarial/*.agda` | 9 files that must fail to typecheck, each with an `-- EXPECT:` line |
-| `gen/ExportAgda.java` | the generator |
+| `Addresses.agda` | rings Z, Q, R, the free modules Cⁿ over them, affine maps in matrix form, denotator coordinates at an address Cᵐ, address change, evaluation, and the proofs that address change is precomposition |
+| `GeneratedAddresses.agda` | written by `gen/ExportAddresses.java`: 10 address changes and 5 evaluations over each of Z, Q and R, with the values Java computed. Do not edit |
+| `AddressChecks.agda` | proofs that Java's values agree with `Addresses.agda` on every exported case |
+| `adversarial/*.agda` | 10 files that must fail to typecheck, each with an `-- EXPECT:` line |
+| `gen/ExportAgda.java` | the generator for `Generated.agda` |
+| `gen/ExportAddresses.java` | the generator for `GeneratedAddresses.agda` |
 | `gen/DepartureProbe.java` | prints Java's behaviour for each departure case P1 to P11 |
 | `run-checks.sh` | runs everything below |
 
@@ -41,10 +45,11 @@ mvn -B -o verify                      # or ant dist; builds the -all jar
 spec/agda/run-checks.sh [log-dir]
 ```
 
-`run-checks.sh` compiles both Java programs against
+`run-checks.sh` compiles the three Java programs against
 `java/target/rubato-composer-0.1.0-SNAPSHOT-all.jar` (override with
-`JAR=`), runs the generator and fails if its output differs from the
-committed `Generated.agda`, runs the probe, typechecks the six positive
+`JAR=`), runs both generators and fails if their output differs from the
+committed `Generated.agda` and `GeneratedAddresses.agda`, runs the probe,
+typechecks the nine positive
 modules from a clean state (it deletes `*.agdai` first), and typechecks
 each adversarial file, which passes only when Agda rejects the file with
 the expected text at a location inside that file. `SKIP_JAVA=1` skips
@@ -68,6 +73,14 @@ the new forms still agree with `Registry.agda`.
 - **Modules** Z, Q, R, C, Z/n and Rⁿ, with Java's element invariants:
   Z/n values below the modulus and Q denominators positive.
 - **Zero-addressed denotators** of each type, with an optional name.
+- **Addressed simple coordinates** (`Addresses.agda`): over Z, Q and R, a
+  coordinate at the address Cᵐ in the module Cⁿ is an affine map Cᵐ → Cⁿ
+  held as a matrix and a shift, as `ZFreeAffineMorphism`,
+  `QFreeAffineMorphism` and `RFreeAffineMorphism` hold it. Address change
+  along f : Cᵏ → Cᵐ composes by matrix product, evaluation at a applies
+  the map, and the constant map from the zero module C⁰ is a 0-column
+  matrix with a shift. Topos of Music I, section 6.2.1 (p. 53) and 6.2.2
+  (p. 54).
 - **Java's order on denotators** (`cmpDen`): form, then denotator name,
   then content, following `Denotator.compareTo`, `Form.compareTo`,
   `NameDenotator`/`NameEntry`, the morphism-map `compareTo` methods and
@@ -81,9 +94,16 @@ the new forms still agree with `Registry.agda`.
 
 ## What is not modelled
 
-- Addresses other than the zero address, address changes and
-  morphisms between modules (D4). The generator refuses a denotator that
-  is not null-addressed.
+- Addressed denotators of the compound types (limit, colimit, power,
+  list), addresses other than the free modules Cᵐ over Z, Q and R, and
+  module morphisms that are not affine (D4). `ExportAgda` still refuses
+  a denotator that is not null-addressed.
+- Java's `changeAddress(Module)`, which changes along
+  `CanonicalMorphism.make` (D18).
+- Address order and equality: since the commit "Fix denotators at
+  non-zero addresses" Java's `equals` and `compareTo` compare addresses
+  first when they differ; the zero-addressed `cmpDen` has no address to
+  compare.
 - Module morphisms, `ModuleMorphism` coordinates and every module other
   than the six above (polynomial rings, product rings, direct sums,
   strings). They appear as `otherM` with no elements.
@@ -163,6 +183,34 @@ RealFlipSym claims flip symmetry of `cmpR` at NaN and 1.0;
 ConstructorArity builds a Note derivation with no coordinates directly
 from the constructors.
 
+
+`Addresses.agda`, for any ring given with the laws in `Laws`
+(associativity and commutativity of +, 0 + a = a, associativity of ·,
+0 · a = a · 0 = 0, both distributive laws):
+- `compose-apply`: the composition of affine maps by matrix product is
+  precomposition, `apply (compose f g) v ≡ apply f (apply g v)`.
+- `at-is-change`: evaluation at a is the address change along the
+  constant map 0 → Cᵐ with value a, followed by evaluation at the one
+  element of the zero module (Topos I, pp. 53–54).
+- `change-functorial`: changing along f and then along g is changing
+  along f ∘ g.
+No ring instance proves the laws. Int satisfies them, but the proofs for
+the hand-written `_+ℤ_` and `_*ℤ_` are not written; the unreduced
+fractions of `ℚ-ring` satisfy them only up to cross-multiplication;
+floats do not satisfy them. The theorems therefore say what the matrix
+model computes, and the checks below say that Java computes the same.
+
+`AddressChecks.agda` (c): for each of the 30 exported address changes,
+Java's values of `d.changeAddress(f)` at the zero element and at 2·eᵢ
+for each basis vector equal both the model's matrix composition and the
+precomposition d(f(x)); for each of the 15 exported evaluations, Java's
+`d.at(a)` equals d(a) and the change along the constant with value a.
+Three Z cases (and three each over Q and R) change along a constant from
+the zero module, which Java got wrong before the commit "Fix denotators
+at non-zero addresses". `adversarial/AddressWrongValue.agda` shows that a
+wrong value fails the check. The R cases use dyadic values, so Java's
+doubles and Agda's floats compute them exactly.
+
 ## Stated but not proved
 
 - `cmpDen` is flip-symmetric or has transitive `lt` on well-formed
@@ -191,7 +239,8 @@ says so. Probe lines (P1 to P11) are in the log of each run of
 | D1 | `Form.equals` compares names when both forms are registered; `Repository.register` returns null for a different form under a taken name | not checked against the texts; the row records how Java uses names | forms are repository entries named by strings, and `uniqueB` holds | P10; `handEnv-unique`, `javaEnv-unique` |
 | D2 | a power denotator is a `TreeMap` keyed by `Denotator.compareTo`: finite, sorted, compareTo-equal elements merged (the first one stays). `PowerDenotator._normalize` is commented out | a set of denotators of the coordinate form; the cited texts give no order | finite list, strictly ascending under `cmpDen` | P3; `insertion-order`, `rej-duplicate`, `rej-unsorted` |
 | D3 | denotator names take part in `compareTo`; two notes equal in content but named differently are two set elements | the manual says denotators may be anonymous; the texts don't say names affect set membership | `cmpDen` compares names after forms and before content | P4; `named-later`, `named-distinct` |
-| D4 | denotators have addresses (`getAddress`, `nullAddressed`) | denotators are addressed; the zero address is one case | zero address only; the generator refuses others | not modelled |
+| D4 | denotators have addresses (`getAddress`, `nullAddressed`); a simple coordinate at address A is a `ModuleMorphism` A → M | Topos I, Def. 4 (p. 57): an A-addressed denotator has coordinates in A@Fun(F); for a simple form, morphisms A → M (§6.2.1, p. 53) | simple coordinates at Cᵐ over Z, Q, R as affine maps; compound denotators zero-addressed only | `AddressChecks`; `compose-apply`, `at-is-change`, `change-functorial` |
+| D18 | `changeAddress(Module B)` changes along `CanonicalMorphism.make(B, A)`: embeddings such as Z → Q, casts such as Q → Z, the zero map to and from the zero module, and for Z² → Z the projection (x, y) ↦ x; null when no canonical morphism exists | the address change needs a morphism; the book gives no canonical choice between arbitrary modules | not modelled | address audit of 2026-11-22 (BUILD-REPORT), cases C9 to C11 |
 | D5 | `ZElement.compareTo` returns `value - other` and `Rational.compareTo` cross-multiplies 32-bit ints; both overflow | Z and Q are exact | exact Int and cross-multiplication on unbounded integers | P5, P7; `javaIntegerSet-rejected`, `JavaOverflowSet` |
 | D6 | `RElement` is equal within epsilon = 4·Double.MIN_VALUE (settable), NaN compares greater than everything including NaN; RProperFreeElement treats a NaN component difference as equal | R is the real numbers | Agda primitive floats with Java's comparison rules | P6; `cmpR-not-flip-symmetric`, `javaRealSet-rejected`, `RealFlipSym`, `JavaNaNSet` |
 | D7 | a List form type (`Yoneda.LIST`), auto-named `_List(X)` | p. 92 of *Perspectives* lists Simple, Syn, Power, Limit and Colimit; no List. The Rubato manual lists Simple, Limit, Colimit, Power and List | `list` body; order kept, repeats allowed | P8; `boolList-ok`, `javaEnvelope-ok` |
@@ -208,7 +257,8 @@ says so. Probe lines (P1 to P11) are in the log of each run of
 
 The texts were read for terminology only. Each "Theory" entry repeats
 what the cited source says or says that the sources don't settle the
-point. The Topos of Music itself was not consulted.
+point. For D4 and D18 the Topos of Music I (2nd ed.) was read; the other
+rows were written before it was consulted.
 
 ## CI
 
@@ -224,3 +274,6 @@ this VM's notes on the Ubuntu noble packages, not from a runner.
 - The CI job (above).
 - D15 and D16 have no probe.
 - Agda versions other than 2.6.3.
+- `GeneratedAddresses.agda` against a jar built before the address
+  fixes: the generator was run only on the fixed code, so the checks were
+  not seen failing on the old behaviour (the adversarial file stands in).

@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # run-checks.sh: cross-checks the Agda spec against the Java core.
 #
-#  1. compiles gen/ExportAgda.java and gen/DepartureProbe.java against the
+#  1. compiles gen/ExportAgda.java, gen/ExportAddresses.java and
+#     gen/DepartureProbe.java against the
 #     built composer jar
-#  2. runs ExportAgda and compares its output with the committed
-#     Generated.agda (any difference fails)
+#  2. runs ExportAgda and ExportAddresses and compares their output with
+#     the committed Generated.agda and GeneratedAddresses.agda (any
+#     difference fails)
 #  3. runs DepartureProbe and keeps its output
 #  4. typechecks every positive module from a clean state
 #  5. typechecks every file in adversarial/ and requires each to fail
@@ -39,7 +41,7 @@ if [ "${SKIP_JAVA:-0}" != 1 ]; then
   [ -f "$JAR" ] || { say "FAIL jar not found: $JAR"; exit 2; }
   say "jar: $JAR ($(sha256sum "$JAR" | cut -c1-16))"
   cls="$(mktemp -d)"
-  if javac -encoding UTF-8 -d "$cls" -cp "$JAR" gen/ExportAgda.java gen/DepartureProbe.java \
+  if javac -encoding UTF-8 -d "$cls" -cp "$JAR" gen/ExportAgda.java gen/ExportAddresses.java gen/DepartureProbe.java \
        > "$logdir/javac.log" 2>&1; then
     say "PASS javac"
   else
@@ -55,6 +57,15 @@ if [ "${SKIP_JAVA:-0}" != 1 ]; then
   else
     say "FAIL ExportAgda (see export.stderr)"; fail=1
   fi
+  if jrun ExportAddresses > "$logdir/GeneratedAddresses.fresh.agda" 2> "$logdir/export-addresses.stderr"; then
+    if diff -u GeneratedAddresses.agda "$logdir/GeneratedAddresses.fresh.agda" > "$logdir/generated-addresses.diff"; then
+      say "PASS generator output matches GeneratedAddresses.agda"
+    else
+      say "FAIL generator output differs from GeneratedAddresses.agda (see generated-addresses.diff)"; fail=1
+    fi
+  else
+    say "FAIL ExportAddresses (see export-addresses.stderr)"; fail=1
+  fi
   if jrun DepartureProbe > "$logdir/departure-probe.txt" 2> "$logdir/departure-probe.stderr"; then
     say "PASS departure probe ($(wc -l < "$logdir/departure-probe.txt") lines, departure-probe.txt)"
   else
@@ -65,7 +76,7 @@ fi
 
 find . -name '*.agdai' -delete
 : > "$logdir/agda-positive.log"
-for m in Prelude OrderedSets Forms Registry Generated GeneratedChecks; do
+for m in Prelude OrderedSets Forms Registry Generated GeneratedChecks Addresses GeneratedAddresses AddressChecks; do
   if out="$("$AGDA" --no-libraries -i . "$m.agda" 2>&1)"; then
     say "PASS $m.agda"
   else
