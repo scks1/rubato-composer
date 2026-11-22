@@ -8,8 +8,8 @@
 #     the committed Generated.agda and GeneratedAddresses.agda (any
 #     difference fails)
 #  3. runs DepartureProbe and keeps its output
-#  4. typechecks every positive module from a clean state, Counterpoint.agda
-#     and Global.agda included (their facts need no generated values)
+#  4. typechecks every positive module from a clean state, Counterpoint.agda,
+#     Global.agda and Harmony.agda included (their facts need no generated values)
 #  5. typechecks every file in adversarial/ and requires each to fail
 #     with the text on its "-- EXPECT:" line, at a location in that file
 #
@@ -77,7 +77,7 @@ fi
 
 find . -name '*.agdai' -delete
 : > "$logdir/agda-positive.log"
-for m in Prelude OrderedSets Forms Registry Generated GeneratedChecks Addresses GeneratedAddresses AddressChecks Counterpoint Global; do
+for m in Prelude OrderedSets Forms Registry Generated GeneratedChecks Addresses GeneratedAddresses AddressChecks Counterpoint Global Harmony; do
   if out="$("$AGDA" --no-libraries -i . "$m.agda" 2>&1)"; then
     say "PASS $m.agda"
   else
