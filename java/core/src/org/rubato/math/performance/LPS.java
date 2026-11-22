@@ -41,6 +41,7 @@ public final class LPS {
     private final DoubleUnaryOperator lambda;
     private final double a;
     private final double b;
+    private double articulation = 1;
     private final String operator;
     private LPS mother;
     private final List<LPS> daughters = new ArrayList<LPS>();
@@ -74,6 +75,9 @@ public final class LPS {
 
     public List<LPS> getDaughters() { return Collections.unmodifiableList(daughters); }
 
+    /** The duration dilation lambda of Example 51 (p. 591); 1 for the mother. */
+    public double getArticulation() { return articulation; }
+
     /** The duration-preservation record of a {@link #tempoOperatorPreserving} daughter, else null. */
     public TempoOperator.Preservation getPreservation() { return preservation; }
 
@@ -87,6 +91,7 @@ public final class LPS {
 
     private LPS daughter(String n, List<PerfNote> k, TempoCurve t, DoubleUnaryOperator l, double na, double nb, String op) {
         LPS d = new LPS(n, k, t, l, na, nb, op);
+        d.articulation = articulation;
         addDaughter(d);
         return d;
     }
@@ -158,10 +163,24 @@ public final class LPS {
                 a * an, an * b + bn, "loudness " + label);
     }
 
+    /**
+     * Example 51 (p. 591): a daughter whose performed durations are lambda times the
+     * mother's, F_lambda(E, D) = (f(E), lambda (f(E + D) - f(E))); dilations compose by
+     * multiplication.
+     */
+    public LPS articulationOperator(double lambda, String label) {
+        if (!(lambda > 0) || Double.isInfinite(lambda)) {
+            throw new IllegalArgumentException("the articulation dilation must be positive: " + lambda);
+        }
+        LPS d = daughter(name + "/" + label, kernel, tempo, this.lambda, a, b, "articulation " + label);
+        d.articulation = articulation * lambda;
+        return d;
+    }
+
     /** The performance of one note of this LPS, with onsets measured from the symbolic onset origin. */
     PerformedNote perform(PerfNote n, double origin) {
         double on = 60 * tempo.integral(origin, n.onset);
-        double du = 60 * tempo.integral(n.onset, n.onset + n.duration);
+        double du = articulation * 60 * tempo.integral(n.onset, n.onset + n.duration);
         double lo = BasisPianolaOperator.performedLoudness(lambda.applyAsDouble(n.onset), a, b, n.loudness);
         return new PerformedNote(n, this, on, du, lo);
     }

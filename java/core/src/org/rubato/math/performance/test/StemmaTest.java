@@ -237,4 +237,25 @@ public class StemmaTest extends TestCase {
         }
         catch (IllegalStateException expected) { /* departure D9 */ }
     }
+
+    /** Example 51: the articulation operator dilates performed durations by lambda; RK4 on the field agrees. */
+    public void testArticulationOperator() {
+        TempoCurve t = TempoCurves.sine(100, 30);
+        LPS mother = LPS.mother(twoHands(), t);
+        LPS d = mother.articulationOperator(0.5, "staccato").articulationOperator(1.5, "less");
+        assertEquals(0.75, d.getArticulation(), 1e-15);
+        PerformanceCell cell = new PerformanceCell(org.rubato.math.performance.Fields.parallel(t, 0.75),
+                org.rubato.math.performance.InitialSet.lines(new int[] { 0, 1 }, new double[] { 0, 0 }),
+                x -> new double[] { t.integral(0, x[0]), 0.75 * t.integral(x[0], x[0] + x[1]) });
+        for (PerformedNote n : new Stemma(mother).perform()) {
+            PerfNote k = n.getSymbolic();
+            assertEquals(0.75 * 60 * t.integral(k.onset, k.onset + k.duration), n.duration, 1e-12);
+            assertEquals(60 * cell.perform(new double[] { k.onset, k.duration }).value()[1], n.duration, 1e-7);
+        }
+        try {
+            mother.articulationOperator(0, "none");
+            fail("lambda = 0 accepted");
+        }
+        catch (IllegalArgumentException expected) { /* Example 51 needs lambda > 0 */ }
+    }
 }
