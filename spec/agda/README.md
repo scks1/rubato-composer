@@ -31,7 +31,8 @@ standard library. Every module uses `--safe --without-K`.
 | `Addresses.agda` | rings Z, Q, R, the free modules Cⁿ over them, affine maps in matrix form, denotator coordinates at an address Cᵐ, address change, evaluation, and the proofs that address change is precomposition |
 | `GeneratedAddresses.agda` | written by `gen/ExportAddresses.java`: 10 address changes and 5 evaluations over each of Z, Q and R, with the values Java computed. Do not edit |
 | `AddressChecks.agda` | proofs that Java's values agree with `Addresses.agda` on every exported case |
-| `adversarial/*.agda` | 10 files that must fail to typecheck, each with an `-- EXPECT:` line |
+| `Counterpoint.agda` | Z12, its 48 affine maps, the six strong dichotomies with their polarities, Z12[ε] as Z12², the induced polarities, and CCW Example 2.5's contrapuntal symmetry, with facts proved by computation |
+| `adversarial/*.agda` | 12 files that must fail to typecheck, each with an `-- EXPECT:` line |
 | `gen/ExportAgda.java` | the generator for `Generated.agda` |
 | `gen/ExportAddresses.java` | the generator for `GeneratedAddresses.agda` |
 | `gen/DepartureProbe.java` | prints Java's behaviour for each departure case P1 to P11 |
@@ -49,7 +50,7 @@ spec/agda/run-checks.sh [log-dir]
 `java/target/rubato-composer-0.1.0-SNAPSHOT-all.jar` (override with
 `JAR=`), runs both generators and fails if their output differs from the
 committed `Generated.agda` and `GeneratedAddresses.agda`, runs the probe,
-typechecks the nine positive
+typechecks the ten positive
 modules from a clean state (it deletes `*.agdai` first), and typechecks
 each adversarial file, which passes only when Agda rejects the file with
 the expected text at a location inside that file. `SKIP_JAVA=1` skips
@@ -211,6 +212,38 @@ at non-zero addresses". `adversarial/AddressWrongValue.agda` shows that a
 wrong value fails the check. The R cases use dyadic values, so Java's
 doubles and Agda's floats compute them exactly.
 
+`Counterpoint.agda` restates the definitions of
+`org.rubato.math.counterpoint` (CCW = Agustín-Aquino, Junod and Mazzola,
+*Computational Counterpoint Worlds*, 2015) over Nat with reduction mod 12,
+and proves by computation:
+- `all-strong`: each of the six class representatives 64, 68, 71, 75, 78
+  and 82 is strong: exactly one of the 48 affine maps T^t·u exchanges its
+  consonances with its dissonances, and only the identity fixes them
+  (CCW Def. 2.3, p. 8).
+- `polarities`: the map listed for each class is that exchanging map, so
+  it is the polarity. The same six values are asserted in Java by
+  `DichotomyTest.testPolaritiesOfTheSixClasses`; only class 82's, T²·5,
+  is printed in CCW (Example 2.2, p. 8).
+- `involutions`, and pointwise `involution-at`: each polarity is an
+  involution; `dissonant-image`: it sends each consonance to a dissonance.
+- `induced-polarities`: for every class and every cantus firmus x₀ the
+  induced polarity p_x₀[ε] = T^{x₀(1−u)+ε.t}·u (CCW Prop. 2.2, p. 11)
+  keeps x₀ and exchanges consonant and dissonant points of Z12[ε], on all
+  144 points; `translations-preserve`: cantus-firmus translations preserve
+  consonance of x + ε.y.
+- For (K/D) at ξ = ε.9 and g = T^{ε.8}·(5 + ε.4) (CCW Example 2.5,
+  pp. 15–16): `xi-outside` (ξ ∉ gK[ε]), `deformed-polarity` (p₀[ε] is a
+  polarity of the deformed dichotomy gK[ε]/gD[ε], the sense in which a
+  contrapuntal symmetry carries consonance and its polarity over), and
+  `intersection-56`.
+That 56 is the maximum over all g is not proved in Agda; the Java tests
+check it against a search of the whole group.
+`adversarial/CounterpointNotStrong.agda` claims CCW's X2 = {0,1,3,7,8,11}
+is strong (it is autocomplementary but fixed by T⁸·5);
+`adversarial/CounterpointWrongSymmetry.agda` claims p₀[ε] is a polarity
+of the deformation by T^{ε.8}·(1 + ε.4), which leaves ξ outside and also
+meets K[ε] in 56 points, so only the polarity condition rules it out.
+
 ## Stated but not proved
 
 - `cmpDen` is flip-symmetric or has transitive `lt` on well-formed
@@ -271,6 +304,8 @@ this VM's notes on the Ubuntu noble packages, not from a runner.
 
 ## Untested
 
+- `Counterpoint.agda` has no generator: its class table and polarities are
+  written by hand and tied to Java only by the matching Java test.
 - The CI job (above).
 - D15 and D16 have no probe.
 - Agda versions other than 2.6.3.

@@ -55,6 +55,16 @@ public class DichotomyTest extends TestCase {
         }
     }
 
+    /** The polarities spec/agda/Counterpoint.agda proves; only 82's is printed in CCW. */
+    public void testPolaritiesOfTheSixClasses() {
+        assertEquals(new ZnAffine(5, 11, 12), StrongDichotomies.ofClass(64).polarity());
+        assertEquals(new ZnAffine(6, 5, 12), StrongDichotomies.ofClass(68).polarity());
+        assertEquals(new ZnAffine(11, 11, 12), StrongDichotomies.ofClass(71).polarity());
+        assertEquals(new ZnAffine(11, 11, 12), StrongDichotomies.ofClass(75).polarity());
+        assertEquals(new ZnAffine(9, 11, 12), StrongDichotomies.ofClass(78).polarity());
+        assertEquals(new ZnAffine(2, 5, 12), StrongDichotomies.ofClass(82).polarity());
+    }
+
     /** CCW Example 2.2, p. 8: the polarity of (K/D) is T^2.5. */
     public void testFuxPolarity() {
         assertEquals(new ZnAffine(2, 5, 12), StrongDichotomies.FUX.polarity());
