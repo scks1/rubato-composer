@@ -43,6 +43,7 @@ jobs:
           path: |
             java/core/target/surefire-reports/
             java/io/target/surefire-reports/
+            java/bigbang/target/surefire-reports/
             java/target/surefire-reports/
           if-no-files-found: ignore
 
@@ -70,6 +71,15 @@ jobs:
           name: rubato-io-jar
           # MusicXML, MIDI files and OSC for Score denotators; needs rubato-core
           path: java/io/target/rubato-io-*.jar
+          if-no-files-found: error
+
+      - name: Upload BigBang library jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: rubato-bigbang-jar
+          # BigBang's operations, operation graph and replay, and the headless
+          # BigBang class; needs rubato-core
+          path: java/bigbang/target/rubato-bigbang-*.jar
           if-no-files-found: error
 
   ant:
@@ -100,6 +110,11 @@ jobs:
       # three modules observable.
       - name: Build the I/O library alone
         run: ant -f java/build.xml io-jar
+
+      # Compiles java/bigbang/src against the core library alone, with the
+      # same three modules observable.
+      - name: Build the BigBang library alone
+        run: ant -f java/build.xml bigbang-jar
 
   agda-spec:
     name: Agda spec (Agda 2.6.3 from Ubuntu)
