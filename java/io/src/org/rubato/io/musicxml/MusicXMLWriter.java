@@ -74,7 +74,14 @@ import org.rubato.math.yoneda.Denotator;
  * <li>Loudness: the note's dynamics attribute, which the specification
  *     defines as a percentage of the MIDI 1.0 forte velocity 90; it is
  *     loudness/0.9 rounded to 4 places. A negative loudness is written as
- *     0, with a warning.</li>
+ *     0, with a warning. For display, each measure of a MusicXML voice
+ *     gets a dynamic mark (ppp to fff, by bands of velocity,
+ *     {@link #dynamicMark}) from the mean velocity of the notes that start
+ *     in it, written before its first such note when it differs from the
+ *     voice's last mark, with a sound dynamics of the mark's velocity
+ *     ({@link #setDynamicMarks} turns this off). A mark per note would
+ *     follow every accent: the Convergences flute line, whose accents run
+ *     from velocity 66 to 100, got a mark on almost every note.</li>
  * <li>A note of duration 0 becomes a grace note.</li>
  * <li>The first measure of the first part has a metronome mark and a sound
  *     tempo, 120 quarter notes per minute unless {@link #setTempo} says
@@ -97,6 +104,7 @@ public final class MusicXMLWriter {
     private final List<String> warnings = new ArrayList<String>();
     private int untyped = 0;
     private final TreeMap<Integer, PartInfo> partInfos = new TreeMap<Integer, PartInfo>();
+    private boolean dynamicMarks = true;
 
     /** Sets the time signature written in the first measure. */
     public void setTime(int beats, int beatType) {
@@ -136,6 +144,18 @@ public final class MusicXMLWriter {
         else {
             this.partInfos.put(voice, part);
         }
+    }
+
+    /**
+     * Sets whether the writer adds dynamic marks (on by default): a
+     * direction with a dynamics mark from ppp to fff ({@link #dynamicMark})
+     * and a sound dynamics, at the first note of a measure whose mean
+     * velocity in a MusicXML voice falls in another band than the voice's
+     * previous mark. The per-note dynamics attribute, which carries the
+     * exact loudness, is written either way.
+     */
+    public void setDynamicMarks(boolean dynamicMarks) {
+        this.dynamicMarks = dynamicMarks;
     }
 
     /** Quarter notes per minute as written in the file. */
@@ -348,6 +368,8 @@ public final class MusicXMLWriter {
         final boolean primary;
         final List<Chord> chords = new ArrayList<Chord>();
         int next = 0;
+        /** The dynamic mark last written in this layer, null before the first. */
+        String dynamic;
 
         Layer(int staff, int voice, boolean primary) {
             this.staff = staff;
@@ -500,12 +522,17 @@ public final class MusicXMLWriter {
                     continue;
                 }
                 long cursor = start;
+                String mark = this.measureDynamic(chords, layer.next, start, stop);
                 for (int i = layer.next; i < chords.size() && chords.get(i).on < stop; i++) {
                     Chord c = chords.get(i);
                     long from = Math.max(c.on, start);
                     if (from > cursor) {
                         this.gap(x, layer, cursor - start, from - cursor, divisions);
                         cursor = from;
+                    }
+                    if (mark != null && c.on >= start) {
+                        this.dynamic(x, mark, layer);
+                        mark = null;
                     }
                     if (isGrace(c)) {
                         this.notes(x, c, layer, new Piece(0, "eighth", false, false), false, false, true);
@@ -530,6 +557,63 @@ public final class MusicXMLWriter {
             x.append("    </measure>\n");
         }
         x.append("  </part>\n");
+    }
+
+    /** Dynamic marks from ppp to fff, and the velocity each one stands for. */
+    static final String[] DYNAMICS = { "ppp", "pp", "p", "mp", "mf", "f", "ff", "fff" };
+    static final int[] DYNAMIC_VELOCITIES = { 16, 33, 49, 64, 80, 96, 112, 126 };
+    /** The highest velocity of each mark but fff: the bands meet halfway between the marks' velocities. */
+    static final int[] DYNAMIC_UPPER = { 24, 40, 56, 71, 87, 103, 118 };
+
+    /** The dynamic mark of a velocity: ppp up to 24, pp to 40, p to 56, mp to 71, mf to 87, f to 103, ff to 118, fff above. */
+    public static String dynamicMark(int velocity) {
+        for (int i = 0; i < DYNAMIC_UPPER.length; i++) {
+            if (velocity <= DYNAMIC_UPPER[i]) {
+                return DYNAMICS[i];
+            }
+        }
+        return DYNAMICS[DYNAMICS.length - 1];
+    }
+
+    /**
+     * The dynamic mark of the notes that start in a measure in one layer:
+     * the band of their mean velocity, rounded half up; null when marks are
+     * off or no note starts in the measure.
+     */
+    private String measureDynamic(List<Chord> chords, int first, long start, long stop) {
+        if (!this.dynamicMarks) {
+            return null;
+        }
+        long sum = 0;
+        int count = 0;
+        for (int i = first; i < chords.size() && chords.get(i).on < stop; i++) {
+            Chord c = chords.get(i);
+            if (c.on >= start) {
+                for (ScoreNote n : c.notes) {
+                    sum += Math.max(0, n.loudness);
+                    count++;
+                }
+            }
+        }
+        return count == 0 ? null : dynamicMark((int)((2 * sum + count) / (2 * count)));
+    }
+
+    /** Writes a dynamic mark when it differs from the last mark of the layer. */
+    private void dynamic(StringBuilder x, String mark, Layer layer) {
+        if (mark.equals(layer.dynamic)) {
+            return;
+        }
+        layer.dynamic = mark;
+        int velocity = DYNAMIC_VELOCITIES[java.util.Arrays.asList(DYNAMICS).indexOf(mark)];
+        x.append("      <direction placement=\"below\">\n        <direction-type>\n          <dynamics>\n            <").append(mark).append("/>\n");
+        x.append("          </dynamics>\n        </direction-type>\n        <voice>").append(layer.voice).append("</voice>\n");
+        staff(x, layer);
+        x.append("        <sound dynamics=\"").append(percent(velocity)).append("\"/>\n      </direction>\n");
+    }
+
+    /** A velocity as MusicXML's dynamics percentage of forte (velocity 90), to 4 places. */
+    static String percent(int velocity) {
+        return BigDecimal.valueOf(velocity).multiply(BigDecimal.TEN).divide(BigDecimal.valueOf(9), 4, RoundingMode.HALF_EVEN).stripTrailingZeros().toPlainString();
     }
 
     private static boolean isGrace(Chord c) {
@@ -580,7 +664,7 @@ public final class MusicXMLWriter {
                 this.warnOnce("Loudness " + loudness + " of " + n + " is written as dynamics 0");
                 loudness = 0;
             }
-            String dynamics = BigDecimal.valueOf(loudness).multiply(BigDecimal.TEN).divide(BigDecimal.valueOf(9), 4, RoundingMode.HALF_EVEN).stripTrailingZeros().toPlainString();
+            String dynamics = percent(loudness);
             x.append("      <note dynamics=\"").append(dynamics).append("\">\n");
             if (grace) {
                 x.append("        <grace/>\n");
