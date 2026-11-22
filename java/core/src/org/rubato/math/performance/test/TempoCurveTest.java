@@ -130,6 +130,10 @@ public class TempoCurveTest extends TestCase {
         // T1 -> T0 limit is (E1 - E0)/T0
         assertRel("limit", 2.0 / 2, Tempo.segmentIntegral(1, 3, 2, 2 * (1 + 1e-10)), 1e-9);
         assertRel("equal", 1.0, Tempo.segmentIntegral(1, 3, 2, 2), CLOSED);
+        // inside the series branch (|r| < 1e-8) the first-order term must be -r/2: ln(1+r)/r = 1 - r/2 + O(r^2)
+        double r = 5e-9;
+        assertRel("series branch", (1 - r / 2) * 2.0 / 2, Tempo.segmentIntegral(1, 3, 2, 2 * (1 + r)), 1e-15);
+        assertRel("series branch, falling", (1 + r / 2) * 2.0 / 2, Tempo.segmentIntegral(1, 3, 2, 2 * (1 - r)), 1e-15);
         // constant outside [E0, Ef]
         assertRel("left", 1.0 / 2, p.integral(0, 1), CLOSED);
         assertRel("right", 2.0 / 7, p.integral(3, 5), CLOSED);
@@ -163,5 +167,58 @@ public class TempoCurveTest extends TestCase {
             fail("negative vertex accepted");
         }
         catch (IllegalArgumentException expected) { /* refused */ }
+    }
+
+    /**
+     * Adaptive Simpson refuses an integrand that is not finite instead of subdividing to full depth
+     * (2^50 pieces when NaN appears everywhere). The counter stops the old behaviour after 10^6 calls.
+     */
+    public void testSimpsonRefusesNonFiniteIntegrand() {
+        final int[] calls = { 0 };
+        java.util.function.DoubleUnaryOperator nan = x -> {
+            if (++calls[0] > 1000000) throw new IllegalStateException("evaluation budget exceeded");
+            return Double.NaN;
+        };
+        try {
+            TempoCurves.simpson(nan, 0, 1, 1e-12);
+            fail("NaN integrand accepted");
+        }
+        catch (ArithmeticException expected) {
+            assertTrue("refused early: " + calls[0] + " calls", calls[0] < 100);
+        }
+        calls[0] = 0;
+        java.util.function.DoubleUnaryOperator inf = x -> {
+            if (++calls[0] > 1000000) throw new IllegalStateException("evaluation budget exceeded");
+            return 1 / (x - x);
+        };
+        try {
+            TempoCurves.simpson(inf, 0, 1, 1e-12);
+            fail("infinite integrand accepted");
+        }
+        catch (ArithmeticException expected) {
+            assertTrue("refused early: " + calls[0] + " calls", calls[0] < 100);
+        }
+    }
+
+    /**
+     * Adaptive Simpson stops with ArithmeticException once it has spent its evaluation budget, so an
+     * integrand it cannot resolve to the tolerance (here pseudo-random noise of size 1e-6) cannot make
+     * it subdivide towards 2^50 pieces. The counter stops the old behaviour after 10^7 calls.
+     */
+    public void testSimpsonHasEvaluationBudget() {
+        final long[] calls = { 0 };
+        java.util.function.DoubleUnaryOperator noisy = x -> {
+            if (++calls[0] > 10000000L) throw new IllegalStateException("test budget exceeded");
+            long h = Double.doubleToLongBits(x) * 0x9E3779B97F4A7C15L;
+            h ^= h >>> 29;
+            return 1 + 1e-6 * ((h >>> 54) / 1023.0);
+        };
+        try {
+            TempoCurves.simpson(noisy, 0, 1, 1e-12);
+            fail("unresolvable integrand accepted");
+        }
+        catch (ArithmeticException expected) {
+            assertTrue("budget respected: " + calls[0], calls[0] <= TempoCurves.SIMPSON_BUDGET + 3);
+        }
     }
 }

@@ -88,6 +88,10 @@ public class OperatorTest extends TestCase {
      * does not know whether this converges; here it does, and every ratio is reported.
      */
     public void testDurationPreservation() {
+        // the first two ratios of the p. 654 iteration (proto: 1.152724470, 1.005756744); two steps only,
+        // so that a wrong update of c fails here before the 50-step run below
+        TempoOperator.Preservation two = TempoOperator.preserveDuration(T, W, 0, 8, 0.5, 1e-12, 2);
+        assertEquals("second ratio (proto 1.005756744)", 1.005756744, two.getRatios().get(1), 1e-8);
         TempoOperator.Preservation p = TempoOperator.preserveDuration(T, W, 0, 8, 0.5, 1e-12, 50);
         assertTrue("converged", p.isConverged());
         assertEquals("first ratio (proto 1.152724470)", 1.152724470, p.getRatios().get(0), 1e-8);

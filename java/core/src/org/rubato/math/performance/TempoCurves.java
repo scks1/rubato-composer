@@ -153,9 +153,13 @@ public final class TempoCurves {
         };
     }
 
+    /** The most integrand evaluations one {@link #simpson} call may spend. */
+    public static final long SIMPSON_BUDGET = 1L << 22;
+
     /**
      * Adaptive Simpson rule with Richardson correction for the integral of f from a to b;
-     * negative when b &lt; a.
+     * negative when b &lt; a. Throws ArithmeticException when the integrand is not finite or the tolerance is not
+     * reached within {@link #SIMPSON_BUDGET} evaluations.
      */
     public static double simpson(DoubleUnaryOperator f, double a, double b, double tol) {
         if (a == b) {
@@ -166,20 +170,30 @@ public final class TempoCurves {
         }
         double fa = f.applyAsDouble(a), fb = f.applyAsDouble(b), m = 0.5 * (a + b), fm = f.applyAsDouble(m);
         double whole = (b - a) / 6 * (fa + 4 * fm + fb);
-        return simpson(f, a, b, fa, fm, fb, whole, tol, 50);
+        long[] spent = { 3 };
+        return simpson(f, a, b, fa, fm, fb, whole, tol, 50, spent);
     }
 
     private static double simpson(DoubleUnaryOperator f, double a, double b, double fa, double fm, double fb,
-                                  double whole, double tol, int depth) {
+                                  double whole, double tol, int depth, long[] spent) {
+        spent[0] += 2;
+        if (spent[0] > SIMPSON_BUDGET) {
+            throw new ArithmeticException("adaptive Simpson did not reach its tolerance within " + SIMPSON_BUDGET
+                + " evaluations");
+        }
         double m = 0.5 * (a + b), lm = 0.5 * (a + m), rm = 0.5 * (m + b);
         double flm = f.applyAsDouble(lm), frm = f.applyAsDouble(rm);
         double left = (m - a) / 6 * (fa + 4 * flm + fm);
         double right = (b - m) / 6 * (fm + 4 * frm + fb);
         double delta = left + right - whole;
+        if (!Double.isFinite(delta)) {
+            // NaN never passes the tolerance test, so without this check the recursion would run to full depth
+            throw new ArithmeticException("integrand not finite on [" + a + ", " + b + "]");
+        }
         if (depth <= 0 || Math.abs(delta) <= 15 * tol) {
             return left + right + delta / 15;
         }
-        return simpson(f, a, m, fa, flm, fm, left, tol / 2, depth - 1)
-             + simpson(f, m, b, fm, frm, fb, right, tol / 2, depth - 1);
+        return simpson(f, a, m, fa, flm, fm, left, tol / 2, depth - 1, spent)
+             + simpson(f, m, b, fm, frm, fb, right, tol / 2, depth - 1, spent);
     }
 }
