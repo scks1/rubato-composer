@@ -65,6 +65,8 @@ public final class BuiltinRubettes {
         "org.rubato.rubettes.global.NerveRubette",
         "org.rubato.rubettes.harmony.ModulationRubette",
         "org.rubato.rubettes.harmony.CadenceAnalysisRubette",
+        "org.rubato.rubettes.performance.TempoPerformanceRubette",
+        "org.rubato.rubettes.performance.ScalarPerformanceRubette",
         "org.rubato.rubettes.score.LilyPondOutRubette",
         "org.rubato.rubettes.texture.TexturalizeRubette",
         "org.rubato.rubettes.wallpaper.WallpaperRubette",
