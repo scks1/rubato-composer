@@ -46,7 +46,7 @@ import org.w3c.dom.Element;
  * @author Florian Thalmann
  */
 @SuppressWarnings("serial")
-public class JAlterationDimensionsTable extends JPropertiesTable {
+public class JAlterationDimensionsTable extends JPropertiesTable implements AlterationDimensions {
 	
 	private AlterationRubette rubette;
 	private SimpleFormFinder simpleFormFinder;

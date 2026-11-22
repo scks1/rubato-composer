@@ -11,7 +11,6 @@ import org.rubato.rubettes.bigbang.model.BigBangObject;
 import org.rubato.rubettes.bigbang.model.denotators.TransformationProperties;
 import org.rubato.rubettes.bigbang.model.graph.CompositionState;
 import org.rubato.rubettes.bigbang.model.operations.AbstractOperation;
-import org.rubato.rubettes.bigbang.view.controller.ViewController;
 import org.rubato.rubettes.util.DenotatorPath;
 
 public class BigBangController extends Controller {

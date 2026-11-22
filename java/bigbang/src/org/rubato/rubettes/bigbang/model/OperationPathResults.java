@@ -7,21 +7,19 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
-import org.apache.commons.collections15.BidiMap;
-import org.apache.commons.collections15.bidimap.TreeBidiMap;
 import org.rubato.rubettes.util.DenotatorPath;
 
 public class OperationPathResults {
 	
 	private Set<DenotatorPath> newPaths;
 	private Set<DenotatorPath> removedPaths;
-	private BidiMap<DenotatorPath, DenotatorPath> changedPaths;
+	private SortedBidiMap<DenotatorPath, DenotatorPath> changedPaths;
 	private Set<DenotatorPath> pathsToBeSelected;
 	
 	public OperationPathResults() {
 		this.newPaths = new TreeSet<DenotatorPath>();
 		this.removedPaths = new TreeSet<DenotatorPath>();
-		this.changedPaths = new TreeBidiMap<DenotatorPath,DenotatorPath>();
+		this.changedPaths = new SortedBidiMap<DenotatorPath,DenotatorPath>();
 		this.pathsToBeSelected = new TreeSet<DenotatorPath>();
 	}
 	
@@ -39,7 +37,7 @@ public class OperationPathResults {
 	
 	public OperationPathResults(Map<DenotatorPath, DenotatorPath> changedPaths) {
 		this();
-		this.changedPaths = new TreeBidiMap<DenotatorPath,DenotatorPath>(changedPaths);
+		this.changedPaths = new SortedBidiMap<DenotatorPath,DenotatorPath>(changedPaths);
 	}
 	
 	public OperationPathResults(Set<DenotatorPath> newPaths, Set<DenotatorPath> removedPaths, Map<DenotatorPath, DenotatorPath> changedPaths) {
@@ -81,7 +79,7 @@ public class OperationPathResults {
 		//need to build new sets and maps separately so that no values are changed back and forth,
 		//e.g. in cases of two paths being switched
 		Set<DenotatorPath> newNewPaths = new TreeSet<DenotatorPath>();
-		BidiMap<DenotatorPath,DenotatorPath> newChangedPaths = new TreeBidiMap<DenotatorPath,DenotatorPath>(this.changedPaths);
+		SortedBidiMap<DenotatorPath,DenotatorPath> newChangedPaths = new SortedBidiMap<DenotatorPath,DenotatorPath>(this.changedPaths);
 		
 		//go through all newPaths and see if they or any of their anchors are in the given changedPaths
 		//replace them or their anchor path and add to newNewPath
@@ -141,7 +139,7 @@ public class OperationPathResults {
 	}
 	
 	public void resetChangedAndRemovedPaths() {
-		this.changedPaths = new TreeBidiMap<DenotatorPath,DenotatorPath>();
+		this.changedPaths = new SortedBidiMap<DenotatorPath,DenotatorPath>();
 		this.removedPaths = new TreeSet<DenotatorPath>();
 	}
 	

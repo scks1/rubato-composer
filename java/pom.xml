@@ -2,8 +2,8 @@
 <!--
   Maven build of the Rubato Composer application, alongside the Ant build in
   build.xml. The parent pom at the repository root builds it after the
-  headless core library in core/ (artifact rubato-core) and rubato-io in io/,
-  which it depends on.
+  headless core library in core/ (artifact rubato-core), rubato-io in io/
+  and rubato-bigbang in bigbang/, which it depends on.
 
   The source tree stays where Ant expects it: src holds production code,
   tests (every **/test/** directory and every *Test.java) and resources side by
@@ -76,6 +76,14 @@
     <dependency>
       <groupId>org.rubato</groupId>
       <artifactId>rubato-io</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <!-- java/bigbang: BigBang's model, operation graph, undo and replay, and
+         the headless entry point. The shaded jar includes it, as the Ant
+         build puts bigbang/src into rubato.jar. -->
+    <dependency>
+      <groupId>org.rubato</groupId>
+      <artifactId>rubato-bigbang</artifactId>
       <version>${project.version}</version>
     </dependency>
     <!-- Maven Central; look and feel (Apache-2.0), installed at startup by

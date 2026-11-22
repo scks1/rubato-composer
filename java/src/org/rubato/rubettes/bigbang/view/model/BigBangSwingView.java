@@ -1,7 +1,7 @@
 package org.rubato.rubettes.bigbang.view.model;
 
 import java.awt.Frame;
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -197,7 +197,7 @@ public class BigBangSwingView extends BigBangView {
 		this.firePropertyChange(ViewController.DISPLAY_TOOL, null, null);
 	}
 	
-	public void modelPropertyChange(PropertyChangeEvent event) {
+	public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(BigBangController.COMPOSITION)) {
 			this.initDisplayAndJSynObjects((BigBangObjects)event.getNewValue());

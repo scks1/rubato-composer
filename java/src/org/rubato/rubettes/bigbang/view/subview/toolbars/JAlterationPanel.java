@@ -4,7 +4,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,7 +78,7 @@ public class JAlterationPanel extends JPanel implements View, ActionListener, It
 
 	@SuppressWarnings("unchecked")
 	//TODO get rid of all this!!!!!!
-    public void modelPropertyChange(PropertyChangeEvent event) {
+    public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(BigBangController.ALTERATION_START_DEGREE)) {
 			this.updateSliderValue(this.startSlider, (Double)event.getNewValue());

@@ -28,14 +28,14 @@ public class Alterator {
 	private final int[][] RELATIVE_TO_PATHS = new int[][]{{0,0,0},{0,0,0},{0,0,0},{0,0,0},{0,0,0}};
 	
 	private NameDenotator emptyName = NameDenotator.make("");
-	private JAlterationDimensionsTable dimensionsTable;
+	private AlterationDimensions dimensionsTable;
 	private NearestNeighborFinder neighborFinder;
 	private int[][] coordinatePaths, elementPaths, allPaths;
 	
 	public Alterator() {
 	}
 	
-	public Alterator(JAlterationDimensionsTable dimensionsTable) {
+	public Alterator(AlterationDimensions dimensionsTable) {
 		this.dimensionsTable = dimensionsTable;
 	}
 	

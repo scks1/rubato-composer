@@ -5,7 +5,7 @@ import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -87,7 +87,7 @@ public class JWindowPreferencesDialog extends JDialog implements View, ItemListe
 		this.add(BorderLayout.SOUTH, controlsPanel);
 	}
 
-	public void modelPropertyChange(PropertyChangeEvent event) {
+	public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(ViewController.SHOW_WINDOW_PREFERENCES)) {
 			this.setVisible(true);

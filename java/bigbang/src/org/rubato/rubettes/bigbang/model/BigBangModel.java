@@ -46,7 +46,6 @@ import org.rubato.xml.XMLReader;
 import org.rubato.xml.XMLWriter;
 import org.w3c.dom.Element;
 
-import edu.uci.ics.jung.algorithms.shortestpath.DijkstraShortestPath;
 
 public class BigBangModel extends Model {
 	
@@ -363,8 +362,7 @@ public class BigBangModel extends Model {
 	
 	public void modifyOperation(Integer operationIndex, Double ratio) {
 		if (operationIndex >= 0 && this.operationGraph.getEdgeCount() > operationIndex) {
-			DijkstraShortestPath<CompositionState,AbstractOperation> dijkstra = new DijkstraShortestPath<CompositionState,AbstractOperation>(this.operationGraph);
-		    List<AbstractOperation> shortestPath = dijkstra.getPath(this.operationGraph.getFirstState(), this.operationGraph.getLastState());
+		    List<AbstractOperation> shortestPath = this.operationGraph.getShortestPath(this.operationGraph.getFirstState(), this.operationGraph.getLastState());
 		    AbstractOperation operation = shortestPath.get(operationIndex);
 		    operation.modify(ratio);
 			this.updateAfterModifying(operation);

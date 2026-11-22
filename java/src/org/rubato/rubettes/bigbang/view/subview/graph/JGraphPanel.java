@@ -5,7 +5,7 @@ import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -14,6 +14,7 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 
 import org.rubato.rubettes.bigbang.controller.BigBangController;
+import org.rubato.rubettes.bigbang.model.graph.BigBangOperationGraph;
 import org.rubato.rubettes.bigbang.model.graph.CompositionState;
 import org.rubato.rubettes.bigbang.model.operations.AbstractOperation;
 import org.rubato.rubettes.bigbang.view.View;
@@ -171,10 +172,10 @@ public class JGraphPanel extends JPanel implements View, ActionListener {
 		this.add(this.statusBar, BorderLayout.SOUTH);
 	}
 
-	public void modelPropertyChange(PropertyChangeEvent event) {
+	public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(BigBangController.GRAPH)) {
-			Graph<CompositionState,AbstractOperation> graph = ((Graph<CompositionState,AbstractOperation>)event.getNewValue());
+			Graph<CompositionState,AbstractOperation> graph = OperationGraphSnapshot.of((BigBangOperationGraph)event.getNewValue());
 			this.updateGraph(graph);
 			this.updateStatusBar();
 		} else if (propertyName.equals(ViewController.SELECT_OPERATION)) {

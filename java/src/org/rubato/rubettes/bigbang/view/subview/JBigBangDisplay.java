@@ -4,7 +4,7 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -78,7 +78,7 @@ public class JBigBangDisplay extends JPanel implements View {
         return new Dimension(JBigBangDisplay.DISPLAY_WIDTH, JBigBangPanel.CENTER_PANEL_HEIGHT);
     }
 
-	public void modelPropertyChange(PropertyChangeEvent event) {
+	public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(ViewController.DISPLAY_MODE)) {
 			this.setModeAdapter((DisplayModeAdapter)event.getNewValue());

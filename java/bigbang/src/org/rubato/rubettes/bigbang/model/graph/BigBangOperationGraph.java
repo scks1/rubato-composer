@@ -15,12 +15,7 @@ import org.rubato.xml.XMLReader;
 import org.rubato.xml.XMLWriter;
 import org.w3c.dom.Element;
 
-import edu.uci.ics.jung.algorithms.shortestpath.DijkstraShortestPath;
-import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
-import edu.uci.ics.jung.graph.util.EdgeType;
-import edu.uci.ics.jung.graph.util.Pair;
-
-public class BigBangOperationGraph extends DirectedSparseMultigraph<CompositionState,AbstractOperation> {
+public class BigBangOperationGraph extends DirectedMultigraph<CompositionState,AbstractOperation> {
 	
 	private List<CompositionState> compositionStates;
 	private CompositionState selectedCompositionState;
@@ -161,7 +156,7 @@ public class BigBangOperationGraph extends DirectedSparseMultigraph<CompositionS
 		for (AbstractOperation currentOperation : new ArrayList<AbstractOperation>(this.getOutEdges(state))) {
 			CompositionState currentEndpoint = this.getEndpoints(currentOperation).getSecond();
 			this.removeEdge(currentOperation);
-			this.addEdge(currentOperation, newState, currentEndpoint, EdgeType.DIRECTED);
+			this.addEdge(currentOperation, newState, currentEndpoint);
 		}
 		
 		//add new edge
@@ -317,8 +312,7 @@ public class BigBangOperationGraph extends DirectedSparseMultigraph<CompositionS
 	}
 
 	private boolean connectedByPath(CompositionState state1, CompositionState state2) {
-		DijkstraShortestPath<CompositionState,AbstractOperation> dijkstra = new DijkstraShortestPath<CompositionState,AbstractOperation>(this);
-		return dijkstra.getPath(state1, state2).size() > 0;
+		return this.isConnectedByPath(state1, state2);
 	}
 	
 	/**
@@ -328,7 +322,7 @@ public class BigBangOperationGraph extends DirectedSparseMultigraph<CompositionS
 		if (this.containsEdge(operation)) {
 			CompositionState operationInitialpoint = this.getEndpoints(operation).getFirst();
 			CompositionState operationEndpoint = this.getEndpoints(operation).getSecond();
-			super.removeEdge(operation);
+			this.removeEdge(operation);
 			this.allOperationsInLogicalOrder.remove(operation);
 			this.allOperationsInAddedOrder.remove(operation);
 			
@@ -354,12 +348,12 @@ public class BigBangOperationGraph extends DirectedSparseMultigraph<CompositionS
 		for (AbstractOperation currentOperation : new ArrayList<AbstractOperation>(this.getOutEdges(state2))) {
 			CompositionState endPoint = this.getEndpoints(currentOperation).getSecond();
 			this.removeEdge(currentOperation);
-			this.addEdge(currentOperation, state1, endPoint, EdgeType.DIRECTED);
+			this.addEdge(currentOperation, state1, endPoint);
 		}
 		for (AbstractOperation currentOperation : new ArrayList<AbstractOperation>(this.getInEdges(state2))) {
 			CompositionState startPoint = this.getEndpoints(currentOperation).getFirst();
 			this.removeEdge(currentOperation);
-			this.addEdge(currentOperation, startPoint, state1, EdgeType.DIRECTED);
+			this.addEdge(currentOperation, startPoint, state1);
 		}
 		this.removeCompositionState(state2);
 	}
@@ -383,7 +377,7 @@ public class BigBangOperationGraph extends DirectedSparseMultigraph<CompositionS
 	}
 	
 	public void setDurations(double duration) {
-		for (AbstractOperation currentEdit : this.edges.keySet()) {
+		for (AbstractOperation currentEdit : this.getEdges()) {
 			currentEdit.setDuration(duration);
 		}
 	}

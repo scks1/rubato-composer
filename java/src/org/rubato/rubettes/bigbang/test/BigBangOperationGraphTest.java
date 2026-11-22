@@ -26,7 +26,7 @@ import org.rubato.rubettes.bigbang.model.operations.ScalingTransformation;
 import org.rubato.rubettes.bigbang.model.operations.TranslationTransformation;
 import org.rubato.rubettes.util.DenotatorPath;
 
-import edu.uci.ics.jung.graph.util.Pair;
+import org.rubato.rubettes.bigbang.model.graph.Pair;
 
 public class BigBangOperationGraphTest extends TestCase {
 	

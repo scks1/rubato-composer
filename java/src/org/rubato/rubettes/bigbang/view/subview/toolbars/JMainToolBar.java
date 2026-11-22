@@ -1,7 +1,7 @@
 package org.rubato.rubettes.bigbang.view.subview.toolbars;
 
 import java.awt.Dimension;
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -67,7 +67,7 @@ public class JMainToolBar extends JToolBar implements View {
 		this.add(this.alterationButton);
 	}
 
-	public void modelPropertyChange(PropertyChangeEvent event) {
+	public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(ViewController.FORM)) {
 			this.alterationPanel.updateCoordinateBoxes((DisplayObjects)event.getNewValue());
@@ -88,7 +88,7 @@ public class JMainToolBar extends JToolBar implements View {
 		}*/
 	}
 	
-	private void selectModeButton(PropertyChangeEvent event) {
+	private void selectModeButton(ModelChangeEvent event) {
 		DisplayModeAdapter mode = (DisplayModeAdapter)event.getNewValue();
 		for (JDisplayModeButton currentModeButton: this.modeButtons) {
 			Class<? extends DisplayModeAdapter> adapterClass = currentModeButton.getAdapter().getClass();

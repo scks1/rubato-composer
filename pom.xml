@@ -40,6 +40,7 @@
   <modules>
     <module>java/core</module>
     <module>java/io</module>
+    <module>java/bigbang</module>
     <module>java</module>
   </modules>
 

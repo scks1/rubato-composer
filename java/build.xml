@@ -9,13 +9,18 @@
 
   <!-- core/src holds the headless core library (math, forms and denotators,
        logeo, XML, Scheme, Denotex, the repository); io/src holds rubato-io
-       (MusicXML, Standard MIDI Files and OSC for Score denotators); src holds
-       the application. All three compile in place and go into rubato.jar.
-       The core-jar and io-jar targets build the two libraries on their own. -->
+       (MusicXML, Standard MIDI Files and OSC for Score denotators);
+       bigbang/src holds rubato-bigbang (BigBang's operations, operation graph,
+       denotator mapping, undo and replay, and a headless entry point); src
+       holds the application. All four compile in place and go into
+       rubato.jar. The core-jar, io-jar and bigbang-jar targets build the
+       three libraries on their own. -->
   <property name="core.src" value="core/src"/>
   <property name="core.build" value="build/core-classes"/>
   <property name="io.src" value="io/src"/>
   <property name="io.build" value="build/io-classes"/>
+  <property name="bigbang.src" value="bigbang/src"/>
+  <property name="bigbang.build" value="build/bigbang-classes"/>
   <property name="src" value="src"/>
   <property name="build" value="${src}"/>
   <property name="dist" value="dist"/>
@@ -26,7 +31,7 @@
   </target>
 
   <target name="compile" depends="init">
-    <javac srcdir="${core.src}:${io.src}:${src}" release="21" encoding="UTF-8" debug="on" includeantruntime="false">
+    <javac srcdir="${core.src}:${io.src}:${bigbang.src}:${src}" release="21" encoding="UTF-8" debug="on" includeantruntime="false">
        <classpath refid="project.jars"/>
     </javac>
   </target>
@@ -69,6 +74,24 @@
     </jar>
   </target>
 
+  <!-- Compiles rubato-bigbang alone against the core library built by
+       core-jar, with the same three modules observable, so BigBang's model
+       cannot use the application, AWT, Swing, java.beans, JUNG or
+       collections-generic. -->
+  <target name="bigbang-jar" depends="core-jar">
+    <mkdir dir="${bigbang.build}"/>
+    <javac srcdir="${bigbang.src}" destdir="${bigbang.build}" encoding="UTF-8" debug="on" includeantruntime="false">
+      <exclude name="**/test/**"/>
+      <exclude name="**/*Test.java"/>
+      <classpath location="${core.build}"/>
+      <compilerarg line="--release 21 --limit-modules java.base,java.xml,java.logging"/>
+    </javac>
+    <mkdir dir="${dist}/bigbang"/>
+    <jar destfile="${dist}/bigbang/rubato-bigbang.jar">
+      <fileset dir="${bigbang.build}"/>
+    </jar>
+  </target>
+
   <!-- Apache-licensed libraries ship as separate jars in ${dist}/lib, next to
        their license files, instead of being unpacked into rubato.jar.
        See LICENSING.md at the repository root. -->
@@ -93,6 +116,11 @@
         <exclude name="org/rubato/test/**"/>
       </fileset>
       <fileset dir="${io.src}">
+        <exclude name="**/test/*"/>
+        <exclude name="**/*Test.class"/>
+        <exclude name="**/*.java"/>
+      </fileset>
+      <fileset dir="${bigbang.src}">
         <exclude name="**/test/*"/>
         <exclude name="**/*Test.class"/>
         <exclude name="**/*.java"/>
@@ -122,7 +150,7 @@
 
   <target name="doc">
     <mkdir dir="${doc}"/>
-    <javadoc sourcepath="${core.src}:${io.src}:${src}" 
+    <javadoc sourcepath="${core.src}:${io.src}:${bigbang.src}:${src}" 
 	     destdir="${doc}" 
              access="public"
              author="true"
@@ -148,6 +176,7 @@
       <fileset dir="${build}" includes="**/*.class"/>
       <fileset dir="${core.src}" includes="**/*.class"/>
       <fileset dir="${io.src}" includes="**/*.class"/>
+      <fileset dir="${bigbang.src}" includes="**/*.class"/>
     </delete>
   </target>
 </project>

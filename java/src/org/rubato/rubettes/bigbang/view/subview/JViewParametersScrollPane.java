@@ -1,7 +1,7 @@
 package org.rubato.rubettes.bigbang.view.subview;
 
 import java.awt.Dimension;
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 import java.util.List;
 
 import javax.swing.JScrollPane;
@@ -58,7 +58,7 @@ public class JViewParametersScrollPane extends JScrollPane implements View {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public void modelPropertyChange(PropertyChangeEvent event) {
+	public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(ViewController.FORM)) {
 			this.updateRowNames(((DisplayObjects)event.getNewValue()).getCoordinateSystemValueNames());

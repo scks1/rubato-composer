@@ -3,7 +3,7 @@ package org.rubato.rubettes.bigbang.view.subview.toolbars;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,7 +59,7 @@ public class JLayersToolBar extends JToolBar implements ActionListener, View {
 		this.add(this.tempoSlider);
 	}
 
-	public void modelPropertyChange(PropertyChangeEvent event) {
+	public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(ViewController.LAYER_SELECTED)) {
 			JLayerButton button = this.layerButtons.get((Integer)event.getNewValue());
@@ -77,7 +77,7 @@ public class JLayersToolBar extends JToolBar implements ActionListener, View {
 		}
 	}
 	
-	private void updateLayerButtons(PropertyChangeEvent event) {
+	private void updateLayerButtons(ModelChangeEvent event) {
 		BigBangLayers layers = (BigBangLayers)event.getNewValue();
 		this.updatePanelCount(layers);
 		for (int i = 0; i < this.layerButtons.size(); i++) {

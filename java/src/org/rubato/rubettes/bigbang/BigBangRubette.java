@@ -9,6 +9,7 @@ import org.rubato.composer.RunInfo;
 import org.rubato.math.yoneda.Denotator;
 import org.rubato.rubettes.bigbang.controller.BigBangController;
 import org.rubato.rubettes.bigbang.model.BigBangModel;
+import org.rubato.rubettes.bigbang.model.denotators.BigBangDenotatorManager;
 import org.rubato.rubettes.bigbang.view.model.BigBangSwingView;
 import org.rubato.rubettes.bigbang.view.model.MTBigBangView;
 import org.rubato.rubettes.util.CoolFormRegistrant;
@@ -19,7 +20,7 @@ import org.w3c.dom.Element;
 public class BigBangRubette extends AbstractRubette {
 	
 	public static final boolean IS_MULTITOUCH = false;
-	public static final String STANDARD_FORM_NAME = "FMSet";
+	public static final String STANDARD_FORM_NAME = BigBangDenotatorManager.STANDARD_FORM_NAME;
 	
 	private BigBangModel model;
 	private BigBangSwingView view;

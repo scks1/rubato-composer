@@ -1,16 +1,16 @@
 package org.rubato.rubettes.bigbang.controller;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.rubato.rubettes.bigbang.model.Model;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeListener;
 import org.rubato.rubettes.bigbang.view.View;
 
-public class Controller implements PropertyChangeListener {
+public class Controller implements ModelChangeListener {
 
     protected ArrayList<View> registeredViews;
     protected ArrayList<Model> registeredModels;
@@ -23,12 +23,12 @@ public class Controller implements PropertyChangeListener {
 
     public void addModel(Model model) {
         registeredModels.add(model);
-        model.addPropertyChangeListener(this);
+        model.addModelChangeListener(this);
     }
 
     public void removeModel(Model model) {
         registeredModels.remove(model);
-        model.removePropertyChangeListener(this);
+        model.removeModelChangeListener(this);
     }
 
     public void addView(View view) {
@@ -54,7 +54,7 @@ public class Controller implements PropertyChangeListener {
      * Use this to observe property changes from registered models
      * and propagate them on to all the views.
      */
-    public void propertyChange(PropertyChangeEvent evt) {
+    public void modelChanged(ModelChangeEvent evt) {
         for (View view: registeredViews) {
             view.modelPropertyChange(evt);
         }

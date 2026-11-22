@@ -3,7 +3,7 @@ package org.rubato.rubettes.bigbang.view.subview;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
@@ -167,7 +167,7 @@ public class JMainOptionsPanel extends JPanel implements ActionListener, View {
 	}
 
 	@SuppressWarnings("unchecked")
-	public void modelPropertyChange(PropertyChangeEvent event) {
+	public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(ViewController.INPUT_ACTIVE)) {
 			this.inputActiveCheckBox.setSelected((Boolean)event.getNewValue());

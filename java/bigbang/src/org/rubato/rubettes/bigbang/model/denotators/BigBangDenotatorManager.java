@@ -16,7 +16,6 @@ import org.rubato.math.yoneda.FactorDenotator;
 import org.rubato.math.yoneda.Form;
 import org.rubato.math.yoneda.ListDenotator;
 import org.rubato.math.yoneda.PowerDenotator;
-import org.rubato.rubettes.bigbang.BigBangRubette;
 import org.rubato.rubettes.bigbang.model.ObjectPathFinder;
 import org.rubato.rubettes.bigbang.model.OperationPathResults;
 import org.rubato.rubettes.util.DenotatorPath;
@@ -40,8 +39,11 @@ public class BigBangDenotatorManager {
 	private BigBangWallpaper currentWallpaper;
 	private BigBangAlteration currentAlteration;
 	
+	/** The form a new BigBang composition has, FMSet. */
+	public static final String STANDARD_FORM_NAME = "FMSet";
+	
 	public BigBangDenotatorManager() {
-		this(Repository.systemRepository().getForm(BigBangRubette.STANDARD_FORM_NAME));
+		this(Repository.systemRepository().getForm(BigBangDenotatorManager.STANDARD_FORM_NAME));
 	}
 	
 	public BigBangDenotatorManager(Form form) {

@@ -1,6 +1,6 @@
 package org.rubato.rubettes.bigbang.view;
 
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 
 public interface View {
 
@@ -10,6 +10,6 @@ public interface View {
      *
      * @param evt The property change event from the model
      */
-    public void modelPropertyChange(PropertyChangeEvent event);
+    public void modelPropertyChange(ModelChangeEvent event);
     
 }

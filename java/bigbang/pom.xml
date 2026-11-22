@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  rubato-bigbang: the model and controller layer of the BigBang rubette
+  (operations, the operation graph, denotator mapping, undo and replay) and
+  org.rubato.rubettes.bigbang.headless.BigBang, which applies BigBang
+  operations to a denotator with no display (see the parent pom at the
+  repository root). It depends on rubato-core only. Sources and tests sit
+  side by side in src. The BigBang rubette and its Swing view stay in the
+  application, which depends on this module.
+
+  As in rubato-core, the compiler sees only the java.base, java.xml and
+  java.logging modules. The model therefore fires its own ModelChangeEvent
+  instead of java.beans.PropertyChangeEvent and keeps its operation graph in
+  its own DirectedMultigraph instead of JUNG. BigBangBoundaryTest checks the
+  compiled classes as well.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.rubato</groupId>
+    <artifactId>rubato-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
+  <artifactId>rubato-bigbang</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Rubato Composer BigBang</name>
+  <description>BigBang's model for Rubato denotators without a user interface: operations, the operation graph, denotator mapping, undo and replay, and a headless entry point.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.rubato</groupId>
+      <artifactId>rubato-core</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>src</testSourceDirectory>
+    <resources>
+      <resource>
+        <directory>src</directory>
+        <excludes>
+          <exclude>**/*.java</exclude>
+          <exclude>**/*.class</exclude>
+          <exclude>**/test/**</exclude>
+        </excludes>
+      </resource>
+    </resources>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <configuration>
+              <compilerArgs>
+                <arg>--limit-modules</arg>
+                <arg>java.base,java.xml,java.logging</arg>
+              </compilerArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <!-- the compiler records its module options here; they are a
+               build detail, not something the jar's users need -->
+          <excludes>
+            <exclude>META-INF/jpms.args</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

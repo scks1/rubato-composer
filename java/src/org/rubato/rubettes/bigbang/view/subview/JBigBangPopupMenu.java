@@ -2,7 +2,7 @@ package org.rubato.rubettes.bigbang.view.subview;
 
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 import java.util.List;
 
 import javax.swing.Action;
@@ -102,7 +102,7 @@ public class JBigBangPopupMenu extends JPopupMenu implements View {
 		//this.deleteItem.setVisible(noteMode);
 	}
 
-	public void modelPropertyChange(PropertyChangeEvent event) {
+	public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(ViewController.FORM)) {
 			DisplayObjects displayObjects = (DisplayObjects)event.getNewValue();
@@ -119,7 +119,7 @@ public class JBigBangPopupMenu extends JPopupMenu implements View {
 		}
 	}
 	
-	private void updateUndoRedoItems(PropertyChangeEvent event) {
+	private void updateUndoRedoItems(ModelChangeEvent event) {
 		UndoManager manager = (UndoManager)event.getNewValue();
 		this.undoItem.setText(manager.getUndoPresentationName());
 		this.undoItem.setEnabled(manager.canUndo());

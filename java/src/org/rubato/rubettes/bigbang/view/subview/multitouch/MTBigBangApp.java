@@ -1,6 +1,6 @@
 package org.rubato.rubettes.bigbang.view.subview.multitouch;
 
-import java.beans.PropertyChangeEvent;
+import org.rubato.rubettes.bigbang.model.ModelChangeEvent;
 
 import org.mt4j.MTApplication;
 import org.rubato.rubettes.bigbang.view.View;
@@ -74,7 +74,7 @@ public class MTBigBangApp extends MTApplication implements View {
 		this.modeAdapter.addTo(this.scene.getCanvas());
 	}
 	
-	public void modelPropertyChange(PropertyChangeEvent event) {
+	public void modelPropertyChange(ModelChangeEvent event) {
 		String propertyName = event.getPropertyName();
 		if (propertyName.equals(ViewController.DISPLAY_MODE)) {
 			this.setModeAdapter((MTDisplayModeAdapter)event.getNewValue());
