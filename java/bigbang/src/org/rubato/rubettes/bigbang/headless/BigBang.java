@@ -64,13 +64,19 @@ public class BigBang {
 	}
 	
 	/**
-	 * Starts a new BigBang model on the given composition.
+	 * Starts a new BigBang model on the given zero-addressed composition.
 	 * @param incrementalReplay if false, the model executes the whole operation graph on every
 	 * change, as it did before incremental replay
+	 * @throws IllegalArgumentException if the composition is null or not zero-addressed
 	 */
 	public BigBang(Denotator composition, boolean incrementalReplay) {
 		if (composition == null) {
 			throw new IllegalArgumentException("composition is null");
+		}
+		if (!composition.nullAddressed()) {
+			//BigBangDenotatorManager adds objects only at the zero address and drops the rest
+			throw new IllegalArgumentException("composition has address " + composition.getAddress()
+					+ ", but BigBang needs a zero-addressed one; evaluate it first, for example with atNull()");
 		}
 		BigBang.registerForms();
 		this.model = new BigBangModel();
