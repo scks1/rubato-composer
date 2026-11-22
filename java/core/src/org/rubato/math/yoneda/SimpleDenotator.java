@@ -571,6 +571,10 @@ public final class SimpleDenotator extends Denotator {
      */
     public int compareTo(SimpleDenotator other) {
         int c = getForm().compareTo(other.getForm());
+        if (c == 0 && !getAddress().equals(other.getAddress())) {
+            // Topos I, Def. 4: the address is part of the denotator
+            c = getAddress().compareTo(other.getAddress());
+        }
         if (c == 0) {
             c = nameCompareTo(other);
             if (c == 0) {
@@ -602,7 +606,7 @@ public final class SimpleDenotator extends Denotator {
      * Checks denotators of the same type for equality.
      */
     public boolean equals(SimpleDenotator other) {
-        if (formEquals(other) && nameEquals(other)) {
+        if (formEquals(other) && nameEquals(other) && getAddress().equals(other.getAddress())) {
             return getModuleMorphismMap().equals(other.getModuleMorphismMap());
         }
         else {

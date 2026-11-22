@@ -194,10 +194,29 @@ public class ModuleMorphismMap implements MorphismMap {
      */    
     public ModuleMorphismMap changeDomain(ModuleMorphism morphism) {
         try {
-            ModuleMorphism newMorphism = getMorphism().compose(morphism);
+            ModuleMorphism f = getMorphism();
+            ModuleMorphism newMorphism;
+            // CompositionMorphism.make gives a composite with a constant the
+            // codomain of f as its domain; the new domain must be the domain
+            // of morphism (Topos I, 6.2.2), so constants are built here
+            if (!f.getDomain().equals(morphism.getCodomain())) {
+                return null;
+            }
+            else if (f.isConstant()) {
+                newMorphism = ModuleMorphism.getConstantMorphism(morphism.getDomain(), f.atZero());
+            }
+            else if (morphism.isConstant()) {
+                newMorphism = ModuleMorphism.getConstantMorphism(morphism.getDomain(), f.map(morphism.atZero()));
+            }
+            else {
+                newMorphism = f.compose(morphism);
+            }
             return new ModuleMorphismMap(newMorphism);
         }
         catch (CompositionException e) {
+            return null;
+        }
+        catch (MappingException e) {
             return null;
         }
     }

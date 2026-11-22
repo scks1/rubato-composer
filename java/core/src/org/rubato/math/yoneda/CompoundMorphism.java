@@ -140,7 +140,7 @@ public final class CompoundMorphism
     public Morphism at(ModuleElement element)
             throws MappingException {
         MorphismMap newMap = map.at(element);
-        if (map == newMap) {
+        if (map == newMap && domain.getDomainModule().isNullModule()) {
             return this;
         }
         else {

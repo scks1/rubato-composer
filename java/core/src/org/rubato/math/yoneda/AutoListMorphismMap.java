@@ -195,7 +195,8 @@ public final class AutoListMorphismMap implements MorphismMap {
      */
     public MorphismMap at(ModuleElement element)
             throws MappingException {
-        ArrayList<Denotator> newList = this.getFactors();
+        // getFactors() returns this map's cached list, so evaluate a copy
+        ArrayList<Denotator> newList = new ArrayList<Denotator>(this.getFactors());
         boolean changed = false;
         for (int i = 0; i < newList.size(); i++) {            
             Denotator oldD = newList.get(i);

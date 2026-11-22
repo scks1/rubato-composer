@@ -207,8 +207,14 @@ public class ListDenotator
     
     @Override
     public Denotator changeAddress(ModuleMorphism morphism) {
+        if (!getAddress().equals(morphism.getCodomain())) {
+            return null;
+        }
         if (getCoordinate() == getFrameCoordinate()) {
             Morphism newCoord = getCoordinate().changeAddress(morphism);
+            if (newCoord == null) {
+                return null;
+            }
             if (newCoord == getCoordinate()) {
                 return this;
             }
@@ -219,6 +225,9 @@ public class ListDenotator
         else {
             Morphism newCoord = getCoordinate().changeAddress(morphism);
             Morphism newFCoord = getFrameCoordinate().changeAddress(morphism);
+            if (newCoord == null || newFCoord == null) {
+                return null;
+            }
             if (newCoord == getCoordinate() && newFCoord == getFrameCoordinate()) {
                 return this;
             }
@@ -573,6 +582,10 @@ public class ListDenotator
      */
     public int compareTo(ListDenotator other) {
         int c = getForm().compareTo(other.getForm());
+        if (c == 0 && !getAddress().equals(other.getAddress())) {
+            // Topos I, Def. 4: the address is part of the denotator
+            c = getAddress().compareTo(other.getAddress());
+        }
         if (c == 0) {
             c = nameCompareTo(other);
             if (c == 0) {
@@ -604,7 +617,7 @@ public class ListDenotator
      * Checks denotators of the same form for equality.
      */
     public boolean equals(ListDenotator other) {
-        if (formEquals(other) && nameEquals(other)) {
+        if (formEquals(other) && nameEquals(other) && getAddress().equals(other.getAddress())) {
             return getListMorphismMap().equals(other.getListMorphismMap());
         }
         else {
