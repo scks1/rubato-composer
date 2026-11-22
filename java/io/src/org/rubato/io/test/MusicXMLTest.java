@@ -105,7 +105,9 @@ public class MusicXMLTest extends TestCase {
 	public void testValuesThatNeedRoundingAreReported() {
 		MusicXMLWriter writer = new MusicXMLWriter();
 		writer.toXML(Arrays.asList(new ScoreNote(0.1234567, new Rational(181, 3), -5, 1, 0)));
-		assertEquals(writer.getWarnings().toString(), 3, writer.getWarnings().size());
+		//the onset, the pitch, the loudness, and the rests around the rounded onset, which no note value expresses
+		assertEquals(writer.getWarnings().toString(), 4, writer.getWarnings().size());
+		assertTrue(writer.getWarnings().get(3), writer.getWarnings().get(3).startsWith("2 notes or rests have lengths that no plain, dotted or triplet note value expresses"));
 	}
 
 	/** A hand-written file that uses what MusicXMLWriter never writes. */
@@ -217,24 +219,8 @@ public class MusicXMLTest extends TestCase {
 	 * test instead of skipping it.
 	 */
 	public void testOutputIsValidAgainstTheMusicXML40Schema() throws Exception {
-		String xsd = System.getProperty("musicxml.xsd");
-		if (xsd == null) {
-			for (String candidate : new String[] { "schema/musicxml-4.0/musicxml.xsd", "java/io/schema/musicxml-4.0/musicxml.xsd" }) {
-				if (new File(candidate).isFile()) {
-					xsd = candidate;
-					break;
-				}
-			}
-		}
-		assertNotNull("MusicXML 4.0 schema not found; expected schema/musicxml-4.0/musicxml.xsd in the rubato-io module", xsd);
-		assertTrue("no schema at " + xsd, new File(xsd).isFile());
-		final File dir = new File(xsd).getParentFile();
-		SchemaFactory sf = SchemaFactory.newDefaultInstance();
-		sf.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "file");
-		sf.setResourceResolver(new LocalSchemas(dir));
-		Schema schema = sf.newSchema(new File(xsd));
-		Validator v = schema.newValidator();
-		v.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+		String xsd = schemaPath();
+		Validator v = schemaValidator(xsd);
 		List<List<ScoreNote>> scores = Arrays.asList(richScore(), new ArrayList<ScoreNote>(), Arrays.asList(new ScoreNote(0, 60, 80, 1, 0)));
 		for (List<ScoreNote> notes : scores) {
 			String xml = new MusicXMLWriter().toXML(notes);
@@ -251,6 +237,33 @@ public class MusicXMLTest extends TestCase {
 			//expected
 		}
 		System.out.println("MusicXMLTest: " + scores.size() + " documents valid against " + xsd + "; one invalid document rejected");
+	}
+
+	/** The MusicXML 4.0 XSD: the system property musicxml.xsd, else the copy in the rubato-io module. */
+	static String schemaPath() {
+		String xsd = System.getProperty("musicxml.xsd");
+		if (xsd == null) {
+			for (String candidate : new String[] { "schema/musicxml-4.0/musicxml.xsd", "java/io/schema/musicxml-4.0/musicxml.xsd" }) {
+				if (new File(candidate).isFile()) {
+					xsd = candidate;
+					break;
+				}
+			}
+		}
+		assertNotNull("MusicXML 4.0 schema not found; expected schema/musicxml-4.0/musicxml.xsd in the rubato-io module", xsd);
+		assertTrue("no schema at " + xsd, new File(xsd).isFile());
+		return xsd;
+	}
+
+	/** A validator for the XSD at xsd that reads its imports from beside it and loads no DTD. */
+	static Validator schemaValidator(String xsd) throws org.xml.sax.SAXException {
+		SchemaFactory sf = SchemaFactory.newDefaultInstance();
+		sf.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "file");
+		sf.setResourceResolver(new LocalSchemas(new File(xsd).getParentFile()));
+		Schema schema = sf.newSchema(new File(xsd));
+		Validator v = schema.newValidator();
+		v.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+		return v;
 	}
 
 	/** Resolves the schema's imports of xml.xsd and xlink.xsd from the schema's directory. */

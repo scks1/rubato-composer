@@ -53,8 +53,16 @@ import org.xml.sax.SAXException;
  *     divided by the current divisions: forward for notes, rests and
  *     forward elements, back for backup elements. A note with a chord
  *     element starts where the previous note did; a grace note has
- *     duration 0 and does not move the position. Repeats, endings and
- *     jumps are not expanded: the result is the written order.</li>
+ *     duration 0 and does not move the position. Each measure starts where
+ *     the previous one started plus the length of the current time
+ *     signature, so a voice that stops before the barline does not move
+ *     later notes; an implicit measure (a pickup), a part without a time
+ *     signature or a senza-misura one ends where its furthest voice ends.
+ *     Repeats, endings and jumps are not expanded: the result is the
+ *     written order.</li>
+ * <li>Tempo: the first sound element with a tempo attribute, available
+ *     from {@link #getTempo()} in microseconds per quarter note; later
+ *     tempo changes are reported in the warnings and not read.</li>
  * <li>Ties: a note whose tie stop continues an open tie with the same
  *     MusicXML voice and pitch, ending where it starts, lengthens that
  *     note.</li>
@@ -70,6 +78,24 @@ import org.xml.sax.SAXException;
 public final class MusicXMLReader {
 
     private final List<String> warnings = new ArrayList<String>();
+    private Integer tempo;
+    private boolean tempoChangeReported;
+
+    /**
+     * The first tempo in the last file read, in microseconds per quarter
+     * note (the unit of {@code ScoreMidi.setTempo} and
+     * {@link MusicXMLWriter#setTempo}), from the first sound element with a
+     * tempo attribute; {@link MusicXMLWriter#DEFAULT_TEMPO} when the file
+     * gives none. Use {@link #hasTempo()} to tell the two apart.
+     */
+    public int getTempo() {
+        return this.tempo == null ? MusicXMLWriter.DEFAULT_TEMPO : this.tempo;
+    }
+
+    /** Whether the last file read gave a tempo. */
+    public boolean hasTempo() {
+        return this.tempo != null;
+    }
 
     public List<String> getWarnings() {
         return Collections.unmodifiableList(this.warnings);
@@ -81,6 +107,8 @@ public final class MusicXMLReader {
 
     public List<ScoreNote> read(InputStream input) throws IOException {
         this.warnings.clear();
+        this.tempo = null;
+        this.tempoChangeReported = false;
         BufferedInputStream in = new BufferedInputStream(input);
         in.mark(4);
         int b0 = in.read(), b1 = in.read();
@@ -162,12 +190,17 @@ public final class MusicXMLReader {
 
     private void readPart(Element part, int voice, List<ScoreNote> notes) throws IOException {
         Frac divisions = Frac.of(1, 1);
+        Frac measureLength = null;
+        Frac measureStart = Frac.ZERO;
         Frac pos = Frac.ZERO;
         Frac lastOnset = Frac.ZERO;
         int partLoudness = 90;
         Map<String, Open> open = new HashMap<String, Open>();
         List<Open> done = new ArrayList<Open>();
         for (Element measure : children(part, "measure")) {
+            pos = measureStart;
+            lastOnset = measureStart;
+            Frac reached = measureStart;
             for (Node n = measure.getFirstChild(); n != null; n = n.getNextSibling()) {
                 if (!(n instanceof Element)) {
                     continue;
@@ -182,6 +215,10 @@ public final class MusicXMLReader {
                             throw new IOException("divisions must be positive: " + d.getTextContent());
                         }
                     }
+                    Element t = child(e, "time");
+                    if (t != null) {
+                        measureLength = timeLength(t);
+                    }
                 }
                 else if ("backup".equals(tag)) {
                     pos = pos.subtract(duration(e, divisions));
@@ -192,14 +229,19 @@ public final class MusicXMLReader {
                 }
                 else if ("forward".equals(tag)) {
                     pos = pos.add(duration(e, divisions));
+                    if (pos.compareTo(reached) > 0) {
+                        reached = pos;
+                    }
                 }
                 else if ("sound".equals(tag)) {
                     partLoudness = this.soundLoudness(e, partLoudness);
+                    this.soundTempo(e);
                 }
                 else if ("direction".equals(tag)) {
                     Element s = child(e, "sound");
                     if (s != null) {
                         partLoudness = this.soundLoudness(s, partLoudness);
+                        this.soundTempo(s);
                     }
                 }
                 else if ("note".equals(tag)) {
@@ -211,6 +253,9 @@ public final class MusicXMLReader {
                     if (!chord) {
                         lastOnset = pos;
                         pos = pos.add(length);
+                        if (pos.compareTo(reached) > 0) {
+                            reached = pos;
+                        }
                     }
                     Element pitch = child(e, "pitch");
                     if (cue || pitch == null) {
@@ -248,9 +293,88 @@ public final class MusicXMLReader {
                     }
                 }
             }
+            measureStart = this.nextMeasure(measure, part, measureStart, measureLength, reached);
         }
         for (Open o : done) {
             notes.add(new ScoreNote(o.onset.doubleValue(), o.pitch, o.loudness, o.end.subtract(o.onset).doubleValue(), voice));
+        }
+    }
+
+    /**
+     * Where the measure after this one starts: its start plus the length the
+     * time signature gives, so that a voice that stops short of the barline
+     * moves nothing after it. An implicit measure (a pickup), a part with no
+     * time signature or one without measure (senza-misura) ends where its
+     * furthest voice ends instead, and so does a measure that runs past its
+     * time signature, with a warning.
+     */
+    private Frac nextMeasure(Element measure, Element part, Frac start, Frac length, Frac reached) {
+        if (length == null || "yes".equals(measure.getAttribute("implicit"))) {
+            return reached;
+        }
+        Frac end = start.add(length);
+        if (reached.compareTo(end) > 0) {
+            this.warnings.add("Measure " + measure.getAttribute("number") + " of part " + part.getAttribute("id") + " is longer than its time signature; the next measure starts after its last note");
+            return reached;
+        }
+        return end;
+    }
+
+    /** The length of a measure in quarter notes, or null for senza-misura or a time signature that cannot be read. */
+    private Frac timeLength(Element time) {
+        if (child(time, "senza-misura") != null) {
+            return null;
+        }
+        List<Element> beats = children(time, "beats");
+        List<Element> types = children(time, "beat-type");
+        if (beats.isEmpty() || beats.size() != types.size()) {
+            return null;
+        }
+        Frac total = Frac.ZERO;
+        try {
+            for (int i = 0; i < beats.size(); i++) {
+                long count = 0;
+                for (String s : beats.get(i).getTextContent().trim().split("\\+")) {
+                    count += Long.parseLong(s.trim());
+                }
+                long type = Long.parseLong(types.get(i).getTextContent().trim());
+                if (count <= 0 || type <= 0) {
+                    return null;
+                }
+                total = total.add(Frac.of(4 * count, type));
+            }
+        }
+        catch (NumberFormatException e) {
+            this.warnings.add("The time signature " + time.getTextContent().trim().replaceAll("\\s+", " ") + " cannot be read; measures end after their last note");
+            return null;
+        }
+        return total;
+    }
+
+    /** Takes the first sound tempo of the file and reports later ones that differ. */
+    private void soundTempo(Element sound) {
+        if (!sound.hasAttribute("tempo")) {
+            return;
+        }
+        BigDecimal bpm;
+        try {
+            bpm = new BigDecimal(sound.getAttribute("tempo").trim());
+        }
+        catch (NumberFormatException e) {
+            this.warnings.add("The tempo " + sound.getAttribute("tempo") + " cannot be read");
+            return;
+        }
+        if (bpm.signum() <= 0) {
+            return;
+        }
+        long us = BigDecimal.valueOf(60000000L).divide(bpm, 0, RoundingMode.HALF_UP).longValue();
+        int micros = (int)Math.max(1, Math.min(0xFFFFFF, us));
+        if (this.tempo == null) {
+            this.tempo = micros;
+        }
+        else if (this.tempo != micros && !this.tempoChangeReported) {
+            this.tempoChangeReported = true;
+            this.warnings.add("The file changes tempo; only the first tempo, " + this.tempo + " microseconds per quarter note, is read");
         }
     }
 

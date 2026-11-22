@@ -38,7 +38,8 @@ import org.rubato.math.yoneda.Denotator;
  * except where noted: a format 1 file with 480 ticks per quarter note, a
  * first track holding a Set Tempo of 500000 microseconds per quarter note
  * (120 quarter notes per minute), and a second track holding the notes,
- * channel = Voice mod 16, key = Pitch rounded and clamped to 0..127,
+ * channel = Voice mod 16, key = Pitch rounded to the nearest key (halves
+ * up, by Rational.intValue, which calls Math.round) and clamped to 0..127,
  * velocity = Loudness clamped. The differences:
  * <ul>
  * <li>MidiPlayer moves the first note to tick 1; this writer keeps onsets

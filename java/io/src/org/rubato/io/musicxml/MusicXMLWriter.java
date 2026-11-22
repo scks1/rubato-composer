@@ -50,8 +50,20 @@ import org.rubato.math.yoneda.Denotator;
  *     a barline is split into tied notes (tie elements, plus tied
  *     notations for display). Notes with equal onset and duration in a part
  *     form a chord; overlapping notes go to further MusicXML voices,
- *     separated by backup elements. Gaps in the first voice become rests,
- *     gaps in the others forward elements.</li>
+ *     separated by backup elements. Every voice written in a measure fills
+ *     it to the barline: gaps in the first voice of a staff become rests,
+ *     gaps in the others forward elements, and a staff with nothing in a
+ *     measure gets a measure rest.</li>
+ * <li>Note values: each note is split into tied plain or dotted values,
+ *     longest first, and each rest into values that follow the beats, or
+ *     either into triplet values (time-modification 3:2) when only those
+ *     fit, so it carries a type element. A length that
+ *     neither expresses is written as one note without a type, and the
+ *     write reports how many in {@link #getWarnings()}.</li>
+ * <li>Clef: a part with no pitch below F3 (53) gets a treble clef, else
+ *     one with no pitch above G4 (67) a bass clef, else a grand staff:
+ *     pitches from middle C (60) up on staff 1 in treble clef, the rest on
+ *     staff 2 in bass clef, in MusicXML voices from 5.</li>
  * <li>Pitch: the MIDI key number p gives octave floor(p/12)-1 and a step
  *     spelled with sharps; a fractional part of p goes into alter as a
  *     decimal, exact when its denominator has only the factors 2 and 5 and
@@ -61,8 +73,9 @@ import org.rubato.math.yoneda.Denotator;
  *     loudness/0.9 rounded to 4 places. A negative loudness is written as
  *     0, with a warning.</li>
  * <li>A note of duration 0 becomes a grace note.</li>
- * <li>The first measure of the first part has a sound element with tempo
- *     120, the tempo the MIDI writers use.</li>
+ * <li>The first measure of the first part has a metronome mark and a sound
+ *     tempo, 120 quarter notes per minute unless {@link #setTempo} says
+ *     otherwise; 120 is the tempo the MIDI writers use by default.</li>
  * </ul>
  * MusicXML has no position before the first measure, so a negative onset is
  * an error.
@@ -72,9 +85,14 @@ public final class MusicXMLWriter {
     public static final long MAX_DENOMINATOR = 3840;
     static final double TOLERANCE = 1e-9;
 
+    /** Microseconds per quarter note, as in ScoreMidi: 500000 is 120 quarter notes per minute. */
+    public static final int DEFAULT_TEMPO = 500000;
+
     private int beats = 4;
     private int beatType = 4;
+    private int tempo = DEFAULT_TEMPO;
     private final List<String> warnings = new ArrayList<String>();
+    private int untyped = 0;
 
     /** Sets the time signature written in the first measure. */
     public void setTime(int beats, int beatType) {
@@ -83,6 +101,25 @@ public final class MusicXMLWriter {
         }
         this.beats = beats;
         this.beatType = beatType;
+    }
+
+    /**
+     * Sets the tempo in microseconds per quarter note, the unit of
+     * {@code ScoreMidi.setTempo} and of the MIDI Set Tempo event (1 to
+     * 16777215). The first measure carries it as a metronome mark and a
+     * sound tempo in quarter notes per minute, 60000000 divided by this
+     * value, written to 6 decimal places.
+     */
+    public void setTempo(int microsecondsPerQuarter) {
+        if (microsecondsPerQuarter <= 0 || microsecondsPerQuarter > 0xFFFFFF) {
+            throw new IllegalArgumentException("tempo out of range: " + microsecondsPerQuarter);
+        }
+        this.tempo = microsecondsPerQuarter;
+    }
+
+    /** Quarter notes per minute as written in the file. */
+    String tempoText() {
+        return BigDecimal.valueOf(60000000L).divide(BigDecimal.valueOf(this.tempo), 6, RoundingMode.HALF_EVEN).stripTrailingZeros().toPlainString();
     }
 
     /** Messages about values the last write had to round or clamp. */
@@ -102,6 +139,7 @@ public final class MusicXMLWriter {
 
     public String toXML(List<ScoreNote> notes) {
         this.warnings.clear();
+        this.untyped = 0;
         for (ScoreNote n : notes) {
             if (n.onset < 0) {
                 throw new IllegalArgumentException("MusicXML has no time before the first measure, so a note cannot start at " + n.onset + ": " + n);
@@ -184,6 +222,9 @@ public final class MusicXMLWriter {
             firstPart = false;
         }
         x.append("</score-partwise>\n");
+        if (this.untyped > 0) {
+            this.warnings.add(this.untyped + " notes or rests have lengths that no plain, dotted or triplet note value expresses; they are written without a note type");
+        }
         return x.toString();
     }
 
@@ -242,10 +283,54 @@ public final class MusicXMLWriter {
         }
     }
 
-    private void writePart(StringBuilder x, String id, List<Placed> placed, long divisions, long measureLength, long measures, boolean firstPart) {
-        // chords, ordered by onset, then duration (grace notes first)
+    /** Notes of one part that go on one staff in one MusicXML voice, none overlapping. */
+    private static final class Layer {
+        /** 0 when the part has one staff, else 1 (treble) or 2 (bass). */
+        final int staff;
+        final int voice;
+        /** The first layer of a staff fills its gaps with rests; the others use forward elements. */
+        final boolean primary;
+        final List<Chord> chords = new ArrayList<Chord>();
+        int next = 0;
+
+        Layer(int staff, int voice, boolean primary) {
+            this.staff = staff;
+            this.voice = voice;
+            this.primary = primary;
+        }
+    }
+
+    static final int TREBLE = 0, BASS = 1, GRAND = 2;
+    private static final Rational MIDDLE_C = new Rational(60);
+    private static final Rational TREBLE_LOWEST = new Rational(53);
+    private static final Rational BASS_HIGHEST = new Rational(67);
+
+    /**
+     * The clef of a part: treble when no pitch is below F3 (53, three ledger
+     * lines under the treble staff), else bass when no pitch is above G4
+     * (67, three ledger lines over the bass staff), else a grand staff.
+     */
+    static int clef(List<Placed> placed) {
+        if (placed.isEmpty()) {
+            return TREBLE;
+        }
+        Rational min = null, max = null;
+        for (Placed p : placed) {
+            if (min == null || p.note.pitch.compareTo(min) < 0) min = p.note.pitch;
+            if (max == null || p.note.pitch.compareTo(max) > 0) max = p.note.pitch;
+        }
+        if (min.compareTo(TREBLE_LOWEST) >= 0) {
+            return TREBLE;
+        }
+        if (max.compareTo(BASS_HIGHEST) <= 0) {
+            return BASS;
+        }
+        return GRAND;
+    }
+
+    /** Groups notes with equal onset and end into chords and puts the chords into non-overlapping layers. */
+    private static void layers(List<Placed> placed, int staff, int firstVoice, List<Layer> out) {
         TreeMap<Long, TreeMap<Long, Chord>> byOnset = new TreeMap<Long, TreeMap<Long, Chord>>();
-        int lowPitches = 0;
         for (Placed p : placed) {
             TreeMap<Long, Chord> byEnd = byOnset.get(p.on);
             if (byEnd == null) {
@@ -258,13 +343,12 @@ public final class MusicXMLWriter {
                 byEnd.put(p.end, c);
             }
             c.notes.add(p.note);
-            if (p.note.pitch.compareTo(new Rational(60)) < 0) {
-                lowPitches++;
-            }
         }
-        // assign chords to MusicXML voices so that no two overlap
-        List<List<Chord>> layers = new ArrayList<List<Chord>>();
+        List<Layer> layers = new ArrayList<Layer>();
         List<Long> layerEnds = new ArrayList<Long>();
+        // the primary layer exists even for an empty staff, so the staff gets measure rests
+        layers.add(new Layer(staff, firstVoice, true));
+        layerEnds.add(0L);
         for (TreeMap<Long, Chord> byEnd : byOnset.values()) {
             for (Chord c : byEnd.values()) {
                 Collections.sort(c.notes);
@@ -276,18 +360,35 @@ public final class MusicXMLWriter {
                     }
                 }
                 if (layer < 0) {
-                    layers.add(new ArrayList<Chord>());
+                    layers.add(new Layer(staff, firstVoice + layers.size(), false));
                     layerEnds.add(0L);
                     layer = layers.size() - 1;
                 }
-                layers.get(layer).add(c);
+                layers.get(layer).chords.add(c);
                 layerEnds.set(layer, Math.max(c.on, c.end));
             }
         }
-        boolean bass = lowPitches * 2 > placed.size();
+        out.addAll(layers);
+    }
+
+    private void writePart(StringBuilder x, String id, List<Placed> placed, long divisions, long measureLength, long measures, boolean firstPart) {
+        int clef = clef(placed);
+        List<Layer> layers = new ArrayList<Layer>();
+        if (clef == GRAND) {
+            List<Placed> upper = new ArrayList<Placed>();
+            List<Placed> lower = new ArrayList<Placed>();
+            for (Placed p : placed) {
+                (p.note.pitch.compareTo(MIDDLE_C) >= 0 ? upper : lower).add(p);
+            }
+            layers(upper, 1, 1, layers);
+            // MusicXML voices 1-4 for the upper staff and 5-8 for the lower, as notation programs number them
+            layers(lower, 2, Math.max(5, layers.size() + 1), layers);
+        }
+        else {
+            layers(placed, 0, 1, layers);
+        }
 
         x.append("  <part id=\"").append(id).append("\">\n");
-        int[] next = new int[layers.size()];
         for (long m = 0; m < measures; m++) {
             long start = m * measureLength;
             long stop = start + measureLength;
@@ -297,7 +398,12 @@ public final class MusicXMLWriter {
                 x.append("        <divisions>").append(divisions).append("</divisions>\n");
                 x.append("        <key>\n          <fifths>0</fifths>\n        </key>\n");
                 x.append("        <time>\n          <beats>").append(this.beats).append("</beats>\n          <beat-type>").append(this.beatType).append("</beat-type>\n        </time>\n");
-                if (bass) {
+                if (clef == GRAND) {
+                    x.append("        <staves>2</staves>\n");
+                    x.append("        <clef number=\"1\">\n          <sign>G</sign>\n          <line>2</line>\n        </clef>\n");
+                    x.append("        <clef number=\"2\">\n          <sign>F</sign>\n          <line>4</line>\n        </clef>\n");
+                }
+                else if (clef == BASS) {
                     x.append("        <clef>\n          <sign>F</sign>\n          <line>4</line>\n        </clef>\n");
                 }
                 else {
@@ -305,58 +411,65 @@ public final class MusicXMLWriter {
                 }
                 x.append("      </attributes>\n");
                 if (firstPart) {
-                    x.append("      <sound tempo=\"120\"/>\n");
+                    String bpm = this.tempoText();
+                    x.append("      <direction placement=\"above\">\n        <direction-type>\n          <metronome>\n");
+                    x.append("            <beat-unit>quarter</beat-unit>\n            <per-minute>").append(bpm).append("</per-minute>\n");
+                    x.append("          </metronome>\n        </direction-type>\n");
+                    if (clef == GRAND) {
+                        x.append("        <staff>1</staff>\n");
+                    }
+                    x.append("        <sound tempo=\"").append(bpm).append("\"/>\n      </direction>\n");
                 }
             }
-            long pos = start;
-            boolean any = false;
-            for (int l = 0; l < layers.size(); l++) {
-                List<Chord> layer = layers.get(l);
+            // every layer that is written fills the whole measure, so each one after the first backs up a measure
+            boolean wroteAny = false;
+            for (Layer layer : layers) {
+                List<Chord> chords = layer.chords;
                 // skip chords that ended before this measure
-                while (next[l] < layer.size() && chordEnd(layer.get(next[l])) <= start && !(isGrace(layer.get(next[l])) && layer.get(next[l]).on >= start)) {
-                    next[l]++;
+                while (layer.next < chords.size() && chords.get(layer.next).end <= start && !(isGrace(chords.get(layer.next)) && chords.get(layer.next).on >= start)) {
+                    layer.next++;
                 }
-                int i = next[l];
-                boolean wrote = false;
+                boolean has = layer.next < chords.size() && chords.get(layer.next).on < stop;
+                if (!has && !layer.primary) {
+                    continue;
+                }
+                if (wroteAny) {
+                    x.append("      <backup>\n        <duration>").append(measureLength).append("</duration>\n      </backup>\n");
+                }
+                wroteAny = true;
+                if (!has) {
+                    x.append("      <note>\n        <rest measure=\"yes\"/>\n        <duration>").append(measureLength).append("</duration>\n        <voice>").append(layer.voice).append("</voice>\n");
+                    staff(x, layer);
+                    x.append("      </note>\n");
+                    continue;
+                }
                 long cursor = start;
-                while (i < layer.size() && layer.get(i).on < stop) {
-                    Chord c = layer.get(i);
-                    if (!wrote) {
-                        if (pos > start) {
-                            x.append("      <backup>\n        <duration>").append(pos - start).append("</duration>\n      </backup>\n");
-                        }
-                        pos = start;
-                        wrote = true;
-                    }
+                for (int i = layer.next; i < chords.size() && chords.get(i).on < stop; i++) {
+                    Chord c = chords.get(i);
                     long from = Math.max(c.on, start);
                     if (from > cursor) {
-                        this.gap(x, l, from - cursor);
+                        this.gap(x, layer, cursor - start, from - cursor, divisions);
                         cursor = from;
                     }
                     if (isGrace(c)) {
-                        this.notes(x, c, l, 0, false, false, true, divisions);
-                        i++;
+                        this.notes(x, c, layer, new Piece(0, "eighth", false, false), false, false, true);
                         continue;
                     }
                     long to = Math.min(c.end, stop);
-                    this.notes(x, c, l, to - from, c.on < start, c.end > stop, false, divisions);
+                    List<Piece> pieces = this.pieces(to - from, divisions);
+                    for (int k = 0; k < pieces.size(); k++) {
+                        boolean tieStop = k > 0 || c.on < start;
+                        boolean tieStart = k < pieces.size() - 1 || c.end > stop;
+                        this.notes(x, c, layer, pieces.get(k), tieStop, tieStart, false);
+                    }
                     cursor = to;
                     if (c.end > stop) {
                         break;
                     }
-                    i++;
                 }
-                if (wrote) {
-                    any = true;
-                    if (l == 0 && cursor < stop) {
-                        this.gap(x, 0, stop - cursor);
-                        cursor = stop;
-                    }
-                    pos = cursor;
+                if (cursor < stop) {
+                    this.gap(x, layer, cursor - start, stop - cursor, divisions);
                 }
-            }
-            if (!any) {
-                x.append("      <note>\n        <rest measure=\"yes\"/>\n        <duration>").append(measureLength).append("</duration>\n        <voice>1</voice>\n      </note>\n");
             }
             x.append("    </measure>\n");
         }
@@ -367,30 +480,48 @@ public final class MusicXMLWriter {
         return c.end == c.on;
     }
 
-    private static long chordEnd(Chord c) {
-        return c.end;
+    private static void staff(StringBuilder x, Layer layer) {
+        if (layer.staff > 0) {
+            x.append("        <staff>").append(layer.staff).append("</staff>\n");
+        }
     }
 
-    private void gap(StringBuilder x, int layer, long length) {
-        if (layer == 0) {
-            x.append("      <note>\n        <rest/>\n        <duration>").append(length).append("</duration>\n        <voice>1</voice>\n      </note>\n");
+    /** Rests in a primary layer, a forward element in the others. */
+    private void gap(StringBuilder x, Layer layer, long offset, long length, long divisions) {
+        if (layer.primary) {
+            for (Piece p : this.pieces(length, divisions, offset)) {
+                x.append("      <note>\n        <rest/>\n        <duration>").append(p.length).append("</duration>\n        <voice>").append(layer.voice).append("</voice>\n");
+                this.type(x, p);
+                staff(x, layer);
+                x.append("      </note>\n");
+            }
         }
         else {
-            x.append("      <forward>\n        <duration>").append(length).append("</duration>\n        <voice>").append(layer + 1).append("</voice>\n      </forward>\n");
+            x.append("      <forward>\n        <duration>").append(length).append("</duration>\n        <voice>").append(layer.voice).append("</voice>\n");
+            staff(x, layer);
+            x.append("      </forward>\n");
         }
     }
 
-    private void notes(StringBuilder x, Chord c, int layer, long length, boolean tieStop, boolean tieStart, boolean grace, long divisions) {
-        String type = grace ? null : noteType(Frac.of(length, divisions));
-        boolean dotted = type != null && type.endsWith(".");
-        if (dotted) {
-            type = type.substring(0, type.length() - 1);
+    private void type(StringBuilder x, Piece p) {
+        if (p.type == null) {
+            return;
         }
+        x.append("        <type>").append(p.type).append("</type>\n");
+        if (p.dot) {
+            x.append("        <dot/>\n");
+        }
+        if (p.triplet) {
+            x.append("        <time-modification>\n          <actual-notes>3</actual-notes>\n          <normal-notes>2</normal-notes>\n        </time-modification>\n");
+        }
+    }
+
+    private void notes(StringBuilder x, Chord c, Layer layer, Piece piece, boolean tieStop, boolean tieStart, boolean grace) {
         boolean first = true;
         for (ScoreNote n : c.notes) {
             int loudness = n.loudness;
             if (loudness < 0) {
-                this.warnings.add("Loudness " + loudness + " of " + n + " is written as dynamics 0");
+                this.warnOnce("Loudness " + loudness + " of " + n + " is written as dynamics 0");
                 loudness = 0;
             }
             String dynamics = BigDecimal.valueOf(loudness).multiply(BigDecimal.TEN).divide(BigDecimal.valueOf(9), 4, RoundingMode.HALF_EVEN).stripTrailingZeros().toPlainString();
@@ -403,7 +534,7 @@ public final class MusicXMLWriter {
             }
             this.pitch(x, n);
             if (!grace) {
-                x.append("        <duration>").append(length).append("</duration>\n");
+                x.append("        <duration>").append(piece.length).append("</duration>\n");
             }
             if (tieStop) {
                 x.append("        <tie type=\"stop\"/>\n");
@@ -411,16 +542,9 @@ public final class MusicXMLWriter {
             if (tieStart) {
                 x.append("        <tie type=\"start\"/>\n");
             }
-            x.append("        <voice>").append(layer + 1).append("</voice>\n");
-            if (type != null) {
-                x.append("        <type>").append(type).append("</type>\n");
-                if (dotted) {
-                    x.append("        <dot/>\n");
-                }
-            }
-            else if (grace) {
-                x.append("        <type>eighth</type>\n");
-            }
+            x.append("        <voice>").append(layer.voice).append("</voice>\n");
+            this.type(x, piece);
+            staff(x, layer);
             if (tieStop || tieStart) {
                 x.append("        <notations>\n");
                 if (tieStop) {
@@ -433,6 +557,152 @@ public final class MusicXMLWriter {
             }
             x.append("      </note>\n");
             first = false;
+        }
+    }
+
+    /** A written note or rest: its length in divisions and its note type, dot and triplet mark. */
+    static final class Piece {
+        final long length;
+        final String type;
+        final boolean dot;
+        final boolean triplet;
+
+        Piece(long length, String type, boolean dot, boolean triplet) {
+            this.length = length;
+            this.type = type;
+            this.dot = dot;
+            this.triplet = triplet;
+        }
+    }
+
+    /** Note values from the dotted breve down to the 1024th, longest first, in quarter notes. */
+    private static final List<Frac> VALUES = new ArrayList<Frac>();
+    private static final List<String> VALUE_TYPES = new ArrayList<String>();
+    private static final List<Boolean> VALUE_DOTS = new ArrayList<Boolean>();
+    static {
+        String[] types = { "breve", "whole", "half", "quarter", "eighth", "16th", "32nd", "64th", "128th", "256th", "512th", "1024th" };
+        Frac v = Frac.of(8, 1);
+        for (String t : types) {
+            if (!"1024th".equals(t)) {
+                VALUES.add(v.multiply(Frac.of(3, 2)));
+                VALUE_TYPES.add(t);
+                VALUE_DOTS.add(Boolean.TRUE);
+            }
+            VALUES.add(v);
+            VALUE_TYPES.add(t);
+            VALUE_DOTS.add(Boolean.FALSE);
+            v = v.multiply(Frac.of(1, 2));
+        }
+    }
+
+    /**
+     * Splits a length into tied note values, longest first, so that every
+     * note and rest carries a note type: plain or dotted values when the
+     * length in quarter notes is a multiple of a 1024th note, triplet
+     * values (time-modification 3:2) when two thirds of it is. Any other
+     * length stays one piece without a type and is counted for a warning.
+     */
+    List<Piece> pieces(long length, long divisions) {
+        return this.pieces(length, divisions, -1);
+    }
+
+    /**
+     * As {@link #pieces(long, long)}, for a rest that starts {@code offset}
+     * divisions after the barline: each value starts on a multiple of its
+     * own undotted length and ends by the next multiple of twice that, so
+     * rests follow the beats (an eighth, a quarter and a half after an
+     * eighth note in 4/4, not a dotted half and an eighth). Where the offset
+     * is off the grid of 1024th notes, the rest is split as a note is.
+     */
+    List<Piece> pieces(long length, long divisions, long offset) {
+        List<Piece> out = offset >= 0 ? aligned(length, divisions, offset) : null;
+        if (out == null) {
+            out = greedy(length, divisions, false);
+        }
+        if (out == null) {
+            out = greedy(length, divisions, true);
+        }
+        if (out == null) {
+            this.untyped++;
+            out = new ArrayList<Piece>();
+            out.add(new Piece(length, null, false, false));
+        }
+        return out;
+    }
+
+    /** Splits a rest at the beats, as described at {@link #pieces(long, long, long)}; null when the rest or its offset is off the grid of 1024th notes. */
+    private static List<Piece> aligned(long length, long divisions, long offset) {
+        Frac rest = Frac.of(length, divisions);
+        Frac at = Frac.of(offset, divisions);
+        Frac grid = Frac.of(256, 1);
+        if (!rest.multiply(grid).den.equals(BigInteger.ONE) || !at.multiply(grid).den.equals(BigInteger.ONE)) {
+            return null;
+        }
+        Frac scale = Frac.of(divisions, 1);
+        List<Piece> out = new ArrayList<Piece>();
+        while (rest.signum() > 0) {
+            int found = -1;
+            for (int i = 0; i < VALUES.size(); i++) {
+                Frac v = VALUES.get(i);
+                if (v.compareTo(rest) > 0) {
+                    continue;
+                }
+                Frac unit = VALUE_DOTS.get(i) ? v.multiply(Frac.of(2, 3)) : v;
+                // at is a multiple of unit, and at + v stays within the next multiple of 2 * unit
+                Frac k = at.divide(unit);
+                if (!k.den.equals(BigInteger.ONE)) {
+                    continue;
+                }
+                Frac limit = Frac.of(k.num.longValueExact() / 2 * 2 + 2, 1).multiply(unit);
+                if (at.add(v).compareTo(limit) <= 0) {
+                    found = i;
+                    break;
+                }
+            }
+            if (found < 0) {
+                return null;
+            }
+            Frac d = VALUES.get(found).multiply(scale);
+            if (!d.den.equals(BigInteger.ONE)) {
+                return null;
+            }
+            out.add(new Piece(d.num.longValueExact(), VALUE_TYPES.get(found), VALUE_DOTS.get(found), false));
+            rest = rest.subtract(VALUES.get(found));
+            at = at.add(VALUES.get(found));
+        }
+        return out;
+    }
+
+    private static List<Piece> greedy(long length, long divisions, boolean triplet) {
+        // the length in written quarter notes: a triplet value sounds two thirds of what it is written as
+        Frac rest = Frac.of(length, divisions);
+        if (triplet) {
+            rest = rest.multiply(Frac.of(3, 2));
+        }
+        if (!rest.multiply(Frac.of(256, 1)).den.equals(BigInteger.ONE)) {
+            return null;
+        }
+        Frac scale = triplet ? Frac.of(2 * divisions, 3) : Frac.of(divisions, 1);
+        List<Piece> out = new ArrayList<Piece>();
+        while (rest.signum() > 0) {
+            int i = 0;
+            while (VALUES.get(i).compareTo(rest) > 0) {
+                i++;
+            }
+            Frac d = VALUES.get(i).multiply(scale);
+            if (!d.den.equals(BigInteger.ONE)) {
+                return null;
+            }
+            out.add(new Piece(d.num.longValueExact(), VALUE_TYPES.get(i), VALUE_DOTS.get(i), triplet));
+            rest = rest.subtract(VALUES.get(i));
+        }
+        return out;
+    }
+
+    /** A note split into tied pieces is written several times but reported once. */
+    private void warnOnce(String message) {
+        if (!this.warnings.contains(message)) {
+            this.warnings.add(message);
         }
     }
 
@@ -455,7 +725,7 @@ public final class MusicXMLWriter {
             }
             catch (ArithmeticException e) {
                 fraction = BigDecimal.valueOf(rest).divide(BigDecimal.valueOf(den), 10, RoundingMode.HALF_EVEN);
-                this.warnings.add("The pitch " + p + " of " + n + " has alter rounded to 10 decimal places");
+                this.warnOnce("The pitch " + p + " of " + n + " has alter rounded to 10 decimal places");
             }
             alter = alter.add(fraction);
         }
@@ -465,28 +735,7 @@ public final class MusicXMLWriter {
         }
         x.append("          <octave>").append(octave).append("</octave>\n        </pitch>\n");
         if (octave < 0 || octave > 9) {
-            this.warnings.add("The pitch " + p + " of " + n + " is in octave " + octave + ", outside MusicXML's 0 to 9");
+            this.warnOnce("The pitch " + p + " of " + n + " is in octave " + octave + ", outside MusicXML's 0 to 9");
         }
-    }
-
-    private static final String[] TYPES = {
-        "1024th", "512th", "256th", "128th", "64th", "32nd", "16th", "eighth", "quarter", "half", "whole", "breve", "long", "maxima"
-    };
-
-    /** The note type of a length in quarter notes, with a trailing "." when dotted, or null. */
-    static String noteType(Frac quarters) {
-        Frac base = Frac.of(1, 256);
-        Frac two = Frac.of(2, 1);
-        Frac dot = Frac.of(3, 2);
-        for (String t : TYPES) {
-            if (quarters.equals(base)) {
-                return t;
-            }
-            if (quarters.equals(base.multiply(dot))) {
-                return t + ".";
-            }
-            base = base.multiply(two);
-        }
-        return null;
     }
 }
