@@ -60,6 +60,8 @@ public final class BuiltinRubettes {
         "org.rubato.rubettes.score.RhythmizeRubette",
         "org.rubato.rubettes.score.ScaleRubette",
         "org.rubato.rubettes.score.QuantizeRubette",
+        "org.rubato.rubettes.counterpoint.CounterpointCheckRubette",
+        "org.rubato.rubettes.counterpoint.SuccessorGeneratorRubette",
         "org.rubato.rubettes.score.LilyPondOutRubette",
         "org.rubato.rubettes.texture.TexturalizeRubette",
         "org.rubato.rubettes.wallpaper.WallpaperRubette",
