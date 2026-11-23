@@ -85,6 +85,20 @@ public class KeyPathRubetteTest extends TestCase {
         assertNotNull(r.getIcon());
     }
 
+    /** Held notes count at later onsets: C and E held over a bar, G then A on top give C then a. */
+    public void testHeldNotes() {
+        List<ScoreNote> n = new ArrayList<ScoreNote>();
+        n.add(new ScoreNote(0, 60, 80, 2.0, 0));
+        n.add(new ScoreNote(0, 64, 80, 2.0, 0));
+        n.add(new ScoreNote(0, 67, 80, 1.0, 1));
+        n.add(new ScoreNote(1, 69, 80, 1.0, 1));
+        n.add(new ScoreNote(2, 62, 80, 1.0, 0));
+        List<List<Integer>> bars = Harmonies.keyPathBars(n, 2.0);
+        assertEquals(2, bars.size());
+        assertEquals(KeyPath.parseChart("C Am | D").get(0), bars.get(0));
+        assertEquals(1, bars.get(1).size());
+    }
+
     public void testRefusals() {
         try {
             Harmonies.keyPathBars(new ArrayList<ScoreNote>(), 0);

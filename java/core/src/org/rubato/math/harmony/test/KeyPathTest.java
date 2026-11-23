@@ -216,4 +216,17 @@ public class KeyPathTest extends TestCase {
         }
         catch (IllegalArgumentException expected) { /* expected */ }
     }
+
+    /**
+     * After a change of key the window starts at the change: with a three-bar window, the G of
+     * bar 3 does not join the A of bar 5 to confirm D, since D's k4 was completed at bar 4.
+     */
+    public void testWindowStartsAtTheChange() {
+        List<Event> ev = path("C | F G | G | A | A", 3);
+        // C starts at bar 2 and is confirmed at bar 3 (F G, then G); D comes at bar 4; nothing at bar 5
+        assertEquals(KeyPath.report(ev), 3, ev.size());
+        assertEquals(Kind.MODULATION, ev.get(2).kind());
+        assertEquals("D", ev.get(2).keyName());
+        assertEquals(4, ev.get(2).bar());
+    }
 }

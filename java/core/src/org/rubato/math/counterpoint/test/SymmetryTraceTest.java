@@ -22,6 +22,7 @@ import java.util.List;
 
 import junit.framework.TestCase;
 
+import org.rubato.math.counterpoint.Dichotomy;
 import org.rubato.math.counterpoint.DualAffine;
 import org.rubato.math.counterpoint.StrongDichotomies;
 import org.rubato.math.counterpoint.SymmetryTrace;
@@ -182,5 +183,28 @@ public class SymmetryTraceTest extends TestCase {
         catch (IllegalArgumentException expected) { /* expected */ }
         String r = SymmetryTrace.report(steps);
         assertTrue(r, r.contains("dissonant"));
+    }
+
+    /** The preimage test agrees with the forward map for maps outside H (a != 0, u not self-inverse in general). */
+    public void testImageOfConsonancesOutsideH() {
+        Dichotomy d = StrongDichotomies.FUX;
+        int[][] maps = { { 3, 0, 5, 1 }, { 7, 2, 7, 5 }, { 11, 9, 11, 3 }, { 5, 4, 1, 8 } };
+        for (int[] m : maps) {
+            DualAffine g = new DualAffine(m[0], m[1], m[2], m[3], 12);
+            boolean[][] image = new boolean[12][12];
+            for (int x = 0; x < 12; x++) {
+                for (int y = 0; y < 12; y++) {
+                    if (d.isConsonant(y)) {
+                        image[(m[2] * x + m[0]) % 12][(m[3] * x + m[2] * y + m[1]) % 12] = true;
+                    }
+                }
+            }
+            for (int x = 0; x < 12; x++) {
+                for (int y = 0; y < 12; y++) {
+                    assertEquals(java.util.Arrays.toString(m) + " at " + x + "," + y, image[x][y],
+                            SymmetryTrace.inImageOfConsonances(g, d, x, y));
+                }
+            }
+        }
     }
 }
