@@ -31,6 +31,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.border.EmptyBorder;
 
+import org.rubato.base.BooleanProperty;
 import org.rubato.base.DoubleProperty;
 import org.rubato.base.IntegerProperty;
 import org.rubato.base.SimpleAbstractRubette;
@@ -52,6 +53,8 @@ public class KeyPathRubette extends SimpleAbstractRubette {
     static final String CHORDS_KEY = "chords";
     static final String WINDOW_KEY = "window";
     static final String BAR_KEY = "barLength";
+    static final String REAL_KEY = "realMusic";
+    static final String REDUCE_KEY = "reduceTriads";
 
     /**
      * A synthetic 20-bar chart for In questo lieto e fortunato giorno (L'Orfeo),
@@ -74,6 +77,8 @@ public class KeyPathRubette extends SimpleAbstractRubette {
                 DEFAULT_CHART));
         putProperty(new IntegerProperty(WINDOW_KEY, "Bars a cadence may span", 2, 1, 8));
         putProperty(new DoubleProperty(BAR_KEY, "Score bar length in onset units", 4.0, 0.0625, 64.0));
+        putProperty(new BooleanProperty(REAL_KEY, "Real-music rules (departure from the paper)", false));
+        putProperty(new BooleanProperty(REDUCE_KEY, "Read a score's non-triads as a contained triad (departure)", false));
     }
 
     public void run(RunInfo runInfo) {
@@ -94,18 +99,26 @@ public class KeyPathRubette extends SimpleAbstractRubette {
     public void process(Denotator score) {
         try {
             int w = ((IntegerProperty) getProperty(WINDOW_KEY)).getInt();
+            KeyPath.Options rules = isRealMusic() ? KeyPath.Options.realMusic(w) : KeyPath.defaults(w);
+            KeyPath.Reduction reduction = isReduceTriads() ? KeyPath.Reduction.CONTAINED_TRIAD : KeyPath.Reduction.NONE;
             List<KeyPath.Event> events;
             String head;
             if (score == null) {
                 String chart = ((StringProperty) getProperty(CHORDS_KEY)).getString();
-                events = Harmonies.keyPath(chart, w);
+                events = Harmonies.keyPath(chart, rules);
                 head = DEFAULT_CHART.equals(chart.trim())
                         ? "Chart: synthetic reconstruction of In questo lieto e fortunato giorno (not the real music)\n\n"
                         : "Chart from the chords property\n\n";
             }
             else {
-                events = Harmonies.keyPath(score, ((DoubleProperty) getProperty(BAR_KEY)).getDouble(), w);
+                events = Harmonies.keyPath(score, ((DoubleProperty) getProperty(BAR_KEY)).getDouble(), rules, reduction);
                 head = "Score input\n\n";
+                if (isReduceTriads()) {
+                    head += "Sonorities reduced to a contained triad (a departure from the paper)\n\n";
+                }
+            }
+            if (isRealMusic()) {
+                head += "Rules: real-music preset (a departure from the paper: " + rules + ")\n\n";
             }
             reportText = head + KeyPath.report(events);
             List<String> keys = new ArrayList<String>();
@@ -128,6 +141,24 @@ public class KeyPathRubette extends SimpleAbstractRubette {
     /** Replaces the chords property. */
     public void setChart(String chart) {
         ((StringProperty) getProperty(CHORDS_KEY)).setString(chart);
+    }
+
+    /** True if the real-music preset ({@link KeyPath.Options#realMusic}) replaces the paper's literal rules. */
+    public boolean isRealMusic() {
+        return ((BooleanProperty) getProperty(REAL_KEY)).getBoolean();
+    }
+
+    public void setRealMusic(boolean on) {
+        ((BooleanProperty) getProperty(REAL_KEY)).setBoolean(on);
+    }
+
+    /** True if a score's sonorities are reduced to a contained triad ({@link KeyPath.Reduction#CONTAINED_TRIAD}). */
+    public boolean isReduceTriads() {
+        return ((BooleanProperty) getProperty(REDUCE_KEY)).getBoolean();
+    }
+
+    public void setReduceTriads(boolean on) {
+        ((BooleanProperty) getProperty(REDUCE_KEY)).setBoolean(on);
     }
 
     /** The text the view shows. */

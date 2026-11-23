@@ -290,6 +290,126 @@ public final class Counterpoint {
         return ScoreNote.toScore(notes);
     }
 
+    /** A two-voice reduction of polyphony for the symmetry trace; see {@link #reduce}. */
+    public static final class Reduced {
+        private final List<ScoreNote> notes;
+        private final List<Double> crossings;
+        private final int repeats;
+        private final int oneVoiceOnly;
+
+        Reduced(List<ScoreNote> notes, List<Double> crossings, int repeats, int oneVoiceOnly) {
+            this.notes = Collections.unmodifiableList(notes);
+            this.crossings = Collections.unmodifiableList(crossings);
+            this.repeats = repeats;
+            this.oneVoiceOnly = oneVoiceOnly;
+        }
+
+        /** The dyads as note-against-note notes, cantus firmus then discantus at each onset. */
+        public List<ScoreNote> notes() { return notes; }
+
+        /** The onsets of dyads where the discantus is on the wrong side of the cantus firmus for the orientation. */
+        public List<Double> crossings() { return crossings; }
+
+        /** Onsets dropped because both voices repeat the dyad before them. */
+        public int repeats() { return repeats; }
+
+        /** Onsets where only one of the two voices sounds. */
+        public int oneVoiceOnly() { return oneVoiceOnly; }
+
+        /** One line for a report, e.g. "12 dyads, 3 repeats dropped, 2 one-voice onsets, 1 voice crossing (at 18)". */
+        public String summary() {
+            StringBuilder at = new StringBuilder();
+            for (int i = 0; i < crossings.size() && i < 10; i++) {
+                at.append(i > 0 ? ", " : "").append(trim(crossings.get(i)));
+            }
+            if (crossings.size() > 10) {
+                at.append(", ...");
+            }
+            return notes.size() / 2 + " dyads, " + repeats + (repeats == 1 ? " repeat" : " repeats") + " dropped, "
+                    + oneVoiceOnly + " one-voice " + (oneVoiceOnly == 1 ? "onset" : "onsets") + ", " + crossings.size()
+                    + (crossings.size() == 1 ? " voice crossing" : " voice crossings")
+                    + (crossings.isEmpty() ? "" : " (at " + at + ")");
+        }
+    }
+
+    /**
+     * Reduces two voices of a polyphonic passage to note against note, so that
+     * {@link #trace(List, Settings)} can run on it. This is a departure: the
+     * counterpoint model here works on note-against-note dyads, and the
+     * reduction is one reading of free polyphony, not part of the theory.
+     * <ul>
+     * <li>Every onset of either voice where both voices sound gives a dyad:
+     *     the lowest sounding pitch of the cantus firmus voice and the highest
+     *     of the discantus voice.</li>
+     * <li>A dyad equal to the one before it (a held or tied repeat) is dropped
+     *     and counted in {@link Reduced#repeats()}.</li>
+     * <li>Onsets where one voice rests are counted in
+     *     {@link Reduced#oneVoiceOnly()} and make no dyad.</li>
+     * <li>Each dyad lasts until the next dyad, the last until the later end of
+     *     its two notes.</li>
+     * <li>A dyad whose discantus lies below the cantus firmus (above it when
+     *     hanging) is kept and its onset listed in {@link Reduced#crossings()},
+     *     since its interval class is then the complement of the one heard.</li>
+     * </ul>
+     */
+    public static Reduced reduce(List<ScoreNote> notes, Settings settings) {
+        java.util.TreeSet<Double> onsets = new java.util.TreeSet<Double>();
+        for (ScoreNote n : notes) {
+            if (n.voice == settings.cantusVoice || n.voice == settings.discantusVoice) {
+                onsets.add(n.onset);
+            }
+        }
+        List<ScoreNote[]> dyads = new ArrayList<ScoreNote[]>();
+        List<Double> at = new ArrayList<Double>();
+        int repeats = 0;
+        int oneVoice = 0;
+        for (double t : onsets) {
+            ScoreNote c = null;
+            ScoreNote d = null;
+            for (ScoreNote n : notes) {
+                if (n.onset <= t + 1e-9 && t < n.onset + n.duration - 1e-9) {
+                    if (n.voice == settings.cantusVoice && (c == null || n.pitch.compareTo(c.pitch) < 0)) {
+                        c = n;
+                    }
+                    if (n.voice == settings.discantusVoice && (d == null || n.pitch.compareTo(d.pitch) > 0)) {
+                        d = n;
+                    }
+                }
+            }
+            if (c == null || d == null) {
+                if (c != null || d != null) {
+                    oneVoice++;
+                }
+                continue;
+            }
+            if (!dyads.isEmpty()) {
+                ScoreNote[] last = dyads.get(dyads.size() - 1);
+                if (last[0].pitch.equals(c.pitch) && last[1].pitch.equals(d.pitch)) {
+                    repeats++;
+                    continue;
+                }
+            }
+            dyads.add(new ScoreNote[] { c, d });
+            at.add(t);
+        }
+        List<ScoreNote> out = new ArrayList<ScoreNote>();
+        List<Double> crossings = new ArrayList<Double>();
+        for (int i = 0; i < dyads.size(); i++) {
+            ScoreNote c = dyads.get(i)[0];
+            ScoreNote d = dyads.get(i)[1];
+            double t = at.get(i);
+            double end = i + 1 < dyads.size() ? at.get(i + 1)
+                    : Math.max(c.onset + c.duration, d.onset + d.duration);
+            out.add(new ScoreNote(t, c.pitch, c.loudness, end - t, settings.cantusVoice));
+            out.add(new ScoreNote(t, d.pitch, d.loudness, end - t, settings.discantusVoice));
+            int cmp = d.pitch.compareTo(c.pitch);
+            if (settings.orientation == Orientation.SWEEPING ? cmp < 0 : cmp > 0) {
+                crossings.add(t);
+            }
+        }
+        return new Reduced(out, crossings, repeats, oneVoice);
+    }
+
     private static List<ScoreNote> voice(List<ScoreNote> notes, int voice) {
         List<ScoreNote> v = new ArrayList<ScoreNote>();
         for (ScoreNote n : notes) {

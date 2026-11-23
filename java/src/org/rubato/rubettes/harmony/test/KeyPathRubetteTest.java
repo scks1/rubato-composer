@@ -18,6 +18,7 @@
 package org.rubato.rubettes.harmony.test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -25,6 +26,8 @@ import junit.framework.TestCase;
 import org.rubato.io.ScoreNote;
 import org.rubato.math.harmony.ChordSymbol;
 import org.rubato.math.harmony.KeyPath;
+import org.rubato.math.harmony.KeyPath.Reduction;
+import org.rubato.math.harmony.PitchClasses;
 import org.rubato.math.harmony.KeyPath.Event;
 import org.rubato.math.yoneda.Denotator;
 import org.rubato.rubettes.harmony.Harmonies;
@@ -97,6 +100,59 @@ public class KeyPathRubetteTest extends TestCase {
         assertEquals(2, bars.size());
         assertEquals(KeyPath.parseChart("C Am | D").get(0), bars.get(0));
         assertEquals(1, bars.get(1).size());
+    }
+
+    /** A G7 sonority reaches the key path as G under CONTAINED_TRIAD, and is dropped by NONE as before. */
+    public void testReducedBars() {
+        List<ScoreNote> n = new ArrayList<ScoreNote>();
+        n.add(new ScoreNote(0, 43, 80, 2.0, 0));
+        n.add(new ScoreNote(0, 59, 80, 2.0, 1));
+        n.add(new ScoreNote(0, 62, 80, 2.0, 2));
+        n.add(new ScoreNote(0, 65, 80, 2.0, 3));
+        n.add(new ScoreNote(2, 48, 80, 2.0, 0));
+        n.add(new ScoreNote(2, 64, 80, 2.0, 1));
+        n.add(new ScoreNote(2, 67, 80, 2.0, 2));
+        assertEquals(Arrays.asList(Arrays.asList(PitchClasses.of(7, 11, 2, 5), PitchClasses.of(0, 4, 7))),
+                Harmonies.keyPathBars(n, 4.0));
+        assertEquals(Arrays.asList(Arrays.asList(PitchClasses.of(7, 11, 2), PitchClasses.of(0, 4, 7))),
+                Harmonies.keyPathBars(n, 4.0, Reduction.CONTAINED_TRIAD));
+        assertEquals(Harmonies.keyPathBars(n, 4.0), Harmonies.keyPathBars(n, 4.0, Reduction.NONE));
+        // a reduced chord equal to the one before it in the bar is dropped as a repeat
+        n.add(new ScoreNote(3, 69, 80, 1.0, 3));
+        List<Integer> bar = Harmonies.keyPathBars(n, 4.0, Reduction.BASS_TRIAD).get(0);
+        assertEquals(Arrays.asList(PitchClasses.of(7, 11, 2), PitchClasses.of(0, 4, 7)), bar);
+    }
+
+    /** The real-music rules and the triad reduction are off by default and selectable. */
+    public void testRubetteRules() {
+        KeyPathRubette r = new KeyPathRubette();
+        assertFalse(r.isRealMusic());
+        assertFalse(r.isReduceTriads());
+        r.setRealMusic(true);
+        r.process(null);
+        assertEquals("C, D, d, C", r.getInfo());
+        assertTrue(r.getReportText(), r.getReportText().contains("Rules: real-music preset (a departure"));
+        r.setRealMusic(false);
+        r.process(null);
+        assertEquals("C, D, A, C", r.getInfo());
+        assertFalse(r.getReportText().contains("Rules:"));
+        // the reduction acts on scores only: F, G7, C (k4 of C) shows C only when the G7 is read as G
+        List<ScoreNote> n = new ArrayList<ScoreNote>();
+        int[][] chords = { { 41, 57, 60, 65 }, { 43, 59, 62, 65 }, { 36, 52, 55, 60 } };
+        for (int i = 0; i < chords.length; i++) {
+            for (int p : chords[i]) {
+                n.add(new ScoreNote(i, p, 80, 1, 0));
+            }
+        }
+        Denotator score = ScoreNote.toScore(n);
+        r.process(score);
+        assertEquals("", r.getInfo());
+        r.setReduceTriads(true);
+        r.process(score);
+        assertEquals("C", r.getInfo());
+        assertTrue(r.getReportText(), r.getReportText().contains("Sonorities reduced to a contained triad (a departure"));
+        assertEquals(KeyPath.report(Harmonies.keyPath(score, 4.0, KeyPath.defaults(2), Reduction.CONTAINED_TRIAD)),
+                KeyPath.report(KeyPath.analyse(Harmonies.keyPathBars(n, 4.0, Reduction.CONTAINED_TRIAD), 2)));
     }
 
     public void testRefusals() {

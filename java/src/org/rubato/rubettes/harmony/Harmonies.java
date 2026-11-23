@@ -169,6 +169,10 @@ public final class Harmonies {
      * @throws IllegalArgumentException if the bar length is not positive
      */
     public static List<List<Integer>> keyPathBars(List<ScoreNote> notes, double barLength) {
+        return bars(notes, barLength, KeyPath.Reduction.NONE);
+    }
+
+    private static List<List<Integer>> bars(List<ScoreNote> notes, double barLength, KeyPath.Reduction reduction) {
         if (!(barLength > 0)) {
             throw new IllegalArgumentException("The bar length must be positive, got " + barLength);
         }
@@ -190,10 +194,16 @@ public final class Harmonies {
         }
         for (double t : onsets) {
             int mask = 0;
+            int bass = Integer.MAX_VALUE;
             for (ScoreNote n : notes) {
                 if (n.onset <= t + 1e-9 && t < n.onset + n.duration - 1e-9) {
-                    mask |= 1 << Math.floorMod((int) Math.round(n.pitch.doubleValue()), 12);
+                    int p = (int) Math.round(n.pitch.doubleValue());
+                    mask |= 1 << Math.floorMod(p, 12);
+                    bass = Math.min(bass, p);
                 }
+            }
+            if (mask != 0) {
+                mask = KeyPath.reduce(mask, bass, reduction);
             }
             List<Integer> bar = bars.get((int) Math.floor((t - start) / barLength + 1e-9));
             if (mask != 0 && (bar.isEmpty() || bar.get(bar.size() - 1) != mask)) {
@@ -201,6 +211,14 @@ public final class Harmonies {
             }
         }
         return bars;
+    }
+
+    /** As {@link #keyPathBars(List, double)}, with each sonority reduced to a triad first. */
+    public static List<List<Integer>> keyPathBars(List<ScoreNote> notes, double barLength, KeyPath.Reduction reduction) {
+        if (reduction == null) {
+            throw new IllegalArgumentException("The reduction is null.");
+        }
+        return bars(notes, barLength, reduction);
     }
 
     /** The key path of a zero-addressed Score; see {@link KeyPath}. */
@@ -213,6 +231,27 @@ public final class Harmonies {
                     + "; Key Path needs a zero-addressed Score.");
         }
         return KeyPath.analyse(keyPathBars(ScoreNote.fromScore(score), barLength), window);
+    }
+
+    /** The key path of a zero-addressed Score under the given rules, its sonorities reduced first. */
+    public static List<KeyPath.Event> keyPath(Denotator score, double barLength, KeyPath.Options rules,
+                                              KeyPath.Reduction reduction) {
+        if (score == null) {
+            throw new IllegalArgumentException("The score is null.");
+        }
+        if (!score.nullAddressed()) {
+            throw new IllegalArgumentException("The score has address " + score.getAddress()
+                    + "; Key Path needs a zero-addressed Score.");
+        }
+        return KeyPath.analyse(keyPathBars(ScoreNote.fromScore(score), barLength, reduction), rules);
+    }
+
+    /** The key path of a chord chart under the given rules. */
+    public static List<KeyPath.Event> keyPath(String chart, KeyPath.Options rules) {
+        if (chart == null || chart.trim().isEmpty()) {
+            throw new IllegalArgumentException("No chords given");
+        }
+        return KeyPath.analyse(KeyPath.parseChart(chart), rules);
     }
 
     /** The key path of a chord chart; see {@link KeyPath}. */
