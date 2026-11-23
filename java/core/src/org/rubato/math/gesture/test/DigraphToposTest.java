@@ -231,6 +231,11 @@ public class DigraphToposTest extends TestCase {
         assertFalse(DigraphHomotopy.isCycleBasis(o, five));
         int[][] notBasis = { gens[0], gens[1], gens[2], DigraphHomotopy.closedPath(o, DigraphTopos.T, DigraphTopos.T) };
         assertFalse(DigraphHomotopy.isCycleBasis(o, notBasis));
+        // T, Q, NP and twice NFP span a sublattice of index 2: independent, but not a basis over Z
+        int[][] index2 = { gens[0], gens[1], gens[2],
+                           DigraphHomotopy.closedPath(o, DigraphTopos.N, DigraphTopos.F, DigraphTopos.P,
+                                                      DigraphTopos.N, DigraphTopos.F, DigraphTopos.P) };
+        assertFalse(DigraphHomotopy.isCycleBasis(o, index2));
     }
 
     public void testClosedPathRejectsGap() {
