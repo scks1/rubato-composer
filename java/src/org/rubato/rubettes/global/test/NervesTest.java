@@ -122,8 +122,42 @@ public class NervesTest extends TestCase {
         assertEquals("Nerve", r.getName());
         assertEquals("Score", r.getGroup());
         assertEquals(1, r.getInCount());
-        assertEquals(0, r.getOutCount());
+        assertEquals(1, r.getOutCount());
+        assertEquals("PitchClassNerve", r.getOutTip(0));
         assertNotNull(r.getIcon());
         assertEquals("Not run yet.", r.getReportText());
+    }
+
+    /** Stage 9: the rubette outputs the nerve as a PitchClassNerve denotator (spec NERVE-SPEC). */
+    public void testRubetteOutputsTheNerve() {
+        NerveRubette r = new NerveRubette();
+        assertNull("no output before a run", r.getOutput(0));
+        r.process(cMajorScale());
+        Denotator out = r.getOutput(0);
+        assertNotNull(r.getReportText(), out);
+        assertEquals("PitchClassNerve", out.getForm().getNameString());
+        assertEquals(28, ((org.rubato.math.yoneda.PowerDenotator) out).getFactorCount());
+        assertEquals(new ArrayList<String>(), org.rubato.math.global.NerveDenotators.violations(out));
+        assertEquals(Nerves.analyze(cMajorScale()).getDenotator(), out);
+
+        // a refused input clears the output
+        List<ScoreNote> two = new ArrayList<ScoreNote>();
+        two.add(new ScoreNote(0, 60, 80, 1.0, 0));
+        two.add(new ScoreNote(1, 64, 80, 1.0, 0));
+        r.process(ScoreNote.toScore(two));
+        assertNull(r.getOutput(0));
+        assertTrue(r.getReportText(), r.getReportText().contains("exactly seven"));
+
+        // chords by onset: the cadence's path of three chords
+        int[][] chords = { { 60, 64, 67 }, { 65, 69, 72 }, { 67, 71, 74 }, { 60, 64, 67 } };
+        List<ScoreNote> notes = new ArrayList<ScoreNote>();
+        for (int t = 0; t < chords.length; t++) {
+            for (int p : chords[t]) {
+                notes.add(new ScoreNote(t, p, 80, 1.0, 0));
+            }
+        }
+        Denotator d = Nerves.analyze(ScoreNote.toScore(notes),
+                new Nerves.Settings(Nerves.Mode.CHORDS_BY_ONSET, 3, -1)).getDenotator();
+        assertEquals(5, ((org.rubato.math.yoneda.PowerDenotator) d).getFactorCount());
     }
 }

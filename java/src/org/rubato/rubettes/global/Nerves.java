@@ -30,6 +30,7 @@ import org.rubato.math.global.ChordClasses;
 import org.rubato.math.global.GlobalComposition;
 import org.rubato.math.global.Interpretations;
 import org.rubato.math.global.LocalComposition;
+import org.rubato.math.global.NerveDenotators;
 import org.rubato.math.global.SimplicialComplex;
 import org.rubato.math.yoneda.Denotator;
 
@@ -88,6 +89,7 @@ public final class Nerves {
         private final GlobalComposition composition;
         private final SimplicialComplex nerve;
         private final String heading;
+        private Denotator denotator;
 
         Report(GlobalComposition composition, String heading) {
             this.composition = composition;
@@ -98,6 +100,17 @@ public final class Nerves {
         public GlobalComposition getComposition() { return composition; }
 
         public SimplicialComplex getNerve() { return nerve; }
+        /**
+         * The nerve as an anonymous PitchClassNerve denotator, a denotator of
+         * G<sub>3</sub> in Topos I &sect;13.4.1 (p. 259); see
+         * {@link NerveDenotators}.
+         */
+        public Denotator getDenotator() {
+            if (denotator == null) {
+                denotator = NerveDenotators.encode(composition);
+            }
+            return denotator;
+        }
 
         /** A plain-text account of the nerve. */
         public String text() {

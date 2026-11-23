@@ -38,7 +38,8 @@ import org.rubato.math.yoneda.Denotator;
 
 /**
  * Shows the nerve of a pitch-class covering of a Score: third chains of a
- * seven-tone scale or the chords by onset. See {@link Nerves}.
+ * seven-tone scale or the chords by onset. See {@link Nerves}. Output 0 is
+ * the nerve as a PitchClassNerve denotator, or null after a refused input.
  */
 public class NerveRubette extends SimpleAbstractRubette {
 
@@ -55,20 +56,26 @@ public class NerveRubette extends SimpleAbstractRubette {
 
     public NerveRubette() {
         setInCount(1);
-        setOutCount(0);
+        setOutCount(1);
         putProperty(new BooleanProperty(CHORDS_KEY, "Cover by the chords at each onset (otherwise third chains)", false));
         putProperty(new IntegerProperty(SIZE_KEY, "Third-chain chart size (1 tones, 2 thirds, 3 triads, 4 tetrads)", 3, 1, 4));
         putProperty(new IntegerProperty(DEGREE_KEY, "Pitch class of degree I (-1: the first note's)", -1, -1, 11));
     }
 
     public void run(RunInfo runInfo) {
-        Denotator input = getInput(0);
+        process(getInput(0));
+    }
+
+    /** Analyses one input; the GUI's run passes the linked Score. */
+    public void process(Denotator input) {
+        setOutput(0, null);
         if (input == null) {
             addError("Input denotator is null.");
             return;
         }
         try {
             Nerves.Report r = Nerves.analyze(input, settings());
+            setOutput(0, r.getDenotator());
             reportText = r.text();
             info = "f = " + java.util.Arrays.toString(r.getNerve().fVector()) + ", chi = "
                    + r.getNerve().eulerCharacteristic();
@@ -147,7 +154,9 @@ public class NerveRubette extends SimpleAbstractRubette {
              + " or tetrads on each degree) or by the chords sounding at each onset. Its view"
              + " shows the nerve of the covering: face counts, Euler characteristic, homology,"
              + " boundary and orientability, maximal simplexes and the chord class of every"
-             + " simplex.";
+             + " simplex. Its output is the nerve as a PitchClassNerve denotator: the set of"
+             + " simplexes, each the set of its covering sets, each the set of its pitch classes"
+             + " (the form G3 of Topos I 13.4.1, p. 259).";
     }
 
     public String getInTip(int i) {
@@ -155,6 +164,6 @@ public class NerveRubette extends SimpleAbstractRubette {
     }
 
     public String getOutTip(int i) {
-        return "";
+        return "PitchClassNerve";
     }
 }
