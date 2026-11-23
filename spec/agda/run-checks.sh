@@ -77,7 +77,7 @@ fi
 
 find . -name '*.agdai' -delete
 : > "$logdir/agda-positive.log"
-for m in Prelude OrderedSets Forms Registry Generated GeneratedChecks Addresses GeneratedAddresses AddressChecks Counterpoint Global Harmony Performance; do
+for m in Prelude OrderedSets Forms Registry Generated GeneratedChecks Addresses GeneratedAddresses AddressChecks Counterpoint Global Harmony Performance Gestures; do
   if out="$("$AGDA" --no-libraries -i . "$m.agda" 2>&1)"; then
     say "PASS $m.agda"
   else
