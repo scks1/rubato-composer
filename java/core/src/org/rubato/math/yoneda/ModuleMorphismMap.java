@@ -105,7 +105,8 @@ public class ModuleMorphismMap implements MorphismMap {
     
     public int compareTo(MorphismMap object) {
         if (object instanceof ConstantModuleMorphismMap) {
-            return 1;
+            // the same comparison as ConstantModuleMorphismMap.compareTo makes from its side
+            return moduleMorphism.compareTo(((ConstantModuleMorphismMap)object).getMorphism());
         }
         else if (object instanceof ModuleMorphismMap){
             return moduleMorphism.compareTo(((ModuleMorphismMap)object).getMorphism());
@@ -121,7 +122,8 @@ public class ModuleMorphismMap implements MorphismMap {
             return true;
         }
         else if (object instanceof ConstantModuleMorphismMap) {
-            return false;
+            // the same test as ConstantModuleMorphismMap.equals makes from its side
+            return moduleMorphism.equals(((ConstantModuleMorphismMap)object).getMorphism());
         }
         else if (object instanceof ModuleMorphismMap) {
             return moduleMorphism.equals(((ModuleMorphismMap)object).moduleMorphism);

@@ -241,7 +241,7 @@ public final class ConstantModuleMorphismMap extends ModuleMorphismMap {
      * Returns a copy of this module morphism map.
      */
     public ModuleMorphismMap copy() {
-        return new ConstantModuleMorphismMap(moduleElement);
+        return new ConstantModuleMorphismMap(getDomain(), moduleElement);
     }
 
     

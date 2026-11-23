@@ -8,10 +8,13 @@ import junit.framework.TestCase;
 
 import org.rubato.logeo.FormFactory;
 import org.rubato.math.module.Module;
+import org.rubato.math.module.RElement;
+import org.rubato.math.module.RRing;
 import org.rubato.math.module.ZElement;
 import org.rubato.math.module.ZProperFreeElement;
 import org.rubato.math.module.ZProperFreeModule;
 import org.rubato.math.module.ZRing;
+import org.rubato.math.module.morphism.CanonicalMorphism;
 import org.rubato.math.module.morphism.ConstantMorphism;
 import org.rubato.math.module.morphism.ModuleMorphism;
 import org.rubato.math.module.morphism.RAffineMorphism;
@@ -200,5 +203,47 @@ public class AddressTest extends TestCase {
 		SimpleDenotator b = new SimpleDenotator(null, PITCH, new ZElement(64));
 		assertTrue(a.compareTo(b) < 0);
 		assertEquals(a, new SimpleDenotator(null, PITCH, new ZElement(60)));
+	}
+
+	private static final SimpleForm REAL = FormFactory.makeRModuleForm("AddressTestReal");
+
+	/**
+	 * A copy of a Z-addressed constant keeps its address in its morphism too. The copy
+	 * dropped the domain before stage 9, so adding an arrow to the copied constant failed.
+	 */
+	public void testACopiedAddressedConstantKeepsItsDomain() throws Exception {
+		SimpleDenotator constant = (SimpleDenotator)new SimpleDenotator(null, REAL, new RElement(3)).changeAddress(Z);
+		SimpleDenotator copy = (SimpleDenotator)constant.copy();
+		assertEquals(Z, copy.getAddress());
+		assertEquals(Z, copy.getModuleMorphism().getDomain());
+		ModuleMorphism arrow = new RAffineMorphism(2, 0).compose(CanonicalMorphism.make(Z, RRing.ring));
+		ModuleMorphism sum = copy.getModuleMorphism().sum(arrow);
+		assertEquals(new RElement(5), sum.map(new ZElement(1)));
+	}
+
+	/**
+	 * A constant coordinate and an arrow coordinate are ordered and compared the same way
+	 * from both sides. PowerDenotator keeps its factors in a TreeMap, which loses objects
+	 * when the two orders disagree; before stage 9 an arrow map ranked itself after every
+	 * constant map while a constant map compared the two morphisms' strings.
+	 */
+	public void testConstantAndArrowCoordinatesOrderConsistently() throws Exception {
+		SimpleDenotator constant = (SimpleDenotator)new SimpleDenotator(null, REAL, new RElement(3)).changeAddress(Z);
+		SimpleDenotator arrow = new SimpleDenotator(null, REAL, new RAffineMorphism(2, 0).compose(CanonicalMorphism.make(Z, RRing.ring)));
+		assertTrue(constant.compareTo(arrow) != 0);
+		assertEquals(Integer.signum(constant.compareTo(arrow)), -Integer.signum(arrow.compareTo(constant)));
+		assertFalse(constant.equals(arrow));
+		assertFalse(arrow.equals(constant));
+		SimpleDenotator constantArrow = new SimpleDenotator(null, REAL, new ConstantMorphism(Z, new RElement(3)));
+		assertEquals(0, constant.compareTo(constantArrow));
+		assertEquals(0, constantArrow.compareTo(constant));
+		assertTrue(constant.equals(constantArrow));
+		assertTrue(constantArrow.equals(constant));
+		//_make_unsafe keeps a constant morphism in an arrow map, which then meets the constant map
+		SimpleDenotator wrapped = SimpleDenotator._make_unsafe(null, REAL, new ConstantMorphism(Z, new RElement(3)));
+		assertEquals(0, wrapped.compareTo(constant));
+		assertEquals(0, constant.compareTo(wrapped));
+		assertTrue(wrapped.equals(constant));
+		assertTrue(constant.equals(wrapped));
 	}
 }
