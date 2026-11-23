@@ -17,18 +17,23 @@
 
 package org.rubato.rubettes.harmony;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import org.rubato.io.ScoreNote;
 
 import org.rubato.math.global.Interpretations;
 import org.rubato.math.harmony.CadentialAnalysis;
 import org.rubato.math.harmony.Cadences;
 import org.rubato.math.harmony.ChordSymbol;
+import org.rubato.math.harmony.KeyPath;
 import org.rubato.math.harmony.Modulations;
 import org.rubato.math.harmony.Modulations.Filter;
 import org.rubato.math.harmony.Modulations.Rigidity;
 import org.rubato.math.harmony.PitchClasses;
 import org.rubato.math.harmony.Quantized;
 import org.rubato.math.harmony.Tonality;
+import org.rubato.math.yoneda.Denotator;
 
 /**
  * Headless entry points for the harmony rubettes: the modulation quanta and
@@ -148,5 +153,68 @@ public final class Harmonies {
         Tonality k = Tonality.of(Interpretations.C_MAJOR, 0, 4).transpose(tonic);
         return CadentialAnalysis.report(k, parsed, rootMode ? CadentialAnalysis.Mode.ROOT : CadentialAnalysis.Mode.LITERAL,
                                         Math.min(window, parsed.size()));
+    }
+
+    /**
+     * The simultaneities of a list of notes, bar by bar: for each distinct
+     * onset in a bar, the pitch classes of the notes sounding then, in onset
+     * order, with repeats of the previous simultaneity dropped. Bar b holds
+     * onsets from (b &minus; 1) &middot; barLength, counted from the earliest note.
+     *
+     * @throws IllegalArgumentException if the bar length is not positive
+     */
+    public static List<List<Integer>> keyPathBars(List<ScoreNote> notes, double barLength) {
+        if (!(barLength > 0)) {
+            throw new IllegalArgumentException("The bar length must be positive, got " + barLength);
+        }
+        List<List<Integer>> bars = new ArrayList<List<Integer>>();
+        if (notes.isEmpty()) {
+            return bars;
+        }
+        double start = Double.MAX_VALUE;
+        double end = -Double.MAX_VALUE;
+        java.util.TreeSet<Double> onsets = new java.util.TreeSet<Double>();
+        for (ScoreNote n : notes) {
+            start = Math.min(start, n.onset);
+            end = Math.max(end, n.onset);
+            onsets.add(n.onset);
+        }
+        int count = (int) Math.floor((end - start) / barLength + 1e-9) + 1;
+        for (int b = 0; b < count; b++) {
+            bars.add(new ArrayList<Integer>());
+        }
+        for (double t : onsets) {
+            int mask = 0;
+            for (ScoreNote n : notes) {
+                if (n.onset <= t + 1e-9 && t < n.onset + n.duration - 1e-9) {
+                    mask |= 1 << Math.floorMod((int) Math.round(n.pitch.doubleValue()), 12);
+                }
+            }
+            List<Integer> bar = bars.get((int) Math.floor((t - start) / barLength + 1e-9));
+            if (mask != 0 && (bar.isEmpty() || bar.get(bar.size() - 1) != mask)) {
+                bar.add(mask);
+            }
+        }
+        return bars;
+    }
+
+    /** The key path of a zero-addressed Score; see {@link KeyPath}. */
+    public static List<KeyPath.Event> keyPath(Denotator score, double barLength, int window) {
+        if (score == null) {
+            throw new IllegalArgumentException("The score is null.");
+        }
+        if (!score.nullAddressed()) {
+            throw new IllegalArgumentException("The score has address " + score.getAddress()
+                    + "; Key Path needs a zero-addressed Score.");
+        }
+        return KeyPath.analyse(keyPathBars(ScoreNote.fromScore(score), barLength), window);
+    }
+
+    /** The key path of a chord chart; see {@link KeyPath}. */
+    public static List<KeyPath.Event> keyPath(String chart, int window) {
+        if (chart == null || chart.trim().isEmpty()) {
+            throw new IllegalArgumentException("No chords given");
+        }
+        return KeyPath.analyse(KeyPath.parseChart(chart), window);
     }
 }

@@ -30,6 +30,7 @@ import org.rubato.math.counterpoint.FirstSpecies.Kind;
 import org.rubato.math.counterpoint.FirstSpecies.Orientation;
 import org.rubato.math.counterpoint.FirstSpecies.Step;
 import org.rubato.math.counterpoint.StrongDichotomies;
+import org.rubato.math.counterpoint.SymmetryTrace;
 import org.rubato.math.yoneda.Denotator;
 
 /**
@@ -215,6 +216,51 @@ public final class Counterpoint {
             d[i] = integerPitch(dc.get(i));
         }
         return new Report(settings, cf, dc, FirstSpecies.check(settings.dichotomy, settings.orientation, c, d));
+    }
+
+    /**
+     * The contrapuntal symmetries of each step of a two-voice score, as
+     * {@link SymmetryTrace#trace(Dichotomy, int[][])} gives them. Each
+     * interval is the cantus firmus pitch class plus &epsilon; times the
+     * discantus interval above it (below it when hanging).
+     */
+    public static List<SymmetryTrace.Step> trace(Denotator score, Settings settings) {
+        if (score == null) {
+            throw new IllegalArgumentException("The score is null.");
+        }
+        if (!score.nullAddressed()) {
+            throw new IllegalArgumentException("The score has address " + score.getAddress()
+                    + "; Symmetry Trace needs a zero-addressed Score. Evaluate it first, for example with atNull().");
+        }
+        return trace(ScoreNote.fromScore(score), settings);
+    }
+
+    /** As {@link #trace(Denotator, Settings)}, for a list of notes. */
+    public static List<SymmetryTrace.Step> trace(List<ScoreNote> notes, Settings settings) {
+        return SymmetryTrace.trace(settings.dichotomy, intervals(notes, settings));
+    }
+
+    /** The intervals x + &epsilon;.y of a note-against-note two-voice passage. */
+    public static int[][] intervals(List<ScoreNote> notes, Settings settings) {
+        List<ScoreNote> cf = voice(notes, settings.cantusVoice);
+        List<ScoreNote> dc = voice(notes, settings.discantusVoice);
+        if (cf.size() != dc.size() || cf.size() < 2) {
+            throw new IllegalArgumentException("A symmetry trace needs at least two note-against-note dyads in voices "
+                    + settings.cantusVoice + " and " + settings.discantusVoice + "; the score has "
+                    + cf.size() + " and " + dc.size() + " notes");
+        }
+        int[][] xi = new int[cf.size()][];
+        for (int i = 0; i < xi.length; i++) {
+            if (Math.abs(cf.get(i).onset - dc.get(i).onset) > 1e-9) {
+                throw new IllegalArgumentException("Note " + (i + 1) + " is not note against note: the cantus firmus starts at "
+                        + cf.get(i).onset + " and the discantus at " + dc.get(i).onset);
+            }
+            int c = integerPitch(cf.get(i));
+            int d = integerPitch(dc.get(i));
+            int k = settings.orientation == Orientation.SWEEPING ? d - c : c - d;
+            xi[i] = new int[] { Math.floorMod(c, 12), Math.floorMod(k, 12) };
+        }
+        return xi;
     }
 
     /** The admitted successors of x + &epsilon;.k; see {@link ContrapuntalSymmetries}. */
