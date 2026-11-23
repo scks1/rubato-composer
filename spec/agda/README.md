@@ -36,7 +36,8 @@ standard library. Every module uses `--safe --without-K`.
 | `Harmony.agda` | the minimal cadential sets of C major for triads and seventh chords, one row of a modulation-quantum table, seventh chords as (type, root), R42, P42 and T^s, with facts proved by computation |
 | `Performance.agda` | stemma shapes as rose trees with proofs that every shape has a leaf, has one edge fewer than nodes and lists no node among its own daughters; the shape of Fig. 38.5; exact onsets of step tempi over positive rationals |
 | `Gestures.agda` | digraphs and their morphisms, the subobject classifier Ω of the topos of digraphs built from sieves (5 arrows), the count of maps D → Ω equals the count of subdigraphs and the Yoneda counts on eight small digraphs, Example 69's networks and implications (V ⇒ I as printed; IV ⇒ V with the extra loop at 11), and the face coefficients of Def. 112, with facts proved by computation |
-| `adversarial/*.agda` | 31 files that must fail to typecheck, each with an `-- EXPECT:` line |
+| `Monteverdi.agda` | the contrapuntal symmetries in H of each consonance of (K/D), the cardinality columns of the six symmetry tables of arXiv 2512.18862 under reading D (41 rows), and the three quanta of its Examples 1-3 with their invariance, rigidity and the unique polarity of the six-tone traces, with facts proved by computation |
+| `adversarial/*.agda` | 34 files that must fail to typecheck, each with an `-- EXPECT:` line |
 | `gen/ExportAgda.java` | the generator for `Generated.agda` |
 | `gen/ExportAddresses.java` | the generator for `GeneratedAddresses.agda` |
 | `gen/DepartureProbe.java` | prints Java's behaviour for each departure case P1 to P11 |
@@ -362,6 +363,31 @@ IV ⇒ V; `GesturesOmegaFourArrows.agda` gives Ω four arrows;
 `GesturesReversedArrow.agda` claims swapping an arrow's ends is a
 morphism; `GesturesHomSubMismatch.agda` counts 12 maps from the path into Ω.
 
+`Monteverdi.agda` covers stage 7 (MONTEVERDI-SPEC):
+- `candidates-exact`: of the 576 maps e^{ε.t}∘(u + ε.v) in H, the 192 in
+  `CANDS` are exactly those under which the induced polarity at 0,
+  (5x, 5y + 2), exchanges gK[ε] and its complement (CCW Def. 2.5,
+  p. 14).
+- `syms-0` … `syms-9`: for each consonance k, the maps in `CANDS` that
+  leave ε.k outside gK[ε] and meet K[ε] in the largest number of points
+  are the listed sets (5, 2, 2, 1, 5 and 2 maps for k = 0, 3, 4, 7, 8, 9).
+- `cards-*`: the cardinality columns of the Confitebor, Ma tu, Io mi son,
+  Laudate and both Gloria tables (pp. 8-11), with each step's set read as
+  the symmetries of ε.k_i whose gK[ε] contains
+  (x_{i+1} − x_i) + ε.k_{i+1}; `laudate-W1` gives finding W1.
+- `ex1`, `ex2`, `ex3`, `invariance`, `rigidity`, `traces`: the three
+  quanta of §4.1 (pp. 5-6) through `Harmony.row`, each mapped onto itself
+  by its modulator, with rigid traces.
+- `unique-polarity`: the traces of Examples 1 and 3 are strong
+  dichotomies with polarities 11x + 7 and 11x + 11; `ex2-five`: Example
+  2's trace has five tones (W3).
+The tables' symmetry names are checked in Java only (SymmetryTraceTest);
+Agda checks the sets per consonance and the counts.
+`adversarial/MonteverdiLaudateRowOneThree.agda` gives Laudate's row 1
+three symmetries; `MonteverdiEx2TraceStrong.agda` calls Example 2's trace
+strong; `MonteverdiEx1WrongPolarity.agda` gives Example 1's trace the
+polarity of Example 3's.
+
 ## Stated but not proved
 
 - `cmpDen` is flip-symmetric or has transitive `lt` on well-formed
@@ -437,6 +463,9 @@ this VM's notes on the Ubuntu noble packages, not from a runner.
   Example 69 are written by hand and tied to Java only by
   `DigraphTest`, `DigraphToposTest` and `FacesTest`, which compute the
   same values.
+- `Monteverdi.agda` has no generator: its interval sequences, symmetry
+  sets and quanta are written by hand and tied to Java only by
+  `SymmetryTraceTest` and `KeyPathTest`.
 - The CI job (above).
 - D15 and D16 have no probe.
 - Agda versions other than 2.6.3.
