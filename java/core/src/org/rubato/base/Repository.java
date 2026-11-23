@@ -1051,6 +1051,18 @@ public class Repository
         
         PowerForm scoreForm = FormFactory.makePowerForm("Score", noteForm);
         registerBuiltin(scoreForm);
+
+        // Nerves as denotators (Topos I 13.4.1, p. 259): G0 = PitchClass,
+        // G(i+1) = Power(G(i)); a pitch-class set is in G1, a covering in G2
+        // and the nerve of a covering in G3. See NerveDenotators.
+        SimpleForm pitchClassForm = FormFactory.makeZnModuleForm("PitchClass", 12);
+        registerBuiltin(pitchClassForm);
+        PowerForm pitchClassSetForm = FormFactory.makePowerForm("PitchClassSet", pitchClassForm);
+        registerBuiltin(pitchClassSetForm);
+        PowerForm pitchClassCoveringForm = FormFactory.makePowerForm("PitchClassCovering", pitchClassSetForm);
+        registerBuiltin(pitchClassCoveringForm);
+        PowerForm pitchClassNerveForm = FormFactory.makePowerForm("PitchClassNerve", pitchClassCoveringForm);
+        registerBuiltin(pitchClassNerveForm);
         
         // Karim's registration of the MacroScore forms
         FormReference formRef = new FormReference("MacroScore", Form.POWER);
