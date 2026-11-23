@@ -16,6 +16,8 @@ import org.rubato.math.module.RProperFreeElement;
 import org.rubato.math.module.RProperFreeModule;
 import org.rubato.math.module.RRing;
 import org.rubato.math.module.RingElement;
+import org.rubato.math.module.morphism.CompositionException;
+import org.rubato.math.module.morphism.ModuleMorphism;
 import org.rubato.math.yoneda.ColimitDenotator;
 import org.rubato.math.yoneda.Denotator;
 import org.rubato.math.yoneda.FactorDenotator;
@@ -329,6 +331,9 @@ public class ObjectGenerator {
 	}
 	
 	private SimpleDenotator createRelativeSimple(SimpleDenotator simple, SimpleDenotator reference) {
+		if (!simple.nullAddressed() || !reference.nullAddressed()) {
+			return this.combineArrows(simple, reference, false);
+		}
 		try {
 			ModuleElement differenceElement = simple.getElement().difference(reference.getElement());
 			return new SimpleDenotator(NameDenotator.make(""), simple.getSimpleForm(), differenceElement);
@@ -339,10 +344,37 @@ public class ObjectGenerator {
 	}
 	
 	private SimpleDenotator createAbsoluteSimple(SimpleDenotator simple, SimpleDenotator reference) {
+		if (!simple.nullAddressed() || !reference.nullAddressed()) {
+			return this.combineArrows(simple, reference, true);
+		}
 		try {
 			ModuleElement sumElement = simple.getElement().sum(reference.getElement());
 			return new SimpleDenotator(NameDenotator.make(""), simple.getSimpleForm(), sumElement);
 		} catch(DomainException e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	/*
+	 * Adds or subtracts the two simples' arrows, so that (x+y)(a) = x(a)+y(a) at every address
+	 * point a. A zero-addressed simple first moves to the other simple's address as a constant.
+	 */
+	private SimpleDenotator combineArrows(SimpleDenotator simple, SimpleDenotator reference, boolean add) {
+		try {
+			if (simple.nullAddressed()) {
+				simple = (SimpleDenotator)simple.changeAddress(reference.getAddress());
+			} else if (reference.nullAddressed()) {
+				reference = (SimpleDenotator)reference.changeAddress(simple.getAddress());
+			}
+			ModuleMorphism x = simple.getModuleMorphism();
+			ModuleMorphism y = reference.getModuleMorphism();
+			ModuleMorphism combined = add ? x.sum(y) : x.difference(y);
+			return new SimpleDenotator(NameDenotator.make(""), simple.getSimpleForm(), combined);
+		} catch (CompositionException e) {
+			e.printStackTrace();
+			return null;
+		} catch (DomainException e) {
 			e.printStackTrace();
 			return null;
 		}

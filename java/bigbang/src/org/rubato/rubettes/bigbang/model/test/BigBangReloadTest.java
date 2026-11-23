@@ -1,5 +1,9 @@
 package org.rubato.rubettes.bigbang.model.test;
 
+import org.rubato.math.module.ZElement;
+import org.rubato.math.module.ZRing;
+import org.rubato.rubettes.bigbang.headless.test.AddressedBigBangTest;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.StringReader;
@@ -164,6 +168,25 @@ public class BigBangReloadTest extends TestCase {
 		assertEquals(loaded.warnings.toString(), 1, loaded.warnings.size());
 		assertTrue(loaded.warnings.get(0).getMessage(), loaded.warnings.get(0).getMessage().contains("identity"));
 		assertSameNotes("identity affine", translated, loaded.model.getComposition());
+	}
+	
+	/**
+	 * A Z-addressed composition saves and reloads with its arrows: the reloaded composition
+	 * has address Z and the same values at every address point checked.
+	 */
+	public void testAddressedScoreReloadsWithItsArrows() throws Exception {
+		Denotator input = AddressedBigBangTest.zScore();
+		BigBang bigBang = new BigBang(input).axes("Onset", "Pitch").translate(1, 12).rotate(0, 60, Math.PI / 3);
+		Denotator before = bigBang.getComposition();
+		Captured loaded = load(save(bigBang.getModel()));
+		assertEquals("stderr while loading", "", loaded.stderr);
+		assertTrue("warnings while loading: " + loaded.warnings, loaded.warnings.isEmpty());
+		Denotator after = loaded.model.getComposition();
+		assertEquals(ZRing.ring, after.getAddress());
+		for (int a = -1; a <= 2; a++) {
+			assertEquals("at " + a, AddressedBigBangTest.values(before.at(new ZElement(a))),
+					AddressedBigBangTest.values(after.at(new ZElement(a))));
+		}
 	}
 	
 }

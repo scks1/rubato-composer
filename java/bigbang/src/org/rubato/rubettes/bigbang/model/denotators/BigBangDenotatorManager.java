@@ -88,6 +88,12 @@ public class BigBangDenotatorManager {
 	}
 	
 	public OperationPathResults setOrAddComposition(Denotator composition) {
+		if (!composition.nullAddressed()) {
+			//objects at two addresses cannot share a powerset, so an addressed input replaces
+			//the composition instead of being added to it
+			this.setComposition(composition);
+			return this.getPathResults();
+		}
 		Denotator convertedComposition = this.objectGenerator.convertDenotatorIfCompatible(composition);
 		if (convertedComposition != null) {
 			if (convertedComposition.getForm().getType() == Form.POWER || convertedComposition.getForm().getType() == Form.LIST) {
@@ -532,6 +538,10 @@ public class BigBangDenotatorManager {
 		FactorDenotator powerset = this.getPowersetOrList(powersetPath);
 		int previousFactorCount = powerset.getFactorCount();
 		object = this.objectGenerator.convertDenotatorIfNecessary(object, ((Denotator)powerset).getForm().getForms().get(0));
+		if (object.nullAddressed() && !((Denotator)powerset).nullAddressed()) {
+			//a zero-addressed object joins an addressed composition as constant arrows
+			object = object.changeAddress(((Denotator)powerset).getAddress());
+		}
 		try {
 			powerset.appendFactor(object);
 		} catch (RubatoException e) { e.printStackTrace(); }
