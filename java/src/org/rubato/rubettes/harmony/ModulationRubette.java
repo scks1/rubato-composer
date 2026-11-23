@@ -34,6 +34,7 @@ import org.rubato.base.IntegerProperty;
 import org.rubato.base.SimpleAbstractRubette;
 import org.rubato.composer.RunInfo;
 import org.rubato.composer.icons.Icons;
+import org.rubato.math.harmony.Modulations;
 import org.rubato.math.harmony.Modulations.Filter;
 import org.rubato.math.harmony.Modulations.Rigidity;
 import org.rubato.math.harmony.Quantized;
@@ -66,7 +67,8 @@ public class ModulationRubette extends SimpleAbstractRubette {
         putProperty(new IntegerProperty(SIZE_KEY, "Chord size (3 triads, 4 seventh chords)", 3, 3, 4));
         putProperty(new IntegerProperty(TARGET_KEY, "Target transposition p (0: all eleven)", 0, 0, 11));
         putProperty(new BooleanProperty(COVERED_KEY, "Keep only quanta whose trace the target's chords cover", true));
-        putProperty(new BooleanProperty(AUTX_KEY, "Rigidity under the scale's TI automorphisms only (reconstruction)", false));
+        putProperty(new BooleanProperty(AUTX_KEY, "Rigidity under the scale's TI automorphisms only (reconstruction; off: literal TI12)",
+                Modulations.DEFAULT_RIGIDITY == Rigidity.AUT_X));
     }
 
     public void run(RunInfo runInfo) {

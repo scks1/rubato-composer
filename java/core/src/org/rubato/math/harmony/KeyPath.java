@@ -173,9 +173,9 @@ public final class KeyPath {
         return bars;
     }
 
-    /** The path with Def. 88's covering filter and TI12 rigidity. */
+    /** The path with Def. 88's covering filter and the default rigidity reading. */
     public static List<Event> analyse(List<List<Integer>> bars, int window) {
-        return analyse(bars, window, Filter.COVERED, Rigidity.TI12);
+        return analyse(bars, window, Filter.COVERED, Modulations.DEFAULT_RIGIDITY);
     }
 
     /**

@@ -65,7 +65,7 @@ public final class Harmonies {
          * @param chordSize 3 (triads) or 4 (seventh chords)
          * @param target    the transposition p = 1 to 11 of the target, or 0 for all
          * @param filter    COVERED keeps quanta whose trace the target's degree chords cover
-         * @param rigidity  TI12 (literal reading) or AUT_X (a reconstruction; see HARMONY-SPEC 7.4)
+         * @param rigidity  AUT_X (the default, a reconstruction; see HARMONY-SPEC 7.4) or TI12 (the literal reading)
          */
         public ModulationSettings(int scale, int tonic, int chordSize, int target, Filter filter, Rigidity rigidity) {
             if (scale < 0 || scale >= SCALES.length) {
@@ -85,9 +85,14 @@ public final class Harmonies {
             this.rigidity = rigidity;
         }
 
-        /** C major, triads, all targets, covered, TI12. */
+        /** C major, triads, all targets, covered, the default rigidity reading. */
         public static ModulationSettings defaults() {
-            return new ModulationSettings(0, 0, 3, 0, Filter.COVERED, Rigidity.TI12);
+            return new ModulationSettings(0, 0, 3, 0, Filter.COVERED, Modulations.DEFAULT_RIGIDITY);
+        }
+
+        /** The rigidity reading. */
+        public Rigidity getRigidity() {
+            return rigidity;
         }
 
         /** The source tonality. */

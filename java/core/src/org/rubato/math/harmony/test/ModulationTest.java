@@ -469,4 +469,26 @@ public class ModulationTest extends TestCase {
         }
         throw new IllegalArgumentException(name);
     }
+
+    /**
+     * Simon's decision of 2026-11-23: AUT_X is the default reading. Against
+     * Topos IV App. P.1.1 it matches 28 of 38 orbits, TI12 4 of 38
+     * (HARMONY-SPEC 7.4, testP11Counts).
+     */
+    public void testDefaultRigidityIsAutX() {
+        assertEquals(Rigidity.AUT_X, Modulations.DEFAULT_RIGIDITY);
+    }
+
+    /**
+     * The major scale has an inversion symmetry, so AUT_X is all of TI12 for
+     * every major tonality, and the default does not change major-key results.
+     */
+    public void testAutXIsTi12ForMajorKeys() {
+        for (int tonic = 0; tonic < 12; tonic++) {
+            assertEquals(24, Modulations.autX(C3.transpose(tonic)).size());
+            assertEquals(24, Modulations.autX(C4.transpose(tonic)).size());
+        }
+        assertEquals(keys(Modulations.all(C4, Filter.ALGORITHM_1, Rigidity.TI12)),
+                keys(Modulations.all(C4, Filter.ALGORITHM_1, Rigidity.AUT_X)));
+    }
 }

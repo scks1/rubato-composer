@@ -36,10 +36,13 @@ import org.rubato.math.counterpoint.ZnAffine;
  * T &cap; Q cover it (property (3)). {@link Filter#ALGORITHM_1} drops the covering
  * half, as Algorithm 1 does, and records it in {@link Quantized#covered()}.
  * <p>
- * Rigidity is tested against all of TI12 by default, as property (3) and
- * Algorithm 1's step 6 state. {@link Rigidity#AUT_X} tests only the TI maps
- * that send S to one of its translates; it is a reconstruction of the counts
- * of Topos IV, App. P.1.1, not a definition from the sources.
+ * Rigidity is tested by default ({@link #DEFAULT_RIGIDITY}, Simon's choice
+ * of 2026-11-23) under {@link Rigidity#AUT_X}: only the TI maps that send S
+ * to one of its translates. This is a reconstruction of the counts of
+ * Topos IV, App. P.1.1 (28 of 38 orbits agree, against 4 of 38 for TI12),
+ * not a definition from the sources. {@link Rigidity#TI12} tests all 24 TI
+ * maps, as property (3) and Algorithm 1's step 6 state. For the major scale
+ * the two coincide, since every TI map sends it to a translate.
  */
 public final class Modulations {
 
@@ -58,6 +61,9 @@ public final class Modulations {
         /** Departure: only the TI maps sending S to a translate of S. */
         AUT_X
     }
+
+    /** The reading the two-argument calls, the harmony rubettes and their defaults use. */
+    public static final Rigidity DEFAULT_RIGIDITY = Rigidity.AUT_X;
 
     private static final List<ZnAffine> TI12 = new ArrayList<ZnAffine>();
 

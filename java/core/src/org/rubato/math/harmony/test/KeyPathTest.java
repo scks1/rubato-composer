@@ -229,4 +229,12 @@ public class KeyPathTest extends TestCase {
         assertEquals("D", ev.get(2).keyName());
         assertEquals(4, ev.get(2).bar());
     }
+
+    /** The two-argument call uses the default reading; on major keys both readings give the same path. */
+    public void testDefaultReading() {
+        List<List<Integer>> bars = KeyPath.parseChart(ARIA);
+        String byDefault = KeyPath.report(KeyPath.analyse(bars, 2));
+        assertEquals(KeyPath.report(KeyPath.analyse(bars, 2, Filter.COVERED, Rigidity.AUT_X)), byDefault);
+        assertEquals(KeyPath.report(KeyPath.analyse(bars, 2, Filter.COVERED, Rigidity.TI12)), byDefault);
+    }
 }

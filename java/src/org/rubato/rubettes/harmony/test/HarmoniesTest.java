@@ -19,6 +19,9 @@ package org.rubato.rubettes.harmony.test;
 
 import junit.framework.TestCase;
 
+import org.rubato.base.BooleanProperty;
+import org.rubato.base.IntegerProperty;
+
 import org.rubato.math.harmony.Modulations.Filter;
 import org.rubato.math.harmony.Modulations.Rigidity;
 import org.rubato.rubettes.harmony.CadenceAnalysisRubette;
@@ -86,5 +89,26 @@ public class HarmoniesTest extends TestCase {
         assertNotNull(c.getIcon());
         c.run(null);
         assertTrue(c.getReportText(), c.getReportText().contains("J4 {III,IV} (region A)"));
+    }
+
+    /**
+     * AUT_X is the default (Simon, 2026-11-23); the literal TI12 reading stays
+     * selectable in the settings and through the rubette's "autX" property.
+     * Harmonic minor has no inversion symmetry, so there the readings differ.
+     */
+    public void testRigidityDefault() {
+        assertEquals(Rigidity.AUT_X, Harmonies.ModulationSettings.defaults().getRigidity());
+        ModulationRubette m = new ModulationRubette();
+        assertTrue(((BooleanProperty) m.getProperty("autX")).getBoolean());
+
+        int autX = Harmonies.modulations(new Harmonies.ModulationSettings(1, 0, 3, 0, Filter.COVERED, Rigidity.AUT_X)).size();
+        int ti12 = Harmonies.modulations(new Harmonies.ModulationSettings(1, 0, 3, 0, Filter.COVERED, Rigidity.TI12)).size();
+        assertTrue(autX + " vs " + ti12, autX != ti12);
+        ((IntegerProperty) m.getProperty("scale")).setInt(1);
+        m.run(null);
+        assertEquals(autX + (autX == 1 ? " quantum" : " quanta"), m.getInfo());
+        ((BooleanProperty) m.getProperty("autX")).setBoolean(false);
+        m.run(null);
+        assertEquals(ti12 + (ti12 == 1 ? " quantum" : " quanta"), m.getInfo());
     }
 }
