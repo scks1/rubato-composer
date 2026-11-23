@@ -70,7 +70,11 @@ import org.xml.sax.SAXException;
  *     tempo changes are reported in the warnings and not read.</li>
  * <li>Ties: a note whose tie stop continues an open tie with the same
  *     MusicXML voice and pitch, ending where it starts, lengthens that
- *     note.</li>
+ *     note. Tie starts that no tie stop answers are counted in one warning
+ *     per part; with {@link #setCloseTies} the next note of the same voice
+ *     and pitch that starts where the tied note ends continues it anyway.</li>
+ * <li>A measure holding only rests that runs past its time signature is cut
+ *     to it, with a warning ({@link #setClampRestMeasures}).</li>
  * <li>Loudness: the note's dynamics attribute, else the last sound element
  *     with a dynamics attribute in the part, else 100; either way the
  *     velocity is the percentage times 0.9, rounded (90 for 100%).</li>
@@ -86,6 +90,26 @@ public final class MusicXMLReader {
     private Integer tempo;
     private final TreeMap<Integer, PartInfo> parts = new TreeMap<Integer, PartInfo>();
     private boolean tempoChangeReported;
+    private boolean closeTies;
+    private boolean clampRestMeasures = true;
+
+    /**
+     * When on, a tie start that has no tie stop is closed by the next note of
+     * the same MusicXML voice and pitch that starts where the tied note ends
+     * (off by default). Either way such tie starts are counted in the warnings.
+     */
+    public void setCloseTies(boolean on) {
+        this.closeTies = on;
+    }
+
+    /**
+     * When on (the default), a measure that holds only rests and runs past its
+     * time signature is cut to the time signature, with a warning, so the
+     * part's later notes keep their places.
+     */
+    public void setClampRestMeasures(boolean on) {
+        this.clampRestMeasures = on;
+    }
 
     /**
      * The first tempo in the last file read, in microseconds per quarter
@@ -239,12 +263,29 @@ public final class MusicXMLReader {
         return new PartInfo(name, program, pan, volume);
     }
 
+    /** The tie starts of one part that no tie stop answered. */
+    private static final class Ties {
+        int count;
+        int closed;
+        int seq;
+        Open first;
+
+        void unstopped(Open o) {
+            this.count++;
+            if (this.first == null || o.order < this.first.order) {
+                this.first = o;
+            }
+        }
+    }
+
     /** A note held open by a tie start, keyed by MusicXML voice and pitch. */
     private static final class Open {
         final Frac onset;
         Frac end;
         final Rational pitch;
         final int loudness;
+        String measure;
+        int order;
 
         Open(Frac onset, Frac end, Rational pitch, int loudness) {
             this.onset = onset;
@@ -263,10 +304,12 @@ public final class MusicXMLReader {
         int partLoudness = 90;
         Map<String, Open> open = new HashMap<String, Open>();
         List<Open> done = new ArrayList<Open>();
+        Ties ties = new Ties();
         for (Element measure : children(part, "measure")) {
             pos = measureStart;
             lastOnset = measureStart;
             Frac reached = measureStart;
+            boolean onlyRests = true;
             for (Node n = measure.getFirstChild(); n != null; n = n.getNextSibling()) {
                 if (!(n instanceof Element)) {
                     continue;
@@ -314,6 +357,9 @@ public final class MusicXMLReader {
                     boolean chord = child(e, "chord") != null;
                     boolean grace = child(e, "grace") != null;
                     boolean cue = child(e, "cue") != null;
+                    if (child(e, "rest") == null) {
+                        onlyRests = false;
+                    }
                     Frac length = grace ? Frac.ZERO : duration(e, divisions);
                     Frac onset = chord ? lastOnset : pos;
                     if (!chord) {
@@ -343,23 +389,43 @@ public final class MusicXMLReader {
                         if ("stop".equals(t.getAttribute("type"))) tieStop = true;
                     }
                     Frac end = onset.add(length);
-                    Open o = tieStop ? open.get(key) : null;
-                    if (o != null && o.end.equals(onset)) {
+                    Open o = open.get(key);
+                    boolean continues = o != null && o.end.equals(onset) && (tieStop || this.closeTies);
+                    if (continues) {
+                        if (!tieStop) {
+                            ties.unstopped(o);
+                            ties.closed++;
+                        }
                         o.end = end;
                         if (!tieStart) {
                             open.remove(key);
                         }
                     }
                     else {
+                        if (o != null) {
+                            ties.unstopped(o);
+                            open.remove(key);
+                        }
                         o = new Open(onset, end, p, loudness);
                         done.add(o);
                         if (tieStart) {
+                            o.measure = measure.getAttribute("number");
+                            o.order = ties.seq++;
                             open.put(key, o);
                         }
                     }
                 }
             }
-            measureStart = this.nextMeasure(measure, part, measureStart, measureLength, reached);
+            measureStart = this.nextMeasure(measure, part, measureStart, measureLength, reached, onlyRests);
+        }
+        for (Open o : open.values()) {
+            ties.unstopped(o);
+        }
+        if (ties.count > 0) {
+            this.warnings.add(ties.count + (ties.count == 1 ? " tie start in part " : " tie starts in part ")
+                    + part.getAttribute("id") + (ties.count == 1 ? " has" : " have") + " no tie stop (first in measure "
+                    + ties.first.measure + "); " + (ties.closed > 0 ? "closed by the next note of the same voice and pitch"
+                    : "the tied notes stay separate"));
         }
         for (Open o : done) {
             notes.add(new ScoreNote(o.onset.doubleValue(), o.pitch, o.loudness, o.end.subtract(o.onset).doubleValue(), voice));
@@ -374,11 +440,16 @@ public final class MusicXMLReader {
      * furthest voice ends instead, and so does a measure that runs past its
      * time signature, with a warning.
      */
-    private Frac nextMeasure(Element measure, Element part, Frac start, Frac length, Frac reached) {
+    private Frac nextMeasure(Element measure, Element part, Frac start, Frac length, Frac reached, boolean onlyRests) {
         if (length == null || "yes".equals(measure.getAttribute("implicit"))) {
             return reached;
         }
         Frac end = start.add(length);
+        if (reached.compareTo(end) > 0 && onlyRests && this.clampRestMeasures) {
+            this.warnings.add("Measure " + measure.getAttribute("number") + " of part " + part.getAttribute("id")
+                    + " holds only rests and is longer than its time signature; it is cut to the time signature");
+            return end;
+        }
         if (reached.compareTo(end) > 0) {
             this.warnings.add("Measure " + measure.getAttribute("number") + " of part " + part.getAttribute("id") + " is longer than its time signature; the next measure starts after its last note");
             return reached;
