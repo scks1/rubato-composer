@@ -143,6 +143,10 @@ public class ContrapuntalSymmetriesTest extends TestCase {
      * H that meet its first two conditions; H itself has 2048 elements).
      * It finds 121 contrapuntal symmetries, not 105, and a union of 127
      * successors; neither book figure is asserted for those two.
+     * An independent recount (brute force over H, Algorithm 2.1 as printed,
+     * and brute force over the whole affine group) gives 121 too, and no
+     * strong dichotomy of Z_16 at any consonance gives 105, so the book's
+     * 105 is taken as an error (COUNTERPOINT-SPEC A2).
      */
     public void testZ16Remark23Readings() {
         Dichotomy x = new Dichotomy(16, 1, 4, 5, 6, 7, 8, 14, 15);
