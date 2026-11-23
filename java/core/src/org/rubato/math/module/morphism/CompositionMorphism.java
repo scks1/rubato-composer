@@ -63,11 +63,12 @@ public final class CompositionMorphism extends ModuleMorphism {
             return f;
         }
         else if (f.isConstant()) {
-        	return ModuleMorphism.getConstantMorphism(f.getCodomain(), f.atZero());
+            // h(x) = f(g(x)) is f's value for every x in g's domain
+            return ModuleMorphism.getConstantMorphism(g.getDomain(), f.atZero());
         }
         else if (g.isConstant()) {
             try {
-                return ModuleMorphism.getConstantMorphism(f.getCodomain(), f.map(g.atZero()));
+                return ModuleMorphism.getConstantMorphism(g.getDomain(), f.map(g.atZero()));
             }
             catch (MappingException e) {
                 throw new CompositionException("CompositionMorphism.make: Cannot not compose "+f+" and "+g);

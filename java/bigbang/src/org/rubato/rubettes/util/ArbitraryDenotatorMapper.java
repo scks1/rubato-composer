@@ -115,7 +115,7 @@ public class ArbitraryDenotatorMapper {
 				} else {
 					SimpleDenotator currentSimple = this.getSimpleDenotator(denotator, currentPath.toIntArray());
 					if (currentSimple != null) {
-						currentMorphism = currentSimple.getModuleMorphism();
+						currentMorphism = this.getMorphism(currentSimple);
 					}
 				}
 				
@@ -139,7 +139,7 @@ public class ArbitraryDenotatorMapper {
 	
 	private ModuleMorphism makeInitialProjection(Denotator denotator, DenotatorPath path) throws RubatoException {
 		SimpleDenotator simple = this.getSimpleDenotator(denotator, path.getDenotatorSubpath().toIntArray());
-		ModuleMorphism currentMorphism = simple.getModuleMorphism();
+		ModuleMorphism currentMorphism = this.getMorphism(simple);
 		ModuleElement currentElement = simple.getElement();
 		DenotatorPath elementPath = path.getElementSubpath();
 		for (int currentIndex : elementPath.toIntArray()) {
@@ -235,6 +235,20 @@ public class ArbitraryDenotatorMapper {
 		}
 		
 		return mappedDenotator;
+	}
+	
+	/*
+	 * The module morphism of a simple denotator, as this mapper composes it.
+	 * A zero-addressed denotator's morphism is a constant on the null module
+	 * of its own ring (R^0, Q^0, Z^0, ...). The mapper sums the coordinates of
+	 * several such denotators, and a sum needs one domain, so their constants
+	 * are put on the domain of the main morphism.
+	 */
+	private ModuleMorphism getMorphism(SimpleDenotator simple) {
+		if (simple.getAddress().isNullModule()) {
+			return ModuleMorphism.getConstantMorphism(this.domain, simple.getElement());
+		}
+		return simple.getModuleMorphism();
 	}
 	
 	//TODO: put all these somewhere else
