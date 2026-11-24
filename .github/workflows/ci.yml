@@ -135,11 +135,60 @@ jobs:
 
       # agda-bin is the compiler; libghc-agda-dev carries the primitive
       # library under /usr/share/libghc-agda-dev/lib. The spec uses no
-      # other library.
+      # other library. `apt-get install` of the two packages pulls 67
+      # packages (129 MB) of Haskell libraries the binary never loads, so
+      # the job fetches only the two noble debs, checks them against the
+      # SHA-256 sums from noble's universe Packages index, keeps them in
+      # the Actions cache and unpacks them with dpkg-deb. agda-bin's own
+      # run-time libraries (libc6, libffi8, libgmp10, libtinfo6, zlib1g)
+      # ship with the ubuntu-24.04 image.
+      - name: Restore the Agda debs
+        id: agda-debs
+        uses: actions/cache@v6
+        with:
+          path: ~/agda-debs
+          key: agda-debs-noble-2.6.3-1build1-17d3b7d5-84c8810c
+
+      - name: Download the Agda debs
+        if: steps.agda-debs.outputs.cache-hit != 'true'
+        timeout-minutes: 8
+        run: |
+          mkdir -p ~/agda-debs
+          cd ~/agda-debs
+          for deb in agda-bin_2.6.3-1build1_amd64.deb libghc-agda-dev_2.6.3-1build1_amd64.deb; do
+            ok=
+            # A mirror slower than 100 kB/s for 30 s is dropped for the next.
+            for mirror in http://azure.archive.ubuntu.com/ubuntu http://archive.ubuntu.com/ubuntu https://mirrors.edge.kernel.org/ubuntu; do
+              if curl -fsSL --retry 2 --speed-time 30 --speed-limit 100000 --max-time 180 \
+                   -o "$deb" "$mirror/pool/universe/a/agda/$deb"; then
+                echo "$deb from $mirror"; ok=1; break
+              fi
+              echo "::warning::$deb: $mirror failed, trying the next mirror"
+            done
+            [ -n "$ok" ] || { echo "::error::$deb: every mirror failed"; exit 1; }
+          done
+
       - name: Install Agda
-        run: sudo apt-get update && sudo apt-get install -y agda-bin libghc-agda-dev
+        timeout-minutes: 3
+        run: |
+          cd ~/agda-debs
+          sha256sum -c - <<'EOF'
+          17d3b7d5453e8a199db789bf9b199b5635e485db93864e454aa6832a03ba5902  agda-bin_2.6.3-1build1_amd64.deb
+          84c8810cb45493aa26b6838928b0aec5a233d7e9ae4a0830b63cb85efc3d0388  libghc-agda-dev_2.6.3-1build1_amd64.deb
+          EOF
+          root="$RUNNER_TEMP/agda-root"
+          mkdir -p "$root"
+          for deb in *.deb; do dpkg-deb -x "$deb" "$root"; done
+          # Agda_datadir must be a path with no symlink in it: through a
+          # symlinked lib directory Agda rejects the builtin modules'
+          # COMPILE pragmas (Agda issue #4828).
+          datadir="$(realpath "$root/usr/share/libghc-agda-dev")"
+          echo "AGDA=$root/usr/bin/agda" >> "$GITHUB_ENV"
+          echo "Agda_datadir=$datadir" >> "$GITHUB_ENV"
+          "$root/usr/bin/agda" --version
 
       - name: Generator diff, positive proofs and negative tests
+        timeout-minutes: 8
         run: spec/agda/run-checks.sh logs/agda-ci
 
       - name: Upload Agda logs
