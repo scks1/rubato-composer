@@ -63,6 +63,7 @@ public final class BuiltinRubettes {
         "org.rubato.rubettes.counterpoint.CounterpointCheckRubette",
         "org.rubato.rubettes.counterpoint.SuccessorGeneratorRubette",
         "org.rubato.rubettes.counterpoint.SymmetryTraceRubette",
+        "org.rubato.rubettes.counterpoint.ThreeVoiceCounterpointRubette",
         "org.rubato.rubettes.global.NerveRubette",
         "org.rubato.rubettes.gesture.FingerGestureRubette",
         "org.rubato.rubettes.gesture.HandGestureRubette",
