@@ -1073,6 +1073,27 @@ public class Repository
 		registerBuiltin(macroScoreForm);
 
 		macroScoreForm.resolveReferences(this);
+
+        // Rhythm trees (Flieder, arXiv 2512.04090, Ex. C.1, pp. 55-56): the
+        // W-type with labels A = Q x List(Q) as a recursive form. The form
+        // cannot require one subtree per factor; RhythmTreeDenotators checks
+        // it. See sources/RHYTHM-TREES-SPEC.md D4.
+        SimpleForm rhythmDurationForm = FormFactory.makeQModuleForm("RhythmDuration");
+        registerBuiltin(rhythmDurationForm);
+        SimpleForm rhythmFactorForm = FormFactory.makeQModuleForm("RhythmFactor");
+        registerBuiltin(rhythmFactorForm);
+        ListForm rhythmFactorsForm = FormFactory.makeListForm("RhythmFactors", rhythmFactorForm);
+        registerBuiltin(rhythmFactorsForm);
+        LimitForm rhythmLabelForm = FormFactory.makeLimitForm("RhythmLabel", rhythmDurationForm, rhythmFactorsForm);
+        rhythmLabelForm.setLabels(Arrays.asList("duration", "factors"));
+        registerBuiltin(rhythmLabelForm);
+        FormReference rhythmTreeRef = new FormReference("RhythmTree", Form.LIMIT);
+        ListForm rhythmSubtreesForm = FormFactory.makeListForm("RhythmSubtrees", rhythmTreeRef);
+        registerBuiltin(rhythmSubtreesForm);
+        LimitForm rhythmTreeForm = FormFactory.makeLimitForm("RhythmTree", rhythmLabelForm, rhythmSubtreesForm);
+        rhythmTreeForm.setLabels(Arrays.asList("label", "subtrees"));
+        registerBuiltin(rhythmTreeForm);
+        rhythmTreeForm.resolveReferences(this);
         
         // register modules
         registerBuiltinModule("Integers", ZRing.ring);
