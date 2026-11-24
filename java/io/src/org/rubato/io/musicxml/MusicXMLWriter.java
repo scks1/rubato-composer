@@ -57,12 +57,18 @@ import org.rubato.math.yoneda.Denotator;
  *     it to the barline: gaps in the first voice of a staff become rests,
  *     gaps in the others forward elements, and a staff with nothing in a
  *     measure gets a measure rest.</li>
- * <li>Note values: each note is split into tied plain or dotted values,
+ * <li>Note values: in a measure whose onsets and ends all lie on the grid
+ *     of 1024th notes, each note is split into tied plain or dotted values,
  *     longest first, and each rest into values that follow the beats, or
  *     either into triplet values (time-modification 3:2) when only those
- *     fit, so it carries a type element. A length that
- *     neither expresses is written as one note without a type, and the
- *     write reports how many in {@link #getWarnings()}.</li>
+ *     fit. In any other measure, {@link TupletPlanner} places tuplet
+ *     brackets (q:n, n the largest power of 2 below q, q up to 255, not
+ *     nested) over metrical spans, and notes are split at the brackets'
+ *     edges and tied; each note or rest under a bracket gets the
+ *     time-modification and the first and last get tuplet start and stop
+ *     notations (sources/MUSICXML-TUPLETS-SPEC.md). Where no bracket fits,
+ *     the measure's boundaries are rounded to 1024th notes and the write
+ *     reports it in {@link #getWarnings()}.</li>
  * <li>Clef: a part with no pitch below F3 (53) gets a treble clef, else
  *     one with no pitch above G4 (67) a bass clef, else a grand staff:
  *     pitches from middle C (60) up on staff 1 in treble clef, the rest on
@@ -103,6 +109,14 @@ public final class MusicXMLWriter {
     private int tempo = DEFAULT_TEMPO;
     private final List<String> warnings = new ArrayList<String>();
     private int untyped = 0;
+    /** Notes or rests whose length changed when a measure's boundaries were rounded to 1024th notes. */
+    private int rounded = 0;
+    private Frac maxShift = Frac.ZERO;
+    private final java.util.TreeSet<Long> roundedMeasures = new java.util.TreeSet<Long>();
+    /** The denominators (in quarter notes) the current divisions failed to make whole. */
+    private BigInteger needDen = BigInteger.ONE;
+    /** Round every measure that needs brackets, when the divisions brackets need would overflow. */
+    private boolean forceFallback = false;
     private final TreeMap<Integer, PartInfo> partInfos = new TreeMap<Integer, PartInfo>();
     private boolean dynamicMarks = true;
 
@@ -209,6 +223,57 @@ public final class MusicXMLWriter {
             }
         }
         long divisions = lcm.longValue();
+        // tied pieces under a tuplet bracket can need more divisions than the onsets and ends (D12); render again with them
+        int warningsBefore = this.warnings.size();
+        this.forceFallback = false;
+        String xml = null;
+        for (int attempt = 0; xml == null; attempt++) {
+            while (this.warnings.size() > warningsBefore) {
+                this.warnings.remove(this.warnings.size() - 1);
+            }
+            this.untyped = 0;
+            this.rounded = 0;
+            this.maxShift = Frac.ZERO;
+            this.roundedMeasures.clear();
+            this.needDen = BigInteger.ONE;
+            String out = this.render(notes, times, measure, divisions);
+            BigInteger need = lcm(BigInteger.valueOf(divisions), this.needDen);
+            if (need.equals(BigInteger.valueOf(divisions))) {
+                xml = out;
+            }
+            else if (need.bitLength() > 31 || attempt >= 3) {
+                // more divisions than MusicXML's integers hold: round the tuplet measures instead
+                this.forceFallback = true;
+                divisions = lcm(BigInteger.valueOf(divisions), BigInteger.valueOf(256)).longValueExact();
+            }
+            else {
+                divisions = need.longValueExact();
+            }
+        }
+        if (this.untyped + this.rounded > 0) {
+            String w = (this.untyped + this.rounded) + " notes or rests have lengths that no plain, dotted or triplet note value expresses";
+            if (this.rounded > 0) {
+                StringBuilder ms = new StringBuilder();
+                for (long m : this.roundedMeasures) {
+                    ms.append(ms.length() == 0 ? "" : ", ").append(m);
+                }
+                w += ", nor any tuplet up to " + TupletPlanner.MAX_ACTUAL + " in the time of " + Integer.highestOneBit(TupletPlanner.MAX_ACTUAL)
+                    + " with written values down to a 1024th note; their boundaries are rounded to the nearest 1024th note, by at most "
+                    + this.maxShift + " quarter note, in measure" + (this.roundedMeasures.size() == 1 ? " " : "s ") + ms;
+                if (this.untyped > 0) {
+                    w += "; " + this.untyped + " of them are written without a note type";
+                }
+            }
+            else {
+                w += "; they are written without a note type";
+            }
+            this.warnings.add(w);
+        }
+        return xml;
+    }
+
+    /** Writes the document with the given divisions; lengths that are not whole in them raise {@link #needDen}. */
+    private String render(List<ScoreNote> notes, List<Frac[]> times, Frac measure, long divisions) {
         long measureLength = measure.num.multiply(BigInteger.valueOf(divisions)).divide(measure.den).longValueExact();
 
         // parts by voice
@@ -278,9 +343,6 @@ public final class MusicXMLWriter {
             firstPart = false;
         }
         x.append("</score-partwise>\n");
-        if (this.untyped > 0) {
-            this.warnings.add(this.untyped + " notes or rests have lengths that no plain, dotted or triplet note value expresses; they are written without a note type");
-        }
         return x.toString();
     }
 
@@ -523,6 +585,10 @@ public final class MusicXMLWriter {
                 }
                 long cursor = start;
                 String mark = this.measureDynamic(chords, layer.next, start, stop);
+                if (!onGrid(chords, layer.next, start, stop, divisions)) {
+                    this.tupletMeasure(x, layer, start, stop, divisions, mark, m + 1);
+                    continue;
+                }
                 for (int i = layer.next; i < chords.size() && chords.get(i).on < stop; i++) {
                     Chord c = chords.get(i);
                     long from = Math.max(c.on, start);
@@ -654,6 +720,25 @@ public final class MusicXMLWriter {
         if (p.triplet) {
             x.append("        <time-modification>\n          <actual-notes>3</actual-notes>\n          <normal-notes>2</normal-notes>\n        </time-modification>\n");
         }
+        else if (p.bracket != null) {
+            x.append("        <time-modification>\n          <actual-notes>").append(p.bracket.actual).append("</actual-notes>\n          <normal-notes>").append(p.bracket.normal).append("</normal-notes>\n        </time-modification>\n");
+        }
+    }
+
+    /** The tuplet notation of a piece that opens or closes its bracket, or nothing. */
+    private static void tuplet(StringBuilder x, Piece p) {
+        if (p.tupletStart) {
+            TupletPlanner.Bracket b = p.bracket;
+            String type = VALUE_TYPES.get(b.normalValue);
+            String dot = VALUE_DOTS.get(b.normalValue) ? "              <tuplet-dot/>\n" : "";
+            x.append("          <tuplet type=\"start\" number=\"1\" bracket=\"yes\">\n");
+            x.append("            <tuplet-actual>\n              <tuplet-number>").append(b.actual).append("</tuplet-number>\n              <tuplet-type>").append(type).append("</tuplet-type>\n").append(dot).append("            </tuplet-actual>\n");
+            x.append("            <tuplet-normal>\n              <tuplet-number>").append(b.normal).append("</tuplet-number>\n              <tuplet-type>").append(type).append("</tuplet-type>\n").append(dot).append("            </tuplet-normal>\n");
+            x.append("          </tuplet>\n");
+        }
+        if (p.tupletStop) {
+            x.append("          <tuplet type=\"stop\" number=\"1\"/>\n");
+        }
     }
 
     private void notes(StringBuilder x, Chord c, Layer layer, Piece piece, boolean tieStop, boolean tieStart, boolean grace) {
@@ -685,13 +770,18 @@ public final class MusicXMLWriter {
             x.append("        <voice>").append(layer.voice).append("</voice>\n");
             this.type(x, piece);
             staff(x, layer);
-            if (tieStop || tieStart) {
+            // a chord's bracket goes on its first note only
+            boolean tuplet = first && (piece.tupletStart || piece.tupletStop);
+            if (tieStop || tieStart || tuplet) {
                 x.append("        <notations>\n");
                 if (tieStop) {
                     x.append("          <tied type=\"stop\"/>\n");
                 }
                 if (tieStart) {
                     x.append("          <tied type=\"start\"/>\n");
+                }
+                if (tuplet) {
+                    tuplet(x, piece);
                 }
                 x.append("        </notations>\n");
             }
@@ -700,18 +790,270 @@ public final class MusicXMLWriter {
         }
     }
 
+    /** Whether every onset and end in this measure of the layer lies on the grid of 1024th notes from the barline. */
+    private static boolean onGrid(List<Chord> chords, int first, long start, long stop, long divisions) {
+        for (int i = first; i < chords.size() && chords.get(i).on < stop; i++) {
+            Chord c = chords.get(i);
+            long from = Math.max(c.on, start);
+            long to = Math.min(c.end, stop);
+            if ((from - start) * 256 % divisions != 0 || (to - start) * 256 % divisions != 0) {
+                return false;
+            }
+            if (c.end > stop) {
+                break;
+            }
+        }
+        return true;
+    }
+
+    /** A length in quarter notes as divisions; a length the divisions do not make whole raises {@link #needDen} and gives 0. */
+    private long div(Frac f, long divisions) {
+        Frac d = f.multiply(Frac.of(divisions, 1));
+        if (!d.den.equals(BigInteger.ONE)) {
+            this.needDen = lcm(this.needDen, f.den);
+            return 0;
+        }
+        return d.num.longValueExact();
+    }
+
+    private static Frac quarters(long length, long divisions) {
+        return Frac.of(length, divisions);
+    }
+
+    private static Frac round256(Frac f) {
+        return round(f, 256);
+    }
+
+    /**
+     * Writes one layer's measure that has a boundary off the grid of 1024th
+     * notes: the layer's timeline is planned into cells under tuplet
+     * brackets ({@link TupletPlanner}); when no plan exists the boundaries
+     * are rounded to 1024th notes and counted for the warning.
+     */
+    private void tupletMeasure(StringBuilder x, Layer layer, long start, long stop, long divisions, String mark, long number) {
+        List<Chord> chords = layer.chords;
+        List<TupletPlanner.Segment> segments = new ArrayList<TupletPlanner.Segment>();
+        List<Frac> graceTimes = new ArrayList<Frac>();
+        List<Chord> graces = new ArrayList<Chord>();
+        Frac cursor = Frac.ZERO;
+        for (int i = layer.next; i < chords.size() && chords.get(i).on < stop; i++) {
+            Chord c = chords.get(i);
+            Frac from = quarters(Math.max(c.on, start) - start, divisions);
+            if (from.compareTo(cursor) > 0) {
+                segments.add(new TupletPlanner.Segment(cursor, from, -1));
+                cursor = from;
+            }
+            if (isGrace(c)) {
+                graceTimes.add(from);
+                graces.add(c);
+                continue;
+            }
+            Frac to = quarters(Math.min(c.end, stop) - start, divisions);
+            segments.add(new TupletPlanner.Segment(from, to, i));
+            cursor = to;
+            if (c.end > stop) {
+                break;
+            }
+        }
+        Frac measure = quarters(stop - start, divisions);
+        if (cursor.compareTo(measure) < 0) {
+            segments.add(new TupletPlanner.Segment(cursor, measure, -1));
+        }
+        List<TupletPlanner.Cell> cells = this.forceFallback ? null : new TupletPlanner(segments, graceTimes, this.beats, this.beatType).plan();
+        if (cells == null) {
+            // round to the grid of 1024th notes and report (D13)
+            cells = new ArrayList<TupletPlanner.Cell>();
+            List<TupletPlanner.Segment> roundedSegments = new ArrayList<TupletPlanner.Segment>();
+            for (int k = 0; k < segments.size(); k++) {
+                TupletPlanner.Segment s = segments.get(k);
+                Frac from = round256(s.from), to = round256(s.to);
+                this.shift(s.from, from);
+                this.shift(s.to, to);
+                if (!to.subtract(from).equals(s.to.subtract(s.from))) {
+                    this.rounded++;
+                }
+                roundedSegments.add(new TupletPlanner.Segment(from, to, s.chord));
+                if (from.compareTo(to) < 0) {
+                    cells.add(new TupletPlanner.Cell(k, from, to, null));
+                }
+                else if (s.chord >= 0) {
+                    // a note shorter than half a 1024th note: written as a grace note where it was
+                    graceTimes.add(from);
+                    graces.add(chords.get(s.chord));
+                    this.warnOnce("Notes shorter than half a 1024th note in measure " + number + " are written as grace notes");
+                }
+            }
+            for (int k = 0; k < graceTimes.size(); k++) {
+                Frac g = round256(graceTimes.get(k));
+                this.shift(graceTimes.get(k), g);
+                graceTimes.set(k, g);
+            }
+            segments = roundedSegments;
+            this.roundedMeasures.add(number);
+            this.needDen = lcm(this.needDen, BigInteger.valueOf(256));
+        }
+        int nextGrace = 0;
+        for (int k = 0; k < cells.size(); k++) {
+            TupletPlanner.Cell cell = cells.get(k);
+            TupletPlanner.Segment s = segments.get(cell.segment);
+            TupletPlanner.Bracket br = cell.bracket;
+            while (nextGrace < graces.size() && graceTimes.get(nextGrace).compareTo(cell.from) <= 0) {
+                Chord g = graces.get(nextGrace++);
+                if (mark != null && g.on >= start) {
+                    this.dynamic(x, mark, layer);
+                    mark = null;
+                }
+                this.notes(x, g, layer, new Piece(0, "eighth", false, false), false, false, true);
+            }
+            boolean opens = br != null && (k == 0 || cells.get(k - 1).bracket != br);
+            boolean closes = br != null && (k == cells.size() - 1 || cells.get(k + 1).bracket != br);
+            Frac length = cell.to.subtract(cell.from);
+            Frac written = br == null ? length : br.written(length);
+            if (s.chord >= 0) {
+                Chord c = chords.get(s.chord);
+                if (mark != null && c.on >= start) {
+                    this.dynamic(x, mark, layer);
+                    mark = null;
+                }
+                List<Integer> values = greedyValues(written);
+                for (int v = 0; v < values.size(); v++) {
+                    Piece p = this.piece(values.get(v), br, opens && v == 0, closes && v == values.size() - 1, divisions);
+                    boolean tieStop = v > 0 || cell.from.compareTo(s.from) > 0 || c.on < start;
+                    boolean tieStart = v < values.size() - 1 || cell.to.compareTo(s.to) < 0 || c.end > stop;
+                    this.notes(x, c, layer, p, tieStop, tieStart, false);
+                }
+            }
+            else if (br == null && !layer.primary) {
+                x.append("      <forward>\n        <duration>").append(this.div(length, divisions)).append("</duration>\n        <voice>").append(layer.voice).append("</voice>\n");
+                staff(x, layer);
+                x.append("      </forward>\n");
+            }
+            else {
+                Frac at = br == null ? cell.from : br.written(cell.from.subtract(br.from));
+                List<Integer> values = alignedValues(written, at);
+                if (values == null) {
+                    values = greedyValues(written);
+                }
+                for (int v = 0; v < values.size(); v++) {
+                    Piece p = this.piece(values.get(v), br, opens && v == 0, closes && v == values.size() - 1, divisions);
+                    // a gap inside a bracket in a secondary layer is a hidden rest, so the bracket adds up
+                    x.append(layer.primary ? "      <note>\n" : "      <note print-object=\"no\">\n");
+                    x.append("        <rest/>\n        <duration>").append(p.length).append("</duration>\n        <voice>").append(layer.voice).append("</voice>\n");
+                    this.type(x, p);
+                    staff(x, layer);
+                    if (p.tupletStart || p.tupletStop) {
+                        x.append("        <notations>\n");
+                        tuplet(x, p);
+                        x.append("        </notations>\n");
+                    }
+                    x.append("      </note>\n");
+                }
+            }
+        }
+        while (nextGrace < graces.size()) {
+            this.notes(x, graces.get(nextGrace++), layer, new Piece(0, "eighth", false, false), false, false, true);
+        }
+    }
+
+    private void shift(Frac before, Frac after) {
+        Frac d = after.subtract(before);
+        if (d.signum() < 0) {
+            d = Frac.ZERO.subtract(d);
+        }
+        if (d.compareTo(this.maxShift) > 0) {
+            this.maxShift = d;
+        }
+    }
+
+    /** A written value (an index into the value table) as a piece, sounding n/q of it under a bracket. */
+    private Piece piece(int value, TupletPlanner.Bracket br, boolean start, boolean stop, long divisions) {
+        Frac v = VALUES.get(value);
+        Frac sounding = br == null ? v : br.sounding(v);
+        return new Piece(this.div(sounding, divisions), VALUE_TYPES.get(value), VALUE_DOTS.get(value), false, br, start, stop);
+    }
+
+    /** The index of a plain or dotted value in the value table, or -1. */
+    static int valueIndex(Frac f) {
+        return VALUES.indexOf(f);
+    }
+
+    /** A written length on the grid of 1024th notes as plain and dotted values, longest first; null off the grid. */
+    static List<Integer> greedyValues(Frac length) {
+        if (!TupletPlanner.onGrid(length)) {
+            return null;
+        }
+        List<Integer> out = new ArrayList<Integer>();
+        Frac rest = length;
+        while (rest.signum() > 0) {
+            int i = 0;
+            while (VALUES.get(i).compareTo(rest) > 0) {
+                i++;
+            }
+            out.add(i);
+            rest = rest.subtract(VALUES.get(i));
+        }
+        return out;
+    }
+
+    /** A written rest that starts at {@code at} as values that follow the beats, as {@link #aligned}; null when none do. */
+    static List<Integer> alignedValues(Frac length, Frac at) {
+        if (!TupletPlanner.onGrid(length) || !TupletPlanner.onGrid(at)) {
+            return null;
+        }
+        List<Integer> out = new ArrayList<Integer>();
+        Frac rest = length;
+        while (rest.signum() > 0) {
+            int found = -1;
+            for (int i = 0; i < VALUES.size(); i++) {
+                Frac v = VALUES.get(i);
+                if (v.compareTo(rest) > 0) {
+                    continue;
+                }
+                Frac unit = VALUE_DOTS.get(i) ? v.multiply(Frac.of(2, 3)) : v;
+                Frac k = at.divide(unit);
+                if (!k.den.equals(BigInteger.ONE)) {
+                    continue;
+                }
+                Frac limit = Frac.of(k.num.longValueExact() / 2 * 2 + 2, 1).multiply(unit);
+                if (at.add(v).compareTo(limit) <= 0) {
+                    found = i;
+                    break;
+                }
+            }
+            if (found < 0) {
+                return null;
+            }
+            out.add(found);
+            rest = rest.subtract(VALUES.get(found));
+            at = at.add(VALUES.get(found));
+        }
+        return out;
+    }
+
     /** A written note or rest: its length in divisions and its note type, dot and triplet mark. */
     static final class Piece {
         final long length;
         final String type;
         final boolean dot;
         final boolean triplet;
+        /** The bracket the piece is under, or null. */
+        final TupletPlanner.Bracket bracket;
+        /** Whether the piece opens or closes its bracket. */
+        final boolean tupletStart;
+        final boolean tupletStop;
 
         Piece(long length, String type, boolean dot, boolean triplet) {
+            this(length, type, dot, triplet, null, false, false);
+        }
+
+        Piece(long length, String type, boolean dot, boolean triplet, TupletPlanner.Bracket bracket, boolean tupletStart, boolean tupletStop) {
             this.length = length;
             this.type = type;
             this.dot = dot;
             this.triplet = triplet;
+            this.bracket = bracket;
+            this.tupletStart = tupletStart;
+            this.tupletStop = tupletStop;
         }
     }
 
