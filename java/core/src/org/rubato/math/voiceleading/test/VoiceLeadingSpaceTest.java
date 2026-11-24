@@ -292,4 +292,16 @@ public class VoiceLeadingSpaceTest extends TestCase {
             t = a[i]; a[i] = a[j]; a[j] = t;
         }
     }
+
+    /** conjugation(phi) is g -> phi g phi^-1: by T1, I0 goes to I2, and the pair is a Sigma_VLS automorphism (added for mutation M10). */
+    public void testConjugationMethod() {
+        VoiceLeadingSpace s = pc("TI", 12);
+        FiniteAction a = s.action();
+        int[] k = s.conjugation(a.indexOf("T1"));
+        assertEquals(a.indexOf("I2"), k[a.indexOf("I0")]);
+        assertEquals(a.indexOf("T5"), k[a.indexOf("T5")]);
+        for (int phi = 0; phi < a.groupSize(); phi++) {
+            assertTrue(a.elementName(phi), s.isSigmaAutomorphism(a.permutation(phi), s.conjugation(phi)));
+        }
+    }
 }

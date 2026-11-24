@@ -152,4 +152,12 @@ public class GISTest extends TestCase {
         assertTrue(r.failure(), r.failure().startsWith("axiom 1 (composition)"));
         assertEquals(a.multiply(g.interval(0, 0), g.interval(0, 0)), g.product(g.interval(0, 0), g.interval(0, 0)));
     }
+
+    /** Axiom 2 also fails when an interval has no target: one point, IVLS = Z2 (added for mutation M14). */
+    public void testAxiom2NeedsATarget() {
+        GIS.Result r = new GIS(2, addition(2), new int[][] { { 0 } }).check();
+        assertFalse(r.isGIS());
+        assertTrue(r.failure(), r.failure().startsWith("axiom 2 (unique target)"));
+        assertTrue(r.failure(), r.failure().contains("s = 0, i = 1: 0 targets"));
+    }
 }
