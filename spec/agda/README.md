@@ -39,7 +39,8 @@ standard library. Every module uses `--safe --without-K`.
 | `Monteverdi.agda` | the contrapuntal symmetries in H of each consonance of (K/D), the cardinality columns of the six symmetry tables of arXiv 2512.18862 under reading D (41 rows), and the three quanta of its Examples 1-3 with their invariance, rigidity and the unique polarity of the six-tone traces, with facts proved by computation |
 | `FiniteModAt.agda` | a finite stand-in for Mod@ (a departure: the book gives no finite example): the affine maps of Z2 and Z3 found by testing every value table, the sieves on the one object (5 for Aff(Z2), 9 for Aff(Z3), 2 for the groups of affine bijections), negation from Prop. 125 and Booleanness by not not, false for Aff(Z2) and Aff(Z3) and true for the groups, with facts proved by computation |
 | `FieldExtraction.agda` | the field formula of Topos II §47.3.4 (p. 762) on exact 2 × 2 integer matrices: det and adjugate, the affine performance [[2,0],[1,2]] through two bases (det 4 for both, U Adj(V) Δ = (2, 1) for both, so Z = A⁻¹Δ), a direction-only image (direction (2, −1)) and two images without information, with facts proved by computation |
-| `adversarial/*.agda` | 40 files that must fail to typecheck, each with an `-- EXPECT:` line |
+| `VoiceLeading.agda` | the voice-leading space of T/I on Z12 and on the 24 consonant triads after Flieder (arXiv 2512.04090, section 4): two transporters over every pair of Z12 (288 arrows), one per pair for T alone and for T/I on the triads (a GIS), 48 affine maps normalizing T/I of which 24 lie in T/I, with facts proved by computation |
+| `adversarial/*.agda` | 43 files that must fail to typecheck, each with an `-- EXPECT:` line |
 | `gen/ExportAgda.java` | the generator for `Generated.agda` |
 | `gen/ExportAddresses.java` | the generator for `GeneratedAddresses.agda` |
 | `gen/DepartureProbe.java` | prints Java's behaviour for each departure case P1 to P11 |
@@ -57,7 +58,7 @@ spec/agda/run-checks.sh [log-dir]
 `java/target/rubato-composer-0.1.0-SNAPSHOT-all.jar` (override with
 `JAR=`), runs both generators and fails if their output differs from the
 committed `Generated.agda` and `GeneratedAddresses.agda`, runs the probe,
-typechecks the seventeen positive
+typechecks the eighteen positive
 modules from a clean state (it deletes `*.agdai` first), and typechecks
 each adversarial file, which passes only when Agda rejects the file with
 the expected text at a location inside that file. `SKIP_JAVA=1` skips
