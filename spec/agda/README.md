@@ -41,9 +41,10 @@ standard library. Every module uses `--safe --without-K`.
 | `FieldExtraction.agda` | the field formula of Topos II §47.3.4 (p. 762) on exact 2 × 2 integer matrices: det and adjugate, the affine performance [[2,0],[1,2]] through two bases (det 4 for both, U Adj(V) Δ = (2, 1) for both, so Z = A⁻¹Δ), a direction-only image (direction (2, −1)) and two images without information, with facts proved by computation |
 | `VoiceLeading.agda` | the voice-leading space of T/I on Z12 and on the 24 consonant triads after Flieder (arXiv 2512.04090, section 4): two transporters over every pair of Z12 (288 arrows), one per pair for T alone and for T/I on the triads (a GIS), 48 affine maps normalizing T/I of which 24 lie in T/I, with facts proved by computation |
 | `RhythmTrees.agda` | rhythm trees after Flieder (arXiv 2512.04090, Ex. C.1, Figure 2) as the W-type with labels Q × List(Q) and arities Fin(n), its recursion principle, the leaf lengths of the proportional and the label timings (spec D1, D2) over unreduced rationals, Figure 2's leaves under both and Ex. C.1's three equal parts, with facts proved by computation |
+| `ThreeVoice.agda` | three-voice first-species counterpoint after Okumura and Shibayama (arXiv 2606.01102v3): Σ(ε.r) at cantus 0 found by search over H, its conjugation to other cantus pitches, the mask of Table 8 (26 shapes, 312 states), S_H as the joint maximization over the active pairs, Table 9's 26 counts, Example 3.3's eleven steps, Prop. 6.8 (12 of 192) and the hold-fibre relaxation (168 of 192, spec D6), with facts proved by computation |
 | `Certificates.agda` | the claims of Rubato's Agda certificates after Flieder (arXiv 2512.04090, Ex. 2.4, B.2, B.3): list membership, pcint and intclass on Z_n, `AllInterval n C` as a Π over interval classes of a Σ over pairs, the three keys' scales, degrees and triads, the leading tone and `DominantContainsLeadingTone`; departures D1 to D11 of sources/AGDA-CERTIFICATES-SPEC.md |
 | `GeneratedCertificates.agda` | written by `gen/ExportCertificates.java` from `AgdaCertificates.exampleModule()`: 8 all-interval certificates (4 negative), the 36 keys of Ex. B.3 (12 vacuous) and 5 scale memberships (2 negative). Do not edit |
-| `adversarial/*.agda` | 53 files that must fail to typecheck, each with an `-- EXPECT:` line |
+| `adversarial/*.agda` | 58 files that must fail to typecheck, each with an `-- EXPECT:` line |
 | `gen/ExportAgda.java` | the generator for `Generated.agda` |
 | `gen/ExportAddresses.java` | the generator for `GeneratedAddresses.agda` |
 | `gen/ExportCertificates.java` | the generator for `GeneratedCertificates.agda` |
@@ -63,7 +64,7 @@ spec/agda/run-checks.sh [log-dir]
 `java/target/rubato-composer-0.1.0-SNAPSHOT-all.jar` (override with
 `JAR=`), runs the three generators and fails if their output differs from the
 committed `Generated.agda`, `GeneratedAddresses.agda` and
-`GeneratedCertificates.agda`, runs the probe, typechecks the twenty positive
+`GeneratedCertificates.agda`, runs the probe, typechecks the twenty-two positive
 modules from a clean state (it deletes `*.agdai` first), runs
 `check-certificate.sh GeneratedCertificates.agda`, and typechecks
 each adversarial file, which passes only when Agda rejects the file with
@@ -397,6 +398,35 @@ three symmetries; `MonteverdiEx2TraceStrong.agda` calls Example 2's trace
 strong; `MonteverdiEx1WrongPolarity.agda` gives Example 1's trace the
 polarity of Example 3's.
 
+`ThreeVoice.agda` covers the three-voice counterpoint of
+sources/THREE-VOICE-COUNTERPOINT-SPEC.md (Okumura and Shibayama, arXiv
+2606.01102v3). It reuses `Counterpoint.agda`'s 48 affine maps and the
+(K/D) consonances, writes states (a; b, c) as a lower-voice pitch class
+and the two intervals above it, and proves by computation:
+- `sigma-data`: for each consonance r, the symmetries g in H = Z12[ε]'s
+  affine group (576 maps) that leave ε.r outside gK[ε] and meet K[ε] in
+  the most points are the listed `sigma0 r` (5, 2, 2, 1, 5 and 2 maps for
+  r = 0, 3, 4, 7, 8, 9; the same counts as Monteverdi.agda's `syms-*`).
+  Other cantus pitches x use T^{x} g T^{−x} (spec D4).
+- `mask-is-table8`, `states-312`: the mask is the 26 shapes of Table 8
+  (p. 24), so 312 states.
+- `table9-counts`: |S_H(0; b, c)| for the 26 shapes is Table 9 (p. 25).
+- `translated`: two sources away from 0 have the translated successor
+  sets (the Java test counts all 12 × 4,156 = 49,872 edges).
+- `example33-admitted`: the eleven steps of Example 3.3 (p. 8).
+- `prop68`: of the 288 parsimonious realizations of P, L and R, 192 end
+  in the mask and 12 are admitted, all P from a minor triad in voicing
+  type 351 (Prop. 6.8, p. 23).
+- `hold-fibre`: under the hold-fibre relaxation (ours, spec D6) 168 of the
+  192 are admitted (P 84, L 36, R 48), and the 24 refused are 12 of P from
+  the major triad in type 351 and 12 of L from the minor triad in type 135.
+The whole module checks in about 95 s on this VM. Five adversarial files:
+`ThreeVoiceMajorP351` admits P from E G C to E♭ G C, `ThreeVoiceTable9Off`
+gives h11 255 successors, `ThreeVoiceStillAdmitted` admits a held fifth
+under the strict relation, `ThreeVoiceHoldFibre180` gives hold-fibre the
+reflexive relaxation's 180, and `ThreeVoiceSigmaExtra` adds a symmetry to
+Σ(ε.7).
+
 ### Agda certificates (Certificates.agda, GeneratedCertificates.agda)
 
 Each certificate is a definition whose type is a claim of `Certificates.agda`
@@ -497,6 +527,10 @@ this VM's notes on the Ubuntu noble packages, not from a runner.
   same values in floating point. It works over Z with no tolerance, so the
   relative tolerances of D7 and the constructed basis vectors of D5 are not
   modelled, and only the 2 × 2 case is checked.
+- `ThreeVoice.agda` has no generator: Σ, the mask and the realizations
+  are computed in Agda from definitions written by hand, and tied to Java
+  only by `ThreeVoiceCounterpointTest`, which asserts the same counts.
+  Theorem 6.6 and Remark 6.4 are checked in Java only.
 - The CI job (above).
 - D15 and D16 have no probe.
 - Agda versions other than 2.6.3.
