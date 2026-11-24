@@ -37,7 +37,8 @@ standard library. Every module uses `--safe --without-K`.
 | `Performance.agda` | stemma shapes as rose trees with proofs that every shape has a leaf, has one edge fewer than nodes and lists no node among its own daughters; the shape of Fig. 38.5; exact onsets of step tempi over positive rationals |
 | `Gestures.agda` | digraphs and their morphisms, the subobject classifier Ω of the topos of digraphs built from sieves (5 arrows), the count of maps D → Ω equals the count of subdigraphs and the Yoneda counts on eight small digraphs, Example 69's networks and implications (V ⇒ I as printed; IV ⇒ V with the extra loop at 11), and the face coefficients of Def. 112, with facts proved by computation |
 | `Monteverdi.agda` | the contrapuntal symmetries in H of each consonance of (K/D), the cardinality columns of the six symmetry tables of arXiv 2512.18862 under reading D (41 rows), and the three quanta of its Examples 1-3 with their invariance, rigidity and the unique polarity of the six-tone traces, with facts proved by computation |
-| `adversarial/*.agda` | 34 files that must fail to typecheck, each with an `-- EXPECT:` line |
+| `FiniteModAt.agda` | a finite stand-in for Mod@ (a departure: the book gives no finite example): the affine maps of Z2 and Z3 found by testing every value table, the sieves on the one object (5 for Aff(Z2), 9 for Aff(Z3), 2 for the groups of affine bijections), negation from Prop. 125 and Booleanness by not not, false for Aff(Z2) and Aff(Z3) and true for the groups, with facts proved by computation |
+| `adversarial/*.agda` | 37 files that must fail to typecheck, each with an `-- EXPECT:` line |
 | `gen/ExportAgda.java` | the generator for `Generated.agda` |
 | `gen/ExportAddresses.java` | the generator for `GeneratedAddresses.agda` |
 | `gen/DepartureProbe.java` | prints Java's behaviour for each departure case P1 to P11 |
@@ -55,7 +56,7 @@ spec/agda/run-checks.sh [log-dir]
 `java/target/rubato-composer-0.1.0-SNAPSHOT-all.jar` (override with
 `JAR=`), runs both generators and fails if their output differs from the
 committed `Generated.agda` and `GeneratedAddresses.agda`, runs the probe,
-typechecks the fourteen positive
+typechecks the sixteen positive
 modules from a clean state (it deletes `*.agdai` first), and typechecks
 each adversarial file, which passes only when Agda rejects the file with
 the expected text at a location inside that file. `SKIP_JAVA=1` skips
