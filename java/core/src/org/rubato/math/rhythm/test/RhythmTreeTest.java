@@ -163,6 +163,24 @@ public class RhythmTreeTest extends TestCase {
         }
     }
 
+    /** D5: a value that is not positive is reported at its own position, for factors and own labels. */
+    public void testNonPositivePositions() {
+        String[][] cases = {
+            { "4 (0 1)", "position 4: 0 must be greater than 0" },
+            { "4 (1 1@-2)", "position 8: -2 must be greater than 0" },
+            { "0 (1)", "position 1: 0 must be greater than 0" },
+        };
+        for (String[] c : cases) {
+            try {
+                RhythmNotation.parse(c[0]);
+                fail("parsed " + c[0]);
+            }
+            catch (IllegalArgumentException e) {
+                assertTrue(c[0] + ": " + e.getMessage(), e.getMessage().startsWith(c[1]));
+            }
+        }
+    }
+
     /** D1, spec section 4: Figure 2 in proportional timing. */
     public void testProportionalFigure2() {
         RhythmLayout l = RhythmLayout.layout(RhythmNotation.parse(FIG2), RhythmLayout.Timing.PROPORTIONAL, Fraction.ZERO);
