@@ -38,23 +38,46 @@ public class AffineTransformation extends AbstractLocalTransformation {
 		this.updateOperation();
 	}
 	
-	//creates a copy of this with the same center and scaleFactors adjusted by the given ratio
+	/**
+	 * Creates a copy whose full map is this operation's map at the given ratio, as the other
+	 * local transformations' copies are: the matrix r A + (1 - r) I and the shift r b.
+	 */
 	protected AffineTransformation createModifiedCopy(double ratio) {
 		AffineTransformation modifiedCopy = (AffineTransformation)this.clone();
-		double[] partialShift = new double[]{this.shift[0]*ratio, this.shift[1]*ratio};
-		double[][] scaleMat = {{ratio, 0},{0,ratio}};
-		RMatrix partialTransform = this.transform.product(new RMatrix(scaleMat));
-		modifiedCopy.setParameters(partialShift, partialTransform);
+		modifiedCopy.setParameters(AffineTransformation.interpolatedShift(this.shift, ratio),
+				AffineTransformation.interpolatedMatrix(this.transform, ratio));
 		return modifiedCopy;
 	}
 	
+	/**
+	 * The matrix at the current modification ratio r, r A + (1 - r) I, interpolated from the
+	 * identity as Mazzola, The Topos of Music III, section 73.2.1.6, p. 1154 gesturalizes
+	 * affine transformations. At r = 1 it is A.
+	 */
 	@Override
 	protected RMatrix getMatrix() {
-		return transform;
+		return AffineTransformation.interpolatedMatrix(this.transform, this.modificationRatio);
 	}
 	
+	/** The shift at the current modification ratio r, r b (section 73.2.1.6). */
 	protected double[] getShift() {
-		return this.shift;
+		return AffineTransformation.interpolatedShift(this.shift, this.modificationRatio);
+	}
+	
+	private static RMatrix interpolatedMatrix(RMatrix matrix, double ratio) {
+		if (ratio == 1) {
+			return matrix;
+		}
+		return new RMatrix(new double[][]{
+			{ratio*matrix.get(0, 0) + (1-ratio), ratio*matrix.get(0, 1)},
+			{ratio*matrix.get(1, 0), ratio*matrix.get(1, 1) + (1-ratio)}});
+	}
+	
+	private static double[] interpolatedShift(double[] shift, double ratio) {
+		if (ratio == 1) {
+			return shift;
+		}
+		return new double[]{ratio*shift[0], ratio*shift[1]};
 	}
 	
 	@Override
