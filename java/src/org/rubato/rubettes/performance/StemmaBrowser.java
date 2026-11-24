@@ -75,6 +75,7 @@ public class StemmaBrowser extends JPanel {
             show(p == null ? null : ((Item) ((DefaultMutableTreeNode) p.getLastPathComponent()).getUserObject()).lps);
         });
         details.setEditable(false);
+        KernelView.tabLeaves(details);
         details.setFont(new Font(Font.MONOSPACED, Font.PLAIN, details.getFont().getSize()));
         details.setBorder(new EmptyBorder(4, 6, 4, 6));
         details.getAccessibleContext().setAccessibleName("LPS details and kernel notes");

@@ -177,6 +177,8 @@ public class WeightWatcherView extends JPanel {
     public WeightWatcherView() {
         super(new BorderLayout());
         table.setFillsViewportHeight(true);
+        KernelView.tabLeaves(table);
+        KernelView.tabLeaves(values);
         table.getAccessibleContext().setAccessibleName("Weight Watcher weights");
         table.getAccessibleContext().setAccessibleDescription(
                 "One row per weight: limits of its values, normalized mean and the Weight Watcher parameters.");
@@ -232,7 +234,7 @@ public class WeightWatcherView extends JPanel {
         at.put(w.frameEnd(), " (frame end)");
         DoubleUnaryOperator f = w.combined();
         StringBuilder b = new StringBuilder("Combined weight (" + (w.isProduct() ? "product, 39.7" : "sum, 39.5")
-                + ") at the weight onsets and the frame ends; each weight is 1 outside its frame before its influence:\n");
+                + ") at the weight onsets and the frame ends; outside its frame each extension is 1, deformed and then scaled by its influence:\n");
         for (java.util.Map.Entry<Double, String> x : at.entrySet()) {
             b.append(String.format(Locale.ROOT, "E = %s: %.6f%s\n", WeightWatcher.format(x.getKey()),
                     f.applyAsDouble(x.getKey()), x.getValue()));

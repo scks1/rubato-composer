@@ -107,6 +107,7 @@ abstract class AbstractPerformanceRubette extends SimpleAbstractRubette {
             view = new JPanel(new BorderLayout());
             text = new JTextArea(16, 72);
             text.setEditable(false);
+            KernelView.tabLeaves(text);
             text.setFont(new Font(Font.MONOSPACED, Font.PLAIN, text.getFont().getSize()));
             text.setBorder(new EmptyBorder(4, 6, 4, 6));
             text.getAccessibleContext().setAccessibleName(viewTitle() + " report");

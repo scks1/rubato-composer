@@ -21,19 +21,24 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.KeyboardFocusManager;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleRole;
 import javax.swing.JComponent;
+import javax.swing.KeyStroke;
 import javax.swing.UIManager;
 
 import org.rubato.math.performance.LPS;
@@ -177,6 +182,18 @@ public class KernelView extends JComponent {
             out.add(new Rectangle(x, y, rw, hh));
         }
         return out;
+    }
+
+    /**
+     * Makes Tab and Shift+Tab move the focus out of a read-only table or text area, which
+     * otherwise keeps Tab for moving between cells or typing, so the controls after it stay
+     * reachable from the keyboard.
+     */
+    static void tabLeaves(JComponent c) {
+        c.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
+                Collections.singleton(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0)));
+        c.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS,
+                Collections.singleton(KeyStroke.getKeyStroke(KeyEvent.VK_TAB, InputEvent.SHIFT_DOWN_MASK)));
     }
 
     static Color background() {

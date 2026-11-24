@@ -246,6 +246,18 @@ public class StemmaViewTest extends TestCase {
         String pd = v.getPlot().getAccessibleContext().getAccessibleDescription();
         assertTrue(pd, pd.contains("2 weights"));
         assertTrue(pd, pd.contains("from E = -1 to E = 12"));
+        // Tab and Shift+Tab leave the read-only table and text areas instead of moving between cells
+        javax.swing.KeyStroke tab = javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_TAB, 0);
+        javax.swing.KeyStroke back = javax.swing.KeyStroke.getKeyStroke(KeyEvent.VK_TAB, java.awt.event.InputEvent.SHIFT_DOWN_MASK);
+        for (javax.swing.JComponent c : new javax.swing.JComponent[] { v.getTable(), v.getValues(), b.getDetails(),
+                                                                       t.getReportArea() }) {
+            assertTrue(c.getClass().getSimpleName() + " Tab",
+                    c.getFocusTraversalKeys(java.awt.KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS).contains(tab));
+            assertTrue(c.getClass().getSimpleName() + " Shift+Tab",
+                    c.getFocusTraversalKeys(java.awt.KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS).contains(back));
+        }
+        assertFalse("the values text claims the weights stay 1 outside their frames",
+                v.getValues().getText().contains("each weight is 1 outside"));
     }
 
     public void testBeforeARunAndAfterARefusal() {
