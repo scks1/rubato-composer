@@ -156,6 +156,21 @@ public class WeightedPerformanceTest extends TestCase {
         assertEquals(2, r.getStemma().leaves().size());
     }
 
+    /** D8 with the rubato in all voices: it hangs under the weights daughter, not beside it. */
+    public void testAllVoiceRubatoActsOnTheWeightsDaughter() {
+        Performances.Result r = Performances.perform(notes(),
+                Performances.Settings.tempo(84, 64, Performances.Curve.LINEAR, 4, 0.2, -1)
+                        .withWeights(WeightWatcher.parse(TWO, false)));
+        LPS mother = r.getStemma().getMother();
+        assertEquals(1, mother.getDaughters().size());
+        LPS d = mother.getDaughters().get(0);
+        assertEquals("Mother/weights", d.getName());
+        assertEquals(1, d.getDaughters().size());
+        assertEquals("Mother/weights/rubato", d.getDaughters().get(0).getName());
+        assertEquals(3, r.getStemma().size());
+        assertEquals(1, r.getStemma().leaves().size());
+    }
+
     public void testScalarSettingsRefuseWeights() {
         try {
             Performances.Settings.scalar(120, 1, 1, 1).withWeights(WeightWatcher.parse(TWO, false));
