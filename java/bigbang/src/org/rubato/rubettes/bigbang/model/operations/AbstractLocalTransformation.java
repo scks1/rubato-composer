@@ -64,7 +64,7 @@ public abstract class AbstractLocalTransformation extends AbstractTransformation
 	
 	public double[] getEndingPoint() {
 		double x = this.center[0]+(this.endingPoint[0]-this.center[0])*this.modificationRatio;
-		double y = this.center[1]+(this.endingPoint[1]-this.center[0])*this.modificationRatio;
+		double y = this.center[1]+(this.endingPoint[1]-this.center[1])*this.modificationRatio;
 		return new double[]{x,y};
 	}
 	
