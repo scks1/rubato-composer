@@ -30,6 +30,7 @@ import org.rubato.math.performance.PerformedNote;
 import org.rubato.math.performance.Stemma;
 import org.rubato.math.performance.TempoCurve;
 import org.rubato.math.performance.TempoCurves;
+import org.rubato.math.performance.WeightWatcher;
 import org.rubato.math.yoneda.Denotator;
 
 /**
@@ -59,9 +60,11 @@ public final class Performances {
         final double barLength, rubatoDepth;
         final int rubatoVoice;
         final double loudStart, loudEnd, articulation;
+        final WeightWatcher weights;
 
         private Settings(boolean scalar, double tempoStart, double tempoEnd, Curve curve, double barLength,
-                         double rubatoDepth, int rubatoVoice, double loudStart, double loudEnd, double articulation) {
+                         double rubatoDepth, int rubatoVoice, double loudStart, double loudEnd, double articulation,
+                         WeightWatcher weights) {
             this.scalar = scalar;
             this.tempoStart = tempoStart;
             this.tempoEnd = tempoEnd;
@@ -72,6 +75,7 @@ public final class Performances {
             this.loudStart = loudStart;
             this.loudEnd = loudEnd;
             this.articulation = articulation;
+            this.weights = weights;
         }
 
         /**
@@ -85,7 +89,7 @@ public final class Performances {
          * @param voice      the voice that plays the rubato, -1 for all voices
          */
         public static Settings tempo(double start, double end, Curve curve, double barLength, double depth, int voice) {
-            return new Settings(false, start, end, curve, barLength, depth, voice, 1, 1, 1);
+            return new Settings(false, start, end, curve, barLength, depth, voice, 1, 1, 1, null);
         }
 
         /**
@@ -97,7 +101,32 @@ public final class Performances {
          * @param articulation the duration dilation lambda of Example 51
          */
         public static Settings scalar(double tempo, double loudStart, double loudEnd, double articulation) {
-            return new Settings(true, tempo, tempo, Curve.LINEAR, 0, 0, -1, loudStart, loudEnd, articulation);
+            return new Settings(true, tempo, tempo, Curve.LINEAR, 0, 0, -1, loudStart, loudEnd, articulation, null);
+        }
+
+        /**
+         * These tempo settings with a Weight Watcher (Mazzola, <i>The Topos of Music II</i>,
+         * &sect;41.4, p. 681): a nonempty one makes the daughter "weights" of the mother by the
+         * tempo operator (39.32) with its combined weight; the rubato then acts on that daughter
+         * (departure D8 of sources/STEMMA-VIEW-SPEC.md). An empty one changes nothing.
+         *
+         * @throws IllegalArgumentException for scalar settings
+         */
+        public Settings withWeights(WeightWatcher ww) {
+            if (scalar) {
+                throw new IllegalArgumentException("only Tempo Performance takes Weight Watcher weights");
+            }
+            return new Settings(false, tempoStart, tempoEnd, curve, barLength, rubatoDepth, rubatoVoice, loudStart,
+                    loudEnd, articulation, ww);
+        }
+
+        /** The Weight Watcher of these settings, null when there is none. */
+        public WeightWatcher getWeights() {
+            return weights;
+        }
+
+        boolean weighted() {
+            return weights != null && !weights.isEmpty();
         }
 
         void validate() {
@@ -187,6 +216,14 @@ public final class Performances {
         StringBuilder r = new StringBuilder();
         TempoCurve t = curve(s, e0, e1, r);
         LPS mother = LPS.mother(kernel, t);
+        LPS base = mother;
+        if (s.weighted()) {
+            base = mother.tempoOperator(s.weights.combined(), "weights");
+            int k = s.weights.getEntries().size();
+            r.append("Weight Watcher: ").append(k).append(k == 1 ? " weight" : " weights").append(", combined as ")
+             .append(s.weights.isProduct() ? "a product (39.7)" : "a sum (39.5)")
+             .append("; the tempo operator w T (39.32) makes ").append(base.getName()).append(".\n");
+        }
         if (s.scalar) {
             LPS leaf = mother;
             if (s.loudStart != 1 || s.loudEnd != 1) {
@@ -215,10 +252,10 @@ public final class Performances {
                 bars[i] = lines.get(i);
             }
             double[] profile = { 1 + s.rubatoDepth, 1 - s.rubatoDepth };
-            LPS target = mother;
+            LPS target = base;
             if (s.rubatoVoice >= 0) {
                 target = null;
-                for (LPS d : mother.splitByVoice()) {
+                for (LPS d : base.splitByVoice()) {
                     if (d.getKernel().get(0).voice == s.rubatoVoice) {
                         target = d;
                     }

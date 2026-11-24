@@ -48,6 +48,10 @@ public class ScalarPerformanceRubette extends AbstractPerformanceRubette {
                 ((DoubleProperty) getProperty(ARTICULATION_KEY)).getDouble());
     }
 
+    boolean takesWeights() {
+        return false;
+    }
+
     String viewTitle() {
         return "Scalar performance";
     }

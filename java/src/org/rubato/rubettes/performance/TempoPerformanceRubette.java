@@ -18,13 +18,18 @@ package org.rubato.rubettes.performance;
 
 import javax.swing.ImageIcon;
 
+import org.rubato.base.BooleanProperty;
 import org.rubato.base.DoubleProperty;
 import org.rubato.base.IntegerProperty;
+import org.rubato.base.TextProperty;
 import org.rubato.composer.icons.Icons;
+import org.rubato.math.performance.WeightWatcher;
 
 /**
  * Performs a Score with a tempo curve (Mazzola, <i>The Topos of Music II</i>, eq. (33.1),
- * p. 562) and an optional per-bar rubato (Example 52, p. 624, by Cor. 21, p. 576).
+ * p. 562) and an optional per-bar rubato (Example 52, p. 624, by Cor. 21, p. 576). Weights
+ * typed in the Weight Watcher property (&sect;41.4, p. 681) make a daughter by the tempo
+ * operator (39.32) before the rubato.
  */
 public class TempoPerformanceRubette extends AbstractPerformanceRubette {
 
@@ -34,6 +39,8 @@ public class TempoPerformanceRubette extends AbstractPerformanceRubette {
     static final String BAR_KEY = "barLength";
     static final String DEPTH_KEY = "rubatoDepth";
     static final String VOICE_KEY = "rubatoVoice";
+    static final String WEIGHTS_KEY = "weights";
+    static final String PRODUCT_KEY = "weightsProduct";
 
     private static final ImageIcon icon = Icons.loadIcon(TempoPerformanceRubette.class, "tempoperformanceicon.png");
 
@@ -44,6 +51,8 @@ public class TempoPerformanceRubette extends AbstractPerformanceRubette {
         putProperty(new DoubleProperty(BAR_KEY, "Rubato bar length in quarters (0 for none)", 0, 0, 64));
         putProperty(new DoubleProperty(DEPTH_KEY, "Rubato depth (0 to 0.89)", 0, 0, 0.89));
         putProperty(new IntegerProperty(VOICE_KEY, "Rubato voice (-1 for all voices)", -1, -1, 1000));
+        putProperty(new TextProperty(WEIGHTS_KEY, "Weight Watcher weights, one per line", "", 60, 5, false, false));
+        putProperty(new BooleanProperty(PRODUCT_KEY, "Combine weights as product", false));
     }
 
     Performances.Settings settings() {
@@ -53,7 +62,13 @@ public class TempoPerformanceRubette extends AbstractPerformanceRubette {
                         : Performances.Curve.LINEAR,
                 ((DoubleProperty) getProperty(BAR_KEY)).getDouble(),
                 ((DoubleProperty) getProperty(DEPTH_KEY)).getDouble(),
-                ((IntegerProperty) getProperty(VOICE_KEY)).getInt());
+                ((IntegerProperty) getProperty(VOICE_KEY)).getInt())
+                .withWeights(WeightWatcher.parse(((TextProperty) getProperty(WEIGHTS_KEY)).getString(),
+                        ((BooleanProperty) getProperty(PRODUCT_KEY)).getBoolean()));
+    }
+
+    boolean takesWeights() {
+        return true;
     }
 
     String viewTitle() {
@@ -77,8 +92,11 @@ public class TempoPerformanceRubette extends AbstractPerformanceRubette {
              + " zero-addressed Score into physical time by integrating 1/T for a linear or"
              + " exponential tempo curve T between a start and an end tempo, in closed form."
              + " With a bar length and a depth it adds a rubato in one voice or in all voices"
-             + " that keeps every bar as long as the plain tempo's bar. The output counts"
+             + " that keeps every bar as long as the plain tempo's bar. Weights typed one per line,"
+             + " as in 'Metro high=1.2 low=0.8 deformation=0.3 points=0:1,4:3,8:2', are normalized,"
+             + " extended, deformed and added (or multiplied) by the Weight Watcher, and the combined"
+             + " weight multiplies the tempo before the rubato. The output counts"
              + " quarters at M.M. 120, so MIDI File Out and Score Play render it in time;"
-             + " the view shows the stemma and the performed length.";
+             + " the view shows the report, a stemma browser with a Kernel View, and the Weight Watcher.";
     }
 }
