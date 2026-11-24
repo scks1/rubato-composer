@@ -22,6 +22,8 @@ import static org.rubato.composer.Utilities.makeTitledBorder;
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.KeyboardFocusManager;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Collections;
@@ -32,7 +34,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 
 import org.rubato.base.IntegerProperty;
 import org.rubato.base.SimpleAbstractRubette;
@@ -59,6 +64,13 @@ public class VoiceLeadingSpaceRubette extends SimpleAbstractRubette {
     static final String TO_KEY = "to";
 
     private static final ImageIcon icon = Icons.loadIcon(NerveRubette.class, "nerveicon.png");
+
+    private static final Border UNFOCUSED = new EmptyBorder(4, 6, 4, 6);
+
+    /** The report's border while it has the keyboard focus. */
+    static Border focusedBorder(JTextArea t) {
+        return new CompoundBorder(new LineBorder(t.getForeground(), 2), new EmptyBorder(2, 4, 2, 4));
+    }
 
     private JPanel view;
     private JTextArea text;
@@ -144,7 +156,18 @@ public class VoiceLeadingSpaceRubette extends SimpleAbstractRubette {
             text.setLineWrap(true);
             text.setWrapStyleWord(true);
             text.setFont(new Font(Font.MONOSPACED, Font.PLAIN, text.getFont().getSize()));
-            text.setBorder(new EmptyBorder(4, 6, 4, 6));
+            text.setBorder(UNFOCUSED);
+            // the caret alone is too faint a focus indicator; a 2 px line in the text colour
+            // replaces 2 px of the padding, so the text does not move
+            text.addFocusListener(new FocusAdapter() {
+                public void focusGained(FocusEvent e) {
+                    text.setBorder(focusedBorder(text));
+                }
+
+                public void focusLost(FocusEvent e) {
+                    text.setBorder(UNFOCUSED);
+                }
+            });
             text.getAccessibleContext().setAccessibleName("Voice-leading space report");
             text.getAccessibleContext().setAccessibleDescription(
                 "Transporters, objective transformations, GIS check and the Score's steps, as text.");

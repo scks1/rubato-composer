@@ -171,4 +171,26 @@ public class VoiceLeadingsTest extends TestCase {
         assertTrue(bad.getReportText(), bad.getReportText().contains("Aff does not act on the triads"));
         assertEquals("", bad.getInfo());
     }
+
+    /** The report shows a 2 px border in the text colour while focused, with the same insets as without (F-gui-contrast.txt). */
+    public void testFocusBorder() {
+        VoiceLeadingSpaceRubette rub = new VoiceLeadingSpaceRubette();
+        rub.getView();
+        JTextArea text = rub.getTextArea();
+        java.awt.Insets before = text.getBorder().getBorderInsets(text);
+        for (java.awt.event.FocusListener l : text.getFocusListeners()) {
+            l.focusGained(new java.awt.event.FocusEvent(text, java.awt.event.FocusEvent.FOCUS_GAINED));
+        }
+        assertTrue(text.getBorder() instanceof javax.swing.border.CompoundBorder);
+        javax.swing.border.Border outer = ((javax.swing.border.CompoundBorder) text.getBorder()).getOutsideBorder();
+        assertTrue(outer instanceof javax.swing.border.LineBorder);
+        assertEquals(2, ((javax.swing.border.LineBorder) outer).getThickness());
+        assertEquals(text.getForeground(), ((javax.swing.border.LineBorder) outer).getLineColor());
+        assertEquals(before, text.getBorder().getBorderInsets(text));
+        for (java.awt.event.FocusListener l : text.getFocusListeners()) {
+            l.focusLost(new java.awt.event.FocusEvent(text, java.awt.event.FocusEvent.FOCUS_LOST));
+        }
+        assertFalse(text.getBorder() instanceof javax.swing.border.CompoundBorder);
+        assertEquals(before, text.getBorder().getBorderInsets(text));
+    }
 }
