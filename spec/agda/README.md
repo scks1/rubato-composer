@@ -40,9 +40,13 @@ standard library. Every module uses `--safe --without-K`.
 | `FiniteModAt.agda` | a finite stand-in for Mod@ (a departure: the book gives no finite example): the affine maps of Z2 and Z3 found by testing every value table, the sieves on the one object (5 for Aff(Z2), 9 for Aff(Z3), 2 for the groups of affine bijections), negation from Prop. 125 and Booleanness by not not, false for Aff(Z2) and Aff(Z3) and true for the groups, with facts proved by computation |
 | `FieldExtraction.agda` | the field formula of Topos II §47.3.4 (p. 762) on exact 2 × 2 integer matrices: det and adjugate, the affine performance [[2,0],[1,2]] through two bases (det 4 for both, U Adj(V) Δ = (2, 1) for both, so Z = A⁻¹Δ), a direction-only image (direction (2, −1)) and two images without information, with facts proved by computation |
 | `VoiceLeading.agda` | the voice-leading space of T/I on Z12 and on the 24 consonant triads after Flieder (arXiv 2512.04090, section 4): two transporters over every pair of Z12 (288 arrows), one per pair for T alone and for T/I on the triads (a GIS), 48 affine maps normalizing T/I of which 24 lie in T/I, with facts proved by computation |
-| `adversarial/*.agda` | 43 files that must fail to typecheck, each with an `-- EXPECT:` line |
+| `Certificates.agda` | the claims of Rubato's Agda certificates after Flieder (arXiv 2512.04090, Ex. 2.4, B.2, B.3): list membership, pcint and intclass on Z_n, `AllInterval n C` as a Π over interval classes of a Σ over pairs, the three keys' scales, degrees and triads, the leading tone and `DominantContainsLeadingTone`; departures D1 to D11 of sources/AGDA-CERTIFICATES-SPEC.md |
+| `GeneratedCertificates.agda` | written by `gen/ExportCertificates.java` from `AgdaCertificates.exampleModule()`: 8 all-interval certificates (4 negative), the 36 keys of Ex. B.3 (12 vacuous) and 5 scale memberships (2 negative). Do not edit |
+| `adversarial/*.agda` | 50 files that must fail to typecheck, each with an `-- EXPECT:` line |
 | `gen/ExportAgda.java` | the generator for `Generated.agda` |
 | `gen/ExportAddresses.java` | the generator for `GeneratedAddresses.agda` |
+| `gen/ExportCertificates.java` | the generator for `GeneratedCertificates.agda` |
+| `check-certificate.sh` | typechecks one certificate module (for example the Agda Certificate rubette's file) in a temporary directory beside copies of `Prelude.agda` and `Certificates.agda` |
 | `gen/DepartureProbe.java` | prints Java's behaviour for each departure case P1 to P11 |
 | `run-checks.sh` | runs everything below |
 
@@ -54,12 +58,13 @@ mvn -B -o verify                      # or ant dist; builds the -all jar
 spec/agda/run-checks.sh [log-dir]
 ```
 
-`run-checks.sh` compiles the three Java programs against
+`run-checks.sh` compiles the four Java programs against
 `java/target/rubato-composer-0.1.0-SNAPSHOT-all.jar` (override with
-`JAR=`), runs both generators and fails if their output differs from the
-committed `Generated.agda` and `GeneratedAddresses.agda`, runs the probe,
-typechecks the eighteen positive
-modules from a clean state (it deletes `*.agdai` first), and typechecks
+`JAR=`), runs the three generators and fails if their output differs from the
+committed `Generated.agda`, `GeneratedAddresses.agda` and
+`GeneratedCertificates.agda`, runs the probe, typechecks the twenty positive
+modules from a clean state (it deletes `*.agdai` first), runs
+`check-certificate.sh GeneratedCertificates.agda`, and typechecks
 each adversarial file, which passes only when Agda rejects the file with
 the expected text at a location inside that file. `SKIP_JAVA=1` skips
 the Java steps. `AGDA=` picks the Agda binary.
@@ -391,6 +396,20 @@ three symmetries; `MonteverdiEx2TraceStrong.agda` calls Example 2's trace
 strong; `MonteverdiEx1WrongPolarity.agda` gives Example 1's trace the
 polarity of Example 3's.
 
+### Agda certificates (Certificates.agda, GeneratedCertificates.agda)
+
+Each certificate is a definition whose type is a claim of `Certificates.agda`
+and whose body Java wrote; Agda accepts it only if the claim holds under the
+Agda definitions, which were written by hand from the paper apart from the
+Java code. Positive all-interval certificates give one witness pair per
+interval class and an absurd clause above ⌊n/2⌋; negative ones refute the
+smallest missing class by one absurd clause per ordered pair. Ex. B.3 is
+proved for all 36 keys, vacuously for the 12 natural-minor keys. The seven
+`adversarial/Certificates*.agda` files forge certificates: a wrong witness
+pair, a positive claim for {0, 1, 2, 3}, a refutation for an all-interval
+set, a missing class, a leading tone in the natural-minor V, a vacuous
+proof in C major, and F sharp in C major.
+
 ## Stated but not proved
 
 - `cmpDen` is flip-symmetric or has transitive `lt` on well-formed
@@ -445,7 +464,10 @@ rows were written before it was consulted.
 `.github/workflows/ci.yml` has an `agda-spec` job: it builds the jar
 with `mvn -DskipTests package`, installs `agda-bin` and `libghc-agda-dev`
 from Ubuntu 24.04's archive (Agda 2.6.3, the version used here), runs
-`run-checks.sh` and uploads its logs. The job has not run on GitHub: the
+`run-checks.sh` and uploads its logs. Since stage 10.2 that run also diffs
+`GeneratedCertificates.agda` against `gen/ExportCertificates.java`,
+typechecks it and runs the seven certificate adversarial files; on this VM
+the whole Agda part takes about 44 s with `SKIP_JAVA=1`. The job has not run on GitHub: the
 branch is local. Package names and the prim-library location come from
 this VM's notes on the Ubuntu noble packages, not from a runner.
 
