@@ -140,7 +140,7 @@ public final class CertificateReports {
     }
 
     /** D8: whole-semitone pitches in onset order, repeats kept. */
-    static int[] pitches(List<ScoreNote> notes) {
+    public static int[] pitches(List<ScoreNote> notes) {
         List<ScoreNote> sorted = new ArrayList<ScoreNote>(notes);
         Collections.sort(sorted);
         int[] p = new int[sorted.size()];

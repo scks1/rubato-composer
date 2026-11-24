@@ -116,6 +116,18 @@ public class CertificateReportsTest extends TestCase {
         assertTrue(r.module(), r.module().contains("inScale : All (λ p → p ∈ scale 9 naturalMinor) []\n"));
     }
 
+    /** D7, D8: notes are read in onset order whatever order the list holds, repeats kept. */
+    public void testOnsetOrder() {
+        List<ScoreNote> notes = new ArrayList<ScoreNote>();
+        notes.add(new ScoreNote(2, 67, 80, 1.0, 0));
+        notes.add(new ScoreNote(0, 60, 80, 1.0, 0));
+        notes.add(new ScoreNote(3, 60, 80, 1.0, 0));
+        notes.add(new ScoreNote(1, 64, 80, 1.0, 0));
+        assertEquals("[60, 64, 67, 60]", Arrays.toString(CertificateReports.pitches(notes)));
+        String m = CertificateReports.analyze(ScoreNote.toScore(notes), CertificateReports.Settings.defaults()).module();
+        assertTrue(m, m.contains("inScale : All (λ p → p ∈ scale 0 major) (0 ∷ 4 ∷ 7 ∷ 0 ∷ [])\n"));
+    }
+
     /** Refusals: modulus, tonic, mode, module name, a half semitone. */
     public void testRefusals() {
         Object[][] bad = { { 1, 0, "major", "Certificate", "2 to 24" }, { 25, 0, "major", "Certificate", "2 to 24" },
