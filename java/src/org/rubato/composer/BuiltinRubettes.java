@@ -65,6 +65,7 @@ public final class BuiltinRubettes {
         "org.rubato.rubettes.counterpoint.SymmetryTraceRubette",
         "org.rubato.rubettes.global.NerveRubette",
         "org.rubato.rubettes.gesture.FingerGestureRubette",
+        "org.rubato.rubettes.gesture.HandGestureRubette",
         "org.rubato.rubettes.harmony.ModulationRubette",
         "org.rubato.rubettes.harmony.CadenceAnalysisRubette",
         "org.rubato.rubettes.harmony.KeyPathRubette",
