@@ -74,6 +74,7 @@ public final class BuiltinRubettes {
         "org.rubato.rubettes.performance.FieldExtractionRubette",
         "org.rubato.rubettes.voiceleading.VoiceLeadingSpaceRubette",
         "org.rubato.rubettes.certificates.AgdaCertificateRubette",
+        "org.rubato.rubettes.rhythm.RhythmTreeRubette",
         "org.rubato.rubettes.score.LilyPondOutRubette",
         "org.rubato.rubettes.texture.TexturalizeRubette",
         "org.rubato.rubettes.wallpaper.WallpaperRubette",
