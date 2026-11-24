@@ -71,6 +71,7 @@ public final class BuiltinRubettes {
         "org.rubato.rubettes.harmony.KeyPathRubette",
         "org.rubato.rubettes.performance.TempoPerformanceRubette",
         "org.rubato.rubettes.performance.ScalarPerformanceRubette",
+        "org.rubato.rubettes.performance.FieldExtractionRubette",
         "org.rubato.rubettes.score.LilyPondOutRubette",
         "org.rubato.rubettes.texture.TexturalizeRubette",
         "org.rubato.rubettes.wallpaper.WallpaperRubette",
