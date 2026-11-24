@@ -48,6 +48,11 @@ public abstract class AbstractOperation {
 		this.updateOperation();
 	}
 	
+	/** Returns the ratio the last {@link #modify(double)} set, 1 for an unmodified operation. */
+	public double getModificationRatio() {
+		return this.modificationRatio;
+	}
+	
 	protected Set<DenotatorPath> getObjectPaths(Set<BigBangObject> objects) {
 		Set<DenotatorPath> objectPaths = new TreeSet<DenotatorPath>();
 		if (objects.size() == 0) {
