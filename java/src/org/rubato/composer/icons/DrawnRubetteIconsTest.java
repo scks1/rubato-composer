@@ -209,6 +209,25 @@ public class DrawnRubetteIconsTest extends TestCase {
     }
 
 
+    public void testFormTreePowerAndLimitDifferAtOneX() {
+        BufferedImage power = paint(RubetteIcons.forResource("org/rubato/composer/icons/power.png"), 1);
+        BufferedImage limit = paint(RubetteIcons.forResource("org/rubato/composer/icons/limit.png"), 1);
+        assertTrue("power has no centre dot", (power.getRGB(8, 8) >>> 24) > 128);
+        assertTrue("limit is not open in the middle", (limit.getRGB(8, 8) >>> 24) < 32);
+        int differing = 0;
+        for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) {
+                int a = power.getRGB(x, y) >>> 24;
+                int b = limit.getRGB(x, y) >>> 24;
+                if (Math.abs(a-b) > 128) {
+                    differing++;
+                }
+            }
+        }
+        assertTrue("power and limit differ in "+differing+" pixels", differing >= 8);
+    }
+
+
     static int[] pixels(BufferedImage img) {
         return img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth());
     }
