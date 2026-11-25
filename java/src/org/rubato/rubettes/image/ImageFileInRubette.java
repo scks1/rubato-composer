@@ -46,10 +46,11 @@ import org.rubato.rubettes.util.ObjectGenerator;
  */
 public class ImageFileInRubette extends SimpleAbstractRubette {
 	
-	private static Form PIXEL_FORM = Repository.systemRepository().getForm("Pixel");
-	private static PowerForm IMAGE_FORM = (PowerForm)Repository.systemRepository().getForm("Image");
-	private static Form VS_PIXEL_FORM = Repository.systemRepository().getForm("VariableSizePixel");
-	private static PowerForm VS_IMAGE_FORM = (PowerForm)Repository.systemRepository().getForm("VSPixelImage");
+	// BigBang registers these forms, possibly after this class loads, so they are looked up on first use
+	private static Form PIXEL_FORM;
+	private static PowerForm IMAGE_FORM;
+	private static Form VS_PIXEL_FORM;
+	private static PowerForm VS_IMAGE_FORM;
 	
 	private File imageFile;
 	private boolean variableSizePixels;
@@ -95,9 +96,9 @@ public class ImageFileInRubette extends SimpleAbstractRubette {
     				int blue = currentColor.getBlue();
     				int alpha = currentColor.getAlpha();
     				if (this.variableSizePixels) {
-    					pixels.add(this.objectGenerator.createStandardDenotator(ImageFileInRubette.VS_PIXEL_FORM, x, image.getHeight()-1-y, 1, 1, red, green, blue, alpha));
+    					pixels.add(this.objectGenerator.createStandardDenotator(vsPixelForm(), x, image.getHeight()-1-y, 1, 1, red, green, blue, alpha));
     				} else {
-    					pixels.add(this.objectGenerator.createStandardDenotator(ImageFileInRubette.PIXEL_FORM, x, image.getHeight()-1-y, red, green, blue, alpha));
+    					pixels.add(this.objectGenerator.createStandardDenotator(pixelForm(), x, image.getHeight()-1-y, red, green, blue, alpha));
     				}
     			}
     			if (runInfo.stopped()) {
@@ -107,9 +108,9 @@ public class ImageFileInRubette extends SimpleAbstractRubette {
     	}
     	try {
     		if (this.variableSizePixels) {
-    			return new PowerDenotator(NameDenotator.make(""), ImageFileInRubette.VS_IMAGE_FORM, pixels);
+    			return new PowerDenotator(NameDenotator.make(""), vsImageForm(), pixels);
     		}
-    		return new PowerDenotator(NameDenotator.make(""), ImageFileInRubette.IMAGE_FORM, pixels);
+    		return new PowerDenotator(NameDenotator.make(""), imageForm(), pixels);
     	} catch (RubatoException e) {
     		e.printStackTrace();
     		return null;
@@ -125,6 +126,29 @@ public class ImageFileInRubette extends SimpleAbstractRubette {
     	return null;
     }
 	
+	/*
+	 * Returns the cached form, or looks it up when it is not cached yet.
+	 */
+	private static Form resolve(Form cached, String name) {
+		return cached != null ? cached : Repository.systemRepository().getForm(name);
+	}
+
+	private static Form pixelForm() {
+		return PIXEL_FORM = resolve(PIXEL_FORM, "Pixel");
+	}
+
+	private static PowerForm imageForm() {
+		return IMAGE_FORM = (PowerForm)resolve(IMAGE_FORM, "Image");
+	}
+
+	private static Form vsPixelForm() {
+		return VS_PIXEL_FORM = resolve(VS_PIXEL_FORM, "VariableSizePixel");
+	}
+
+	private static PowerForm vsImageForm() {
+		return VS_IMAGE_FORM = (PowerForm)resolve(VS_IMAGE_FORM, "VSPixelImage");
+	}
+
 	public JComponent getProperties() {
 		return super.getProperties();
 	}

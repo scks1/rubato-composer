@@ -47,8 +47,9 @@ import org.rubato.rubettes.util.ObjectGenerator;
  */
 public class ImageFileOutRubette extends SimpleAbstractRubette {
 	
-	private static PowerForm IMAGE_FORM = (PowerForm)Repository.systemRepository().getForm("Image");
-	private static PowerForm VS_IMAGE_FORM = (PowerForm)Repository.systemRepository().getForm("VSPixelImage");
+	// BigBang registers these forms, possibly after this class loads, so they are looked up on first use
+	private static PowerForm IMAGE_FORM;
+	private static PowerForm VS_IMAGE_FORM;
 	
 	private File imageFile;
 	private boolean fillEmptyPixels;
@@ -79,15 +80,30 @@ public class ImageFileOutRubette extends SimpleAbstractRubette {
             this.addError("No file has been set.");
     	} else if (input == null) {
             this.addError("Input denotator is null.");
-    	} else if (input.hasForm(ImageFileOutRubette.IMAGE_FORM)) {
+    	} else if (input.hasForm(imageForm())) {
     		this.writeImageFile(this.getBufferedImage((PowerDenotator)input, runInfo));
-    	} else if (input.hasForm(ImageFileOutRubette.VS_IMAGE_FORM)) {
+    	} else if (input.hasForm(vsImageForm())) {
     		this.writeImageFile(this.getBufferedImageFromVS((PowerDenotator)input, runInfo));
     	} else {
     		this.addError("Input denotator is not of form \"Image\" or \"VSPixelImage\".");
     	}
     }
     
+    /*
+     * Returns the cached form, or looks it up when it is not cached yet.
+     */
+    private static PowerForm resolve(PowerForm cached, String name) {
+        return cached != null ? cached : (PowerForm)Repository.systemRepository().getForm(name);
+    }
+
+    private static PowerForm imageForm() {
+        return IMAGE_FORM = resolve(IMAGE_FORM, "Image");
+    }
+
+    private static PowerForm vsImageForm() {
+        return VS_IMAGE_FORM = resolve(VS_IMAGE_FORM, "VSPixelImage");
+    }
+
     private BufferedImage getBufferedImage(PowerDenotator imageDenotator, RunInfo runInfo) {
     	double[] minAndMaxX = new DenotatorAnalyzer().getMinAndMaxValue(imageDenotator, 0);
     	double[] minAndMaxY = new DenotatorAnalyzer().getMinAndMaxValue(imageDenotator, 1);
