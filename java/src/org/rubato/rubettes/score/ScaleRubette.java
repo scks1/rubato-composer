@@ -435,6 +435,9 @@ public class ScaleRubette extends AbstractRubette implements ChangeListener, Act
 				i++;
 			}
 			loadedRubette.intervals = intervals;
+		} else {
+			//a preset scale stores no intervals, so they come from the scale map, as in the constructor
+			loadedRubette.intervals = loadedRubette.scaleMap.get(loadedRubette.getPresetName());
 		}
 		loadedRubette.revertProperties();
 		return loadedRubette;
