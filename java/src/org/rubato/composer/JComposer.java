@@ -1586,7 +1586,7 @@ public class JComposer extends JFrame implements Observer {
 
                         JTextArea messageArea = new JTextArea("Copyright (C) 2006 Gérard Milmeister"); //$NON-NLS-1$
                         messageArea.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-                        messageArea.setForeground(new Color(0.59f, 0.67f, 0.99f));
+                        messageArea.setForeground(Theme.color("Rubato.about.foreground", new Color(0.59f, 0.67f, 0.99f))); //$NON-NLS-1$
                         messageArea.setOpaque(false);
                         
                         messageArea.setBounds(10, 250, 380, 50);
