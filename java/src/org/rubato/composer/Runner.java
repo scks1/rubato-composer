@@ -159,6 +159,18 @@ public class Runner implements Runnable {
                         addProblem(runProblems, describe("Runner.exceptionproblem", e), model); //$NON-NLS-1$
                     }
                 }
+                catch (Error e) {
+                    //an Error such as StackOverflowError or OutOfMemoryError ends the run,
+                    //since the program may not be in a state to run further rubettes
+                    if (info.abandoned) {
+                        return;
+                    }
+                    if (!info.stopped()) {
+                        e.printStackTrace();
+                        addProblem(runProblems, describe("Runner.errorproblem", e), model); //$NON-NLS-1$
+                    }
+                    break;
+                }
                 if (!info.abandoned) {
                     host.makeProgress(i+1);
                 }
