@@ -100,10 +100,24 @@ public class AlterationRubette extends AbstractRubette implements ActionListener
 		return new AlterationRubette();
 	}
 		
+    /**
+     * Returns a new rubette with this rubette's applied settings, set up in
+     * the order fromXML uses: input form, global degree, then dimensions.
+     */
     @Override
     public Rubette duplicate() {
-        // TODO: This must be implemented correctly
-        return newInstance();
+        AlterationRubette copy = new AlterationRubette();
+        if (this.inputForm == null) {
+            return copy;
+        }
+        copy.setInputForm(this.inputForm);
+        copy.globalStartDegree = this.globalStartDegree;
+        copy.globalEndDegree = this.globalEndDegree;
+        if (this.global) {
+            copy.setGlobal(true);
+        }
+        this.dimensionsTable.copyDimensionsTo(copy.dimensionsTable);
+        return copy;
     }
 
     public void init() {}

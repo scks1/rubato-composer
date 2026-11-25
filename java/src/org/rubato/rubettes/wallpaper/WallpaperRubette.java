@@ -185,10 +185,26 @@ public class WallpaperRubette extends AbstractRubette implements ActionListener 
         return rubette;
     }
 
+    /**
+     * Returns a new rubette with this rubette's input form and applied
+     * morphisms, added in the way fromXML adds them.
+     */
     @Override
     public Rubette duplicate() {
-        // TODO: This must be correctly implemented
-        return newInstance();
+        WallpaperRubette copy = (WallpaperRubette)this.newInstance();
+        if (this.inputForm == null) {
+            return copy;
+        }
+        copy.setInputForm(this.inputForm);
+        for (ModuleMorphism morphism : this.morphismsTable.getMorphisms()) {
+            List<List<Integer>> paths = new ArrayList<List<Integer>>();
+            for (List<Integer> path : this.morphismsTable.getCoordinates(morphism)) {
+                paths.add(new ArrayList<Integer>(path));
+            }
+            copy.addMorphism(morphism, this.morphismsTable.getRangeFrom(morphism),
+                    this.morphismsTable.getRangeTo(morphism), paths);
+        }
+        return copy;
     }
 
     /**

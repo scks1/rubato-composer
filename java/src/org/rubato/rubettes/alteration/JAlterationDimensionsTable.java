@@ -238,6 +238,18 @@ public class JAlterationDimensionsTable extends JPropertiesTable implements Alte
 		return true;
 	}
 	
+	/**
+	 * Adds this table's applied dimensions to the other table and applies them there.
+	 * The other table needs its parent form set first, as fromXML does.
+	 */
+	void copyDimensionsTo(JAlterationDimensionsTable other) {
+		for (int i = 0; i < this.dimensionCount(); i++) {
+			other.addDimension(this.selectedForms.get(i), this.startPercentages.get(i),
+				this.endPercentages.get(i), this.relativeToForms.get(i));
+		}
+		other.applyChanges();
+	}
+	
 	public void revertChanges() {
 		this.stopEditing();
 		DefaultTableModel model = (DefaultTableModel) this.getModel();

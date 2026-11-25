@@ -104,10 +104,20 @@ public class ScaleRubette extends AbstractRubette implements ChangeListener, Act
 		return new ScaleRubette();
 	}
 
+    /**
+     * Returns a new rubette with this rubette's applied scale, with its
+     * properties window filled in the way fromXML fills it.
+     */
     @Override
     public Rubette duplicate() {
-        // TODO: This must be correctly implemented
-        return newInstance();
+        ScaleRubette copy = new ScaleRubette();
+        copy.getProperties();
+        copy.numberOfNotes = this.numberOfNotes;
+        copy.root = this.root;
+        copy.preset = this.preset;
+        copy.intervals = this.intervals.clone();
+        copy.revertProperties();
+        return copy;
     }
     
 	@Override
