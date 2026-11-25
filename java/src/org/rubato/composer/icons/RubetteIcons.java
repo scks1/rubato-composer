@@ -594,6 +594,77 @@ final class RubetteIcons {
             g.draw(polygon(xy));
         });
 
+        // Rubettes that share a bitmap with another rubette, drawn by name;
+        // the rubette that owns the bitmap keeps the mark drawn for it above
+
+        // the turnstile of a proof, beside the nerve's simplex
+        named("agdacertificate", (g, i) -> {
+            Stroke old = g.getStroke();
+            g.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            line(g, 3.5, 2, 3.5, 14);
+            line(g, 3.5, 8, 13, 8);
+            g.setStroke(old);
+        });
+        // two three-note chords, each voice moving to its note in the next
+        named("voiceleadingspace", (g, i) -> {
+            double[] from = { 2.5, 8, 13.5 }, to = { 6, 8.5, 11 };
+            withColor(g, i.getSecondaryColor(), () -> {
+                for (int k = 0; k < 3; k++) {
+                    line(g, 2.8, from[k], 13.2, to[k]);
+                }
+            });
+            for (int k = 0; k < 3; k++) {
+                dot(g, 2.8, from[k], 1.5);
+                dot(g, 13.2, to[k], 1.5);
+            }
+        });
+        // three fingers' paths, where the finger gesture draws one
+        named("handgesture", (g, i) -> {
+            for (double y : new double[] { 3.5, 8, 12.5 }) {
+                Path2D.Double p = VectorIcons.path();
+                p.moveTo(2, y+1);
+                p.curveTo(5.5, y-2.2, 8.5, y+3.2, 14.5, y-1);
+                g.draw(p);
+                dot(g, 2, y+1, 1.3);
+            }
+        });
+        // three voices of three notes, where the counterpoint check marks two
+        named("threevoicecounterpoint", (g, i) -> {
+            double[] xs = { 2.5, 8, 13.5 };
+            double[][] ys = { { 3, 2, 3.5 }, { 8.5, 7, 8 }, { 13.5, 12, 12.5 } };
+            withColor(g, i.getSecondaryColor(), () -> {
+                for (double[] v : ys) {
+                    polyline(g, xs[0], v[0], xs[1], v[1], xs[2], v[2]);
+                }
+            });
+            for (double[] v : ys) {
+                for (int k = 0; k < 3; k++) {
+                    dot(g, xs[k], v[k], 1.4);
+                }
+            }
+        });
+        // a field of small vectors, each a point with its direction
+        named("fieldextraction", (g, i) -> {
+            for (int r = 0; r < 3; r++) {
+                for (int c = 0; c < 3; c++) {
+                    double x = 2.2+4.8*c, y = 2.2+4.8*r;
+                    double a = Math.toRadians(62-16*c-8*r);
+                    dot(g, x, y, 1.1);
+                    line(g, x, y, x+3.5*Math.cos(a), y+3.5*Math.sin(a));
+                }
+            }
+        });
+        // a beat divided in two and again in two, the leaves as notes
+        named("rhythmtree", (g, i) -> {
+            polyline(g, 4, 7.5, 8, 2.5, 12, 7.5);
+            polyline(g, 2, 13, 4, 7.5, 6, 13);
+            polyline(g, 10, 13, 12, 7.5, 14, 13);
+            dot(g, 8, 2.5, 1.4);
+            for (double x : new double[] { 2, 6, 10, 14 }) {
+                dot(g, x, 13.2, 1.5);
+            }
+        });
+
         // Form types
 
         mark(C+"limit.png", (g, i) -> {

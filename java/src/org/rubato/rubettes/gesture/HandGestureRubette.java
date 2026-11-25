@@ -75,7 +75,7 @@ public class HandGestureRubette extends SimpleAbstractRubette {
                                               { 1f, 6f } };
     private static final String[] LABELS = { "1", "2", "3", "4", "5", "carpus" };
 
-    private static final ImageIcon icon = Icons.loadIcon(HandGestureRubette.class, "fingergestureicon.png");
+    private static final ImageIcon icon = Icons.loadIcon(HandGestureRubette.class, "fingergestureicon.png", "handgesture");
 
     private JPanel view;
     private JTextArea text;

@@ -63,7 +63,7 @@ public class VoiceLeadingSpaceRubette extends SimpleAbstractRubette {
     static final String FROM_KEY = "from";
     static final String TO_KEY = "to";
 
-    private static final ImageIcon icon = Icons.loadIcon(NerveRubette.class, "nerveicon.png");
+    private static final ImageIcon icon = Icons.loadIcon(NerveRubette.class, "nerveicon.png", "voiceleadingspace");
 
     private static final Border UNFOCUSED = new EmptyBorder(4, 6, 4, 6);
 

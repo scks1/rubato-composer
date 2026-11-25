@@ -37,7 +37,8 @@ import org.rubato.composer.BuiltinRubettes;
  * Checks the drawings that {@link RubetteIcons} keeps by name: the icons of
  * rubettes without a bitmap, which show nothing under the classic theme,
  * and the icons of rubettes that share a bitmap with another rubette,
- * which keep the shared bitmap under the classic theme.
+ * which draw differently from each other under FlatLaf and keep the
+ * shared bitmap under the classic theme.
  */
 @SuppressWarnings("nls")
 public class DrawnRubetteIconsTest extends TestCase {
@@ -154,6 +155,62 @@ public class DrawnRubetteIconsTest extends TestCase {
             assertTrue("not loaded: "+name, icons.containsKey(name));
             assertSame(name, empty, icons.get(name));
         }
+    }
+
+
+    /** Groups of builtin rubettes that share one bitmap. */
+    static final String[][] SHARED_BITMAP = {
+        { "org.rubato.rubettes.global.NerveRubette",
+          "org.rubato.rubettes.certificates.AgdaCertificateRubette",
+          "org.rubato.rubettes.voiceleading.VoiceLeadingSpaceRubette" },
+        { "org.rubato.rubettes.gesture.FingerGestureRubette",
+          "org.rubato.rubettes.gesture.HandGestureRubette" },
+        { "org.rubato.rubettes.counterpoint.CounterpointCheckRubette",
+          "org.rubato.rubettes.counterpoint.ThreeVoiceCounterpointRubette" },
+        { "org.rubato.rubettes.performance.TempoPerformanceRubette",
+          "org.rubato.rubettes.performance.FieldExtractionRubette" },
+        { "org.rubato.rubettes.score.RhythmizeRubette",
+          "org.rubato.rubettes.rhythm.RhythmTreeRubette" },
+    };
+
+
+    public void testRubettesSharingABitmapGetDifferentDrawingsUnderFlatLaf() throws Exception {
+        Map<String,Object> icons = builtinIcons(true);
+        for (String[] group : SHARED_BITMAP) {
+            for (int a = 0; a < group.length; a++) {
+                assertTrue("not loaded: "+group[a], icons.containsKey(group[a]));
+                for (int b = a+1; b < group.length; b++) {
+                    int[] pa = pixels(paint((Icon)icons.get(group[a]), 1));
+                    int[] pb = pixels(paint((Icon)icons.get(group[b]), 1));
+                    assertFalse(group[a]+" and "+group[b]+" draw the same", Arrays.equals(pa, pb));
+                }
+            }
+        }
+    }
+
+
+    public void testRubettesSharingABitmapKeepItUnderClassic() throws Exception {
+        Map<String,Object> icons = builtinIcons(false);
+        for (String[] group : SHARED_BITMAP) {
+            int[] first = null;
+            for (String name : group) {
+                Object icon = icons.get(name);
+                assertNotNull("no icon: "+name, icon);
+                assertEquals(name, "javax.swing.ImageIcon", icon.getClass().getName());
+                int[] p = pixels(paint((Icon)icon, 1));
+                if (first == null) {
+                    first = p;
+                }
+                else {
+                    assertTrue(name+" no longer shows the shared bitmap", Arrays.equals(first, p));
+                }
+            }
+        }
+    }
+
+
+    static int[] pixels(BufferedImage img) {
+        return img.getRGB(0, 0, img.getWidth(), img.getHeight(), null, 0, img.getWidth());
     }
 
 

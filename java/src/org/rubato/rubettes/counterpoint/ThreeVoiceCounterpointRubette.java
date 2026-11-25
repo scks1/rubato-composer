@@ -75,7 +75,7 @@ public class ThreeVoiceCounterpointRubette extends SimpleAbstractRubette {
     /** Example 3.3's first chord (2; 3, 0), D F D. */
     public static final String DEFAULT_START = "50 53 62";
 
-    private static final ImageIcon icon = Icons.loadIcon(CounterpointCheckRubette.class, "counterpointcheckicon.png");
+    private static final ImageIcon icon = Icons.loadIcon(CounterpointCheckRubette.class, "counterpointcheckicon.png", "threevoicecounterpoint");
 
     private static final Border UNFOCUSED = new EmptyBorder(4, 6, 4, 6);
 

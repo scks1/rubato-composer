@@ -68,7 +68,7 @@ public class AgdaCertificateRubette extends SimpleAbstractRubette {
     static final String MODULE_KEY = "module";
     static final String FILE_KEY = "file";
 
-    private static final ImageIcon icon = Icons.loadIcon(NerveRubette.class, "nerveicon.png");
+    private static final ImageIcon icon = Icons.loadIcon(NerveRubette.class, "nerveicon.png", "agdacertificate");
 
     private static final Border UNFOCUSED = new EmptyBorder(4, 6, 4, 6);
 

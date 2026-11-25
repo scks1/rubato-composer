@@ -65,7 +65,7 @@ public class RhythmTreeRubette extends SimpleAbstractRubette {
     static final String LOUDNESS_KEY = "loudness";
     static final String VOICE_KEY = "voice";
 
-    private static final ImageIcon icon = Icons.loadIcon(RhythmizeRubette.class, "rhythmizeicon.png");
+    private static final ImageIcon icon = Icons.loadIcon(RhythmizeRubette.class, "rhythmizeicon.png", "rhythmtree");
 
     private static final Border UNFOCUSED = new EmptyBorder(4, 6, 4, 6);
 

@@ -77,7 +77,7 @@ public class FieldExtractionRubette extends SimpleAbstractRubette {
     static final String COLOUR_KEY = "colour";
     static final String CYCLES_KEY = "cycles";
 
-    private static final ImageIcon icon = Icons.loadIcon(FieldExtractionRubette.class, "tempoperformanceicon.png");
+    private static final ImageIcon icon = Icons.loadIcon(FieldExtractionRubette.class, "tempoperformanceicon.png", "fieldextraction");
 
     private JPanel view;
     private JTextArea text;
