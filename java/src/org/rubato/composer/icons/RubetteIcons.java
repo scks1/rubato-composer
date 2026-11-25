@@ -422,5 +422,76 @@ final class RubetteIcons {
             dot(g, 6.5, 7, 1.4);
             dot(g, 10, 8.5, 1.4);
         });
+
+        // Theory rubettes
+
+        mark(R+"counterpoint/counterpointcheckicon.png", (g, i) -> {
+            withColor(g, i.getSecondaryColor(), () -> {
+                line(g, 3, 4.5, 7.5, 3);
+                line(g, 3, 11.5, 7.5, 10);
+            });
+            dot(g, 3, 4.5, 1.5);
+            dot(g, 3, 11.5, 1.5);
+            dot(g, 7.5, 3, 1.5);
+            dot(g, 7.5, 10, 1.5);
+            line(g, 10.6, 5.4, 14.4, 9.2);
+            line(g, 14.4, 5.4, 10.6, 9.2);
+        });
+        mark(R+"counterpoint/successorgeneratoricon.png", (g, i) -> {
+            dot(g, 2.8, 8, 1.7);
+            for (double y : new double[] { 2.8, 8, 13.2 }) {
+                line(g, 4.6, 8, 11.4, y);
+                dot(g, 13.2, y, 1.5);
+            }
+        });
+        mark(R+"counterpoint/symmetrytraceicon.png", (g, i) -> {
+            withColor(g, i.getSecondaryColor(), () -> dashed(g, () -> line(g, 8, 1, 8, 15)));
+            polyline(g, 6, 1.8, 2.5, 5, 6, 8, 2.5, 11, 6, 14.2);
+            polyline(g, 10, 1.8, 13.5, 5, 10, 8, 13.5, 11, 10, 14.2);
+        });
+        mark(R+"gesture/fingergestureicon.png", (g, i) -> {
+            g.draw(new CubicCurve2D.Double(2, 10.5, 4.5, 1.5, 6.5, 1.5, 8.2, 8));
+            g.draw(new CubicCurve2D.Double(8.2, 8, 10, 14.5, 12.5, 14.5, 14.5, 5.5));
+            dot(g, 2, 10.5, 1.6);
+        });
+        mark(R+"global/nerveicon.png", (g, i) -> {
+            Path2D.Double t = polygon(2.5, 13, 7.5, 3, 12, 13);
+            withColor(g, i.getSecondaryColor(), () -> g.fill(t));
+            g.draw(t);
+            polyline(g, 7.5, 3, 14, 6, 12, 13);
+            for (double[] v : new double[][] { {2.5, 13}, {7.5, 3}, {12, 13}, {14, 6} }) {
+                dot(g, v[0], v[1], 1.5);
+            }
+        });
+        mark(R+"harmony/cadenceicon.png", (g, i) -> {
+            g.draw(new Rectangle2D.Double(2, 9, 3, 5));
+            g.draw(new Rectangle2D.Double(6.5, 6, 3, 8));
+            g.fill(new Rectangle2D.Double(10.3, 2.3, 4.4, 12.4));
+        });
+        mark(R+"harmony/keypathicon.png", (g, i) -> {
+            polyline(g, 2.5, 12.5, 6, 7, 10, 9.5, 13.5, 3.5);
+            dot(g, 2.5, 12.5, 1.6);
+            dot(g, 6, 7, 1.6);
+            dot(g, 10, 9.5, 1.6);
+            dot(g, 13.5, 3.5, 1.6);
+        });
+        mark(R+"harmony/modulationicon.png", (g, i) -> {
+            ring(g, 4, 7, 2.6);
+            arrow(g, 7.2, 7, 9.6, 7);
+            dot(g, 12.3, 7, 2.6);
+            line(g, 1.5, 13, 14.5, 13);
+        });
+        mark(R+"performance/scalarperformanceicon.png", (g, i) ->
+            polyline(g, 14.5, 3, 1.5, 8, 14.5, 13));
+        mark(R+"performance/tempoperformanceicon.png", (g, i) -> {
+            line(g, 1.5, 14.2, 14.5, 14.2);
+            for (double x : new double[] { 2, 6.8, 10.4, 12.8, 14.3 }) {
+                line(g, x, 14.2, x, 12.2);
+            }
+            Path2D.Double c = VectorIcons.path();
+            c.moveTo(1.5, 9.5);
+            c.quadTo(9.5, 9.5, 14.5, 2);
+            g.draw(c);
+        });
     }
 }
