@@ -289,6 +289,8 @@ public final class AddressEvalRubette
         rubette.evalType = evalType;
         rubette.outputForm = outputForm;
         rubette.module = module;
+        rubette.morphism = morphism;
+        rubette.setInCount(getInCount());
         return rubette;
     }
     
