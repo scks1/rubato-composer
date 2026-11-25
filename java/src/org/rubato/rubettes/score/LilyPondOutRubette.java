@@ -63,6 +63,7 @@ public class LilyPondOutRubette extends SimpleAbstractRubette {
     }
 
     public void run(RunInfo runInfo) {
+        this.readProperties();
     	Denotator input = this.getInput(0);
     	if (input == null) {
             this.addError("Input denotator is null.");
@@ -271,8 +272,16 @@ public class LilyPondOutRubette extends SimpleAbstractRubette {
 	@Override
 	public boolean applyProperties() {
         super.applyProperties();
-        this.lilyPondFile = ((FileProperty)this.getProperty(this.lilyPondFileKey)).getFile();
+        this.readProperties();
         return true;
+    }
+
+    /**
+     * Reads the applied property values into the fields that run() and getInfo() use.
+     * A duplicate gets copies of the properties but not of these fields.
+     */
+    private void readProperties() {
+        this.lilyPondFile = ((FileProperty)this.getProperty(this.lilyPondFileKey)).getFile();
     }
     
 	public boolean hasInfo() {
@@ -280,6 +289,7 @@ public class LilyPondOutRubette extends SimpleAbstractRubette {
     }
 	
 	public String getInfo() {
+        this.readProperties();
         if (this.lilyPondFile != null) {
         	return this.lilyPondFile.getName();
         }

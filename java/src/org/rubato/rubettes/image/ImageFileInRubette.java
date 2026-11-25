@@ -74,6 +74,7 @@ public class ImageFileInRubette extends SimpleAbstractRubette {
 	public void init() { }
 
     public void run(RunInfo runInfo) {
+        this.readProperties();
     	if (this.imageFile == null) {
             this.addError("No file has been set.");
     	} else {
@@ -132,9 +133,17 @@ public class ImageFileInRubette extends SimpleAbstractRubette {
 	@Override
 	public boolean applyProperties() {
         super.applyProperties();
+        this.readProperties();
+        return true;
+    }
+
+    /**
+     * Reads the applied property values into the fields that run() and getInfo() use.
+     * A duplicate gets copies of the properties but not of these fields.
+     */
+    private void readProperties() {
         this.imageFile = ((FileProperty)this.getProperty(this.imageFileKey)).getFile();
         this.variableSizePixels = ((BooleanProperty)this.getProperty(this.variableSizePixelsKey)).getBoolean();
-        return true;
     }
 	
 	public boolean hasInfo() {
@@ -142,6 +151,7 @@ public class ImageFileInRubette extends SimpleAbstractRubette {
     }
 	
 	public String getInfo() {
+        this.readProperties();
         if (this.imageFile != null) {
         	return this.imageFile.getName();
         }
