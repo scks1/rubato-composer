@@ -46,6 +46,7 @@ import org.rubato.composer.RunInfo;
 import org.rubato.composer.Utilities;
 import org.rubato.composer.components.JSelectForm;
 import org.rubato.composer.components.JStatusline;
+import org.rubato.math.yoneda.Denotator;
 import org.rubato.math.yoneda.Form;
 import org.rubato.math.yoneda.PowerForm;
 import org.rubato.math.yoneda.PowerDenotator;
@@ -124,11 +125,11 @@ public class AlterationRubette extends AbstractRubette implements ActionListener
 
 	@Override
 	public void run(RunInfo arg0) {
-		PowerDenotator input0 = (PowerDenotator) this.getInput(0);
-		PowerDenotator input1 = (PowerDenotator) this.getInput(1);
-		if (this.inputFormAndDenotatorsValid(input0, input1)) {
+		Denotator in0 = this.getInput(0);
+		Denotator in1 = this.getInput(1);
+		if (this.inputFormAndDenotatorsValid(in0, in1)) {
 			try {
-				PowerDenotator output = this.alterator.getAlteration(input0, input1);
+				PowerDenotator output = this.alterator.getAlteration((PowerDenotator) in0, (PowerDenotator) in1);
 				this.setOutput(0, output);
 			} catch (RubatoException e) {
 				e.printStackTrace();
@@ -138,6 +139,14 @@ public class AlterationRubette extends AbstractRubette implements ActionListener
 	}
 	
 	protected boolean inputFormAndDenotatorsValid(PowerDenotator input0, PowerDenotator input1) {
+		return this.inputFormAndDenotatorsValid((Denotator) input0, (Denotator) input1);
+	}
+	
+	/*
+	 * Checks the form and both inputs, which need not be Power denotators: an input that is
+	 * not a Power is reported as being of the wrong form.
+	 */
+	private boolean inputFormAndDenotatorsValid(Denotator input0, Denotator input1) {
 		if (this.inputForm == null) {
             this.addError("Input form not set.");
         } else if (input0 == null) {
