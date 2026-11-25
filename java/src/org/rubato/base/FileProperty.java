@@ -51,6 +51,7 @@ public class FileProperty extends RubetteProperty implements ActionListener {
         super(property);
         this.allowedExtensions = property.allowedExtensions;
         this.value = property.value;
+        this.saving = property.saving;
     }
     
     

@@ -67,6 +67,8 @@ public class TextProperty
         this.tmpValue = prop.tmpValue;
         this.cols = prop.cols;
         this.rows = prop.rows;
+        this.lineWrap = prop.lineWrap;
+        this.wordWrap = prop.wordWrap;
     }
     
     
