@@ -493,5 +493,26 @@ final class RubetteIcons {
             c.quadTo(9.5, 9.5, 14.5, 2);
             g.draw(c);
         });
+
+        // Form types
+
+        mark(C+"limit.png", (g, i) -> {
+            double[] xy = new double[12];
+            for (int k = 0; k < 6; k++) {
+                double a = Math.toRadians(60*k);
+                xy[2*k] = 8+6.4*Math.cos(a);
+                xy[2*k+1] = 8+6.4*Math.sin(a);
+            }
+            g.draw(polygon(xy));
+        });
+        mark(C+"colimit.png", (g, i) -> g.draw(polygon(8, 1.5, 14.5, 8, 8, 14.5, 1.5, 8)));
+        mark(C+"power.png", (g, i) -> ring(g, 8, 8, 6.2));
+        mark(C+"list.png", (g, i) -> g.draw(new RoundRectangle2D.Double(2.3, 2.3, 11.4, 11.4, 2, 2)));
+        mark(C+"simple.png", (g, i) -> {
+            g.draw(new Ellipse2D.Double(2.5, 2, 11, 4));
+            line(g, 2.5, 4, 2.5, 12);
+            line(g, 13.5, 4, 13.5, 12);
+            g.draw(new Arc2D.Double(2.5, 10, 11, 4, 180, 180, Arc2D.OPEN));
+        });
     }
 }
