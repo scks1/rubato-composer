@@ -429,6 +429,10 @@ public class AlterationRubette extends AbstractRubette implements ActionListener
     public Rubette fromXML(XMLReader reader, Element element) {
 		AlterationRubette loadedRubette = new AlterationRubette();
 		Element child = XMLReader.getChild(element, FORM);
+		if (child == null) {
+			//toXML writes nothing for a rubette whose input form is not set
+			return loadedRubette;
+		}
 		loadedRubette.setInputForm((PowerForm) reader.parseAndResolveForm(child));
 		
 		Element nextChild = XMLReader.getNextSibling(child, GLOBAL);

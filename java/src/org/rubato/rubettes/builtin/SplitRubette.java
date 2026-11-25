@@ -240,6 +240,10 @@ public class SplitRubette
     
     public Rubette fromXML(XMLReader reader, Element element) {
         Element child = XMLReader.getChild(element, FORM);
+        if (child == null) {
+            // toXML writes nothing for a rubette whose form is not set
+            return new SplitRubette();
+        }
         Form f = reader.parseAndResolveForm(child);
         SplitRubette newRubette = new SplitRubette();
         if (f instanceof LimitForm) {
