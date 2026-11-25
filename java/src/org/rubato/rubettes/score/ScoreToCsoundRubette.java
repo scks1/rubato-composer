@@ -217,7 +217,7 @@ public final class ScoreToCsoundRubette extends AbstractRubette {
         }
         fileNameField.setText(fileName);
         timeScaleField.setText(Double.toString(timeScale));
-        freqField.setText(Double.toString(timeScale));
+        freqField.setText(Double.toString(a4freq));
         prologTextArea.setText(prolog);
     }
 
