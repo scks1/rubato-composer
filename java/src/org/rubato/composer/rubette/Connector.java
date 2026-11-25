@@ -22,6 +22,7 @@ package org.rubato.composer.rubette;
 import org.rubato.composer.Theme;
 
 import java.awt.*;
+import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -166,6 +167,10 @@ public class Connector {
     
     
     public void paint(Graphics2D g) {
+        if (Theme.isFlat()) {
+            paintFlat(g);
+            return;
+        }
         g.setColor(stateColor[state]);
         g.fillRect(r.x, r.y, r.width, r.height);
         g.setColor(outlineColor);
@@ -174,6 +179,38 @@ public class Connector {
     }
     
     
+    /**
+     * Paints the connector for the FlatLaf themes as a circle on the box
+     * edge: filled when a link is attached and a ring when none is, so the
+     * two states differ in shape as well as in color.
+     */
+    private void paintFlat(Graphics2D g0) {
+        Graphics2D g = (Graphics2D)g0.create();
+        try {
+            g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            double d = r.width+1;
+            double cx = r.x+r.width/2.0;
+            double cy = (type == INPUT) ? r.y+r.height : r.y+1;
+            Ellipse2D.Double c = new Ellipse2D.Double(cx-d/2, cy-d/2, d, d);
+            if (state == CONNECTED) {
+                g.setColor(stateColor[CONNECTED]);
+                g.fill(c);
+            }
+            else {
+                g.setColor(ringFill);
+                g.fill(c);
+                g.setColor(stateColor[UNCONNECTED]);
+                g.setStroke(new BasicStroke(1.6f));
+                g.draw(new Ellipse2D.Double(cx-d/2+0.8, cy-d/2+0.8, d-1.6, d-1.6));
+            }
+        }
+        finally {
+            g.dispose();
+        }
+    }
+
+
     public void refresh() {
         if (type == INPUT) {
             for (JLink jlink : links) {
@@ -205,5 +242,6 @@ public class Connector {
         Theme.color("Rubato.connector.state0", Color.BLUE), //$NON-NLS-1$
         Theme.color("Rubato.connector.state1", Color.RED)   //$NON-NLS-1$
     };
+    private final static Color ringFill = Theme.color("Rubato.connector.ringFill", Color.WHITE); //$NON-NLS-1$
     private final static Color outlineColor = Theme.color("Rubato.canvas.line", Color.BLACK); //$NON-NLS-1$
 }

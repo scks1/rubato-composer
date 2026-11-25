@@ -190,6 +190,10 @@ public class JLink extends JPanel {
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                              RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setColor(lineColor);
+        if (Theme.isFlat()) {
+            g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            g2d.setStroke(flatStroke);
+        }
         if (type == ZIGZAG) {
             int midY = (srcY+destY)/2;
             g2d.drawLine(srcX, srcY, srcX, midY);
@@ -201,7 +205,9 @@ public class JLink extends JPanel {
         }
         else {
             if (path != null) {
-                g2d.setStroke(stroke);
+                if (!Theme.isFlat()) {
+                    g2d.setStroke(stroke);
+                }
                 g2d.draw(path);
             }
         }
@@ -224,6 +230,7 @@ public class JLink extends JPanel {
     
     private GeneralPath path = null;
     private Stroke stroke = new BasicStroke(1);
+    private static final Stroke flatStroke = new BasicStroke(1.6f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
     private int CURVE_LEN = 80;
         
     private int type = CURVE;

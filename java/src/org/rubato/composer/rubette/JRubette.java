@@ -25,6 +25,7 @@ import static org.rubato.composer.Utilities.installEscapeKey;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.RoundRectangle2D;
 import java.util.*;
 import java.util.List;
 
@@ -74,6 +75,9 @@ public final class JRubette extends JPanel
             nameLabel = new JLabel(model.getName(), model.getIcon(), SwingConstants.CENTER);            
         }
         nameLabel.setForeground(foregroundColor);
+        if (Theme.isFlat()) {
+            nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
+        }
         nameLabel.setBounds(MARGIN_LEFT+5, wy, size.width-MARGIN_RIGHT-MARGIN_LEFT-10, nameLabel.getPreferredSize().height);
         add(nameLabel);
 
@@ -98,6 +102,7 @@ public final class JRubette extends JPanel
                     openProperties();
                 }
             });
+            styleButton(propertiesButton);
             add(propertiesButton);
             wy += propertiesButton.getHeight()+5;
         }
@@ -111,6 +116,7 @@ public final class JRubette extends JPanel
                     openView();
                 }
             });
+            styleButton(viewButton);
             add(viewButton);
             wy += viewButton.getHeight()+5;
         }
@@ -124,6 +130,7 @@ public final class JRubette extends JPanel
                     openNetwork();
                 }
             });
+            styleButton(openButton);
             add(openButton);
             wy += openButton.getHeight()+5;            
         }
@@ -139,6 +146,23 @@ public final class JRubette extends JPanel
         addMouseMotionListener(this);
 
         setToolTipText(""); //$NON-NLS-1$
+    }
+
+
+    /**
+     * Gives a button inside the box the box's own colors under FlatLaf, so
+     * the buttons read as part of the rubette instead of as white fields.
+     */
+    private static void styleButton(JButton button) {
+        if (!Theme.isFlat()) {
+            return;
+        }
+        button.putClientProperty("FlatLaf.style", buttonStyle); //$NON-NLS-1$
+    }
+
+
+    private static String hex(Color c) {
+        return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(), c.getBlue()); //$NON-NLS-1$
     }
 
 
@@ -547,6 +571,16 @@ public final class JRubette extends JPanel
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2d = (Graphics2D)g;
+        if (Theme.isFlat()) {
+            paintFlat(g2d);
+            for (int i = 0; i < inConnectorCount; i++) {
+                inConnectors[i].paint(g2d);
+            }
+            for (int j = 0; j < outConnectorCount; j++) {
+                outConnectors[j].paint(g2d);
+            }
+            return;
+        }
         g2d.setColor(Color.BLACK);
 
         for (int i = 0; i < inConnectorCount; i++) {
@@ -559,10 +593,6 @@ public final class JRubette extends JPanel
         // background color
         g2d.setColor(getModel().isPassThrough()?passthroughColor:backgroundColor);
         g2d.setColor(inselection?inselectionColor:g2d.getColor());
-        if (Theme.isFlat()) {
-            paintFlat(g2d);
-            return;
-        }
         int x = MARGIN_LEFT;
         int y = MARGIN_TOP;
         g2d.fillRect(MARGIN_LEFT,
@@ -611,22 +641,42 @@ public final class JRubette extends JPanel
 
 
     /**
-     * Paints the box as a flat fill with a one-pixel border, the FlatLaf
-     * themes' replacement for the classic bevel.
+     * Paints the box for the FlatLaf themes: a rounded fill with a one
+     * pixel border. The rubette under the mouse, which the keyboard
+     * shortcuts act on, gets a two pixel border in the focus color, and a
+     * rubette with a problem gets a two pixel border in the problem color.
      */
-    private void paintFlat(Graphics2D g2d) {
-        int w = getWidth()-MARGIN_RIGHT-MARGIN_LEFT-1;
-        int h = getHeight()-MARGIN_TOP-MARGIN_BOTTOM;
-        g2d.fillRect(MARGIN_LEFT, MARGIN_TOP, w, h);
-        g2d.setColor(selected?selectionColor:borderColor);
-        g2d.drawRect(MARGIN_LEFT, MARGIN_TOP, w-1, h-1);
-        if (selected) {
-            g2d.drawRect(MARGIN_LEFT+1, MARGIN_TOP+1, w-3, h-3);
+    private void paintFlat(Graphics2D g0) {
+        Graphics2D g2d = (Graphics2D)g0.create();
+        try {
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            Color fill = getModel().isPassThrough() ? passthroughColor : backgroundColor;
+            if (inselection) {
+                fill = inselectionColor;
+            }
+            float w = getWidth()-MARGIN_RIGHT-MARGIN_LEFT;
+            float h = getHeight()-MARGIN_TOP-MARGIN_BOTTOM;
+            float arc = Theme.scale(10);
+            g2d.setColor(fill);
+            g2d.fill(new RoundRectangle2D.Float(MARGIN_LEFT, MARGIN_TOP, w, h, arc, arc));
+            Color line = borderColor;
+            float stroke = 1f;
+            if (highlighted) {
+                line = problemColor;
+                stroke = Theme.scale(2);
+            }
+            else if (selected) {
+                line = selectionColor;
+                stroke = Theme.scale(2);
+            }
+            g2d.setColor(line);
+            g2d.setStroke(new BasicStroke(stroke));
+            float d = stroke/2f;
+            g2d.draw(new RoundRectangle2D.Float(MARGIN_LEFT+d, MARGIN_TOP+d, w-stroke, h-stroke, arc-stroke, arc-stroke));
         }
-        if (highlighted) {
-            g2d.setColor(problemColor);
-            g2d.drawRect(MARGIN_LEFT, MARGIN_TOP, w-1, h-1);
-            g2d.drawRect(MARGIN_LEFT+1, MARGIN_TOP+1, w-3, h-3);
+        finally {
+            g2d.dispose();
         }
     }
 
@@ -1073,6 +1123,14 @@ public final class JRubette extends JPanel
     private static final Color foregroundColor = Theme.color("Rubato.rubette.foreground", Color.BLACK); //$NON-NLS-1$
     private static final Color selectionColor  = Theme.color("Rubato.canvas.selection", Color.BLACK); //$NON-NLS-1$
     private static final Color problemColor    = Theme.color("Rubato.canvas.problem", Color.RED); //$NON-NLS-1$
+
+    private static final Color buttonBackground  = Theme.color("Rubato.rubette.buttonBackground", Color.WHITE); //$NON-NLS-1$
+    private static final Color buttonHover       = Theme.color("Rubato.rubette.buttonHover", Color.WHITE); //$NON-NLS-1$
+    private static final Color buttonBorder      = Theme.color("Rubato.rubette.buttonBorder", Color.GRAY); //$NON-NLS-1$
+    private static final String buttonStyle = "background: "+hex(buttonBackground) //$NON-NLS-1$
+                                              +"; hoverBackground: "+hex(buttonHover) //$NON-NLS-1$
+                                              +"; borderColor: "+hex(buttonBorder) //$NON-NLS-1$
+                                              +"; foreground: "+hex(foregroundColor); //$NON-NLS-1$
 
     private static final Border emptyBorder = BorderFactory.createEmptyBorder(5, 5, 5, 5);
 }
