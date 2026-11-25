@@ -138,26 +138,27 @@ public class Icons {
     
 
     static {
-        emptyIcon   = loadIcon("emptyicon.png");
-        newIcon     = loadIcon("newicon.png");
-        openIcon    = loadIcon("openicon.png");
-        revertIcon  = loadIcon("reverticon.png");
-        addIcon     = loadIcon("addicon.png");
-        saveIcon    = loadIcon("saveicon.png");
-        saveasIcon  = loadIcon("saveasicon.png");
-        quitIcon    = loadIcon("quiticon.png");
-        runIcon     = loadIcon("runicon.png");
-        runContIcon = loadIcon("runconticon.png");
-        stopIcon    = loadIcon("stopicon.png");
-        newnetIcon  = loadIcon("newneticon.png");
-        closeIcon   = loadIcon("closeicon.png");
-        prefIcon    = loadIcon("preficon.png");
+        boolean vector = Theme.isFlat();
+        emptyIcon   = vector ? VectorIcons.emptyIcon()   : loadIcon("emptyicon.png");
+        newIcon     = vector ? VectorIcons.newIcon()     : loadIcon("newicon.png");
+        openIcon    = vector ? VectorIcons.openIcon()    : loadIcon("openicon.png");
+        revertIcon  = vector ? VectorIcons.revertIcon()  : loadIcon("reverticon.png");
+        addIcon     = vector ? VectorIcons.addIcon()     : loadIcon("addicon.png");
+        saveIcon    = vector ? VectorIcons.saveIcon()    : loadIcon("saveicon.png");
+        saveasIcon  = vector ? VectorIcons.saveasIcon()  : loadIcon("saveasicon.png");
+        quitIcon    = vector ? VectorIcons.quitIcon()    : loadIcon("quiticon.png");
+        runIcon     = vector ? VectorIcons.runIcon()     : loadIcon("runicon.png");
+        runContIcon = vector ? VectorIcons.runContIcon() : loadIcon("runconticon.png");
+        stopIcon    = vector ? VectorIcons.stopIcon()    : loadIcon("stopicon.png");
+        newnetIcon  = vector ? VectorIcons.newnetIcon()  : loadIcon("newneticon.png");
+        closeIcon   = vector ? VectorIcons.closeIcon()   : loadIcon("closeicon.png");
+        prefIcon    = vector ? VectorIcons.prefIcon()    : loadIcon("preficon.png");
         rubatoIcon  = loadIcon("rubatoicon.png");
         splashIcon  = loadIcon("splash.png");
-        denoIcon    = loadIcon("denotator.png");
-        formIcon    = loadIcon("form.png");
-        moduleIcon  = loadIcon("module.png");
-        morphIcon   = loadIcon("morph.png");
+        denoIcon    = vector ? VectorIcons.denoIcon()    : loadIcon("denotator.png");
+        formIcon    = vector ? VectorIcons.formIcon()    : loadIcon("form.png");
+        moduleIcon  = vector ? VectorIcons.moduleIcon()  : loadIcon("module.png");
+        morphIcon   = vector ? VectorIcons.morphIcon()   : loadIcon("morph.png");
         limitIcon   = loadIcon("limit.png");
         colimitIcon = loadIcon("colimit.png");
         powerIcon   = loadIcon("power.png");
@@ -165,13 +166,13 @@ public class Icons {
         simpleIcon  = loadIcon("simple.png");
         midiinIcon  = loadIcon("midiin.png");
         midioutIcon = loadIcon("midiout.png");
-        tdownIcon   = loadIcon("triandown.png");
-        trightIcon  = loadIcon("trianright.png");
-        schemeIcon  = loadIcon("schemeicon.png");
-        schemeEditIcon  = loadIcon("schemeediticon.png");
-        browseIcon  = loadIcon("browseicon.png");
-        cutIcon     = loadIcon("cuticon.png");
-        copyIcon    = loadIcon("copyicon.png");
-        pasteIcon   = loadIcon("pasteicon.png");
+        tdownIcon   = vector ? VectorIcons.tdownIcon()   : loadIcon("triandown.png");
+        trightIcon  = vector ? VectorIcons.trightIcon()  : loadIcon("trianright.png");
+        schemeIcon  = vector ? VectorIcons.schemeIcon()  : loadIcon("schemeicon.png");
+        schemeEditIcon = vector ? VectorIcons.schemeEditIcon() : loadIcon("schemeediticon.png");
+        browseIcon  = vector ? VectorIcons.browseIcon()  : loadIcon("browseicon.png");
+        cutIcon     = vector ? VectorIcons.cutIcon()     : loadIcon("cuticon.png");
+        copyIcon    = vector ? VectorIcons.copyIcon()    : loadIcon("copyicon.png");
+        pasteIcon   = vector ? VectorIcons.pasteIcon()   : loadIcon("pasteicon.png");
     }
 }
