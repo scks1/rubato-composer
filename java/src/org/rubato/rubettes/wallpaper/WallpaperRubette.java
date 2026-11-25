@@ -82,12 +82,15 @@ public class WallpaperRubette extends AbstractRubette implements ActionListener 
      * input denotator.
      */
     public void run(RunInfo runInfo) {
-        PowerDenotator input = (PowerDenotator) this.getInput(0);
+        Denotator in = this.getInput(0);
         if (this.inputForm == null) {
             this.addError("Input form not set.");
-        } else if (input == null) {
+        } else if (in == null) {
             this.addError("Input denotator not set.");
+        } else if (!(in instanceof PowerDenotator)) {
+            this.addError("Input denotator is not of type Power.");
         } else {
+            PowerDenotator input = (PowerDenotator) in;
         	try {
         		List<ModuleMorphism> morphisms = new ArrayList<ModuleMorphism>(this.morphismsTable.getMorphisms());
         		PowerDenotator output = this.getUnitedMappedDenotators(input, morphisms);
