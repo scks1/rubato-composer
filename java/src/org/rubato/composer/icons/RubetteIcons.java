@@ -338,5 +338,89 @@ final class RubetteIcons {
             link(g, 9, 8, 7, 12.7);
         });
         mark(B+"address/addressicon.png", (g, i) -> upright(g, "@", 14f, 0.3));
+
+        // Score and file rubettes
+
+        mark(C+"midiin.png", (g, i) -> {
+            keyboard(g, 1.5, 6.5);
+            arrow(g, 8, 9, 8, 14.5);
+        });
+        mark(C+"midiout.png", (g, i) -> {
+            arrow(g, 8, 1.5, 8, 7);
+            keyboard(g, 8, 6.5);
+        });
+        mark(R+"image/imagefileinicon.png", (g, i) -> {
+            picture(g, 1.5, 7);
+            arrow(g, 8, 9.5, 8, 14.5);
+        });
+        mark(R+"image/imagefileouticon.png", (g, i) -> {
+            arrow(g, 8, 1.5, 8, 6.5);
+            picture(g, 7.5, 7);
+        });
+        mark(S+"lilypondouticon.png", (g, i) -> {
+            arrow(g, 5, 1.5, 5, 6.5);
+            staff(g, 8, 6.5);
+        });
+        mark(S+"melodyicon.png", (g, i) -> {
+            head(g, 3.5, 12.5, 3.8, 2.8);
+            head(g, 8, 10.5, 3.8, 2.8);
+            head(g, 12.5, 8.5, 3.8, 2.8);
+            line(g, 5.1, 12, 5.1, 5.5);
+            line(g, 9.6, 10, 9.6, 3.5);
+            line(g, 14.1, 8, 14.1, 1.5);
+            Stroke old = g.getStroke();
+            g.setStroke(new BasicStroke(2.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+            line(g, 5.1, 5.5, 14.1, 1.5);
+            g.setStroke(old);
+        });
+        mark(S+"scoreplayicon.png", (g, i) -> {
+            head(g, 4, 12.5, 3.8, 2.8);
+            line(g, 5.6, 12, 5.6, 2.5);
+            Path2D.Double f = VectorIcons.path();
+            f.moveTo(5.6, 2.5);
+            f.quadTo(8.6, 4.2, 7.6, 7.6);
+            g.draw(f);
+            g.draw(new Arc2D.Double(8.5-2.6, 10-2.6, 5.2, 5.2, -50, 100, Arc2D.OPEN));
+            g.draw(new Arc2D.Double(8.5-5.4, 10-5.4, 10.8, 10.8, -45, 90, Arc2D.OPEN));
+        });
+        mark(S+"scaleicon.png", (g, i) ->
+            polyline(g, 1.5, 14.5, 1.5, 11.5, 5, 11.5, 5, 8, 8.5, 8, 8.5, 4.5, 12, 4.5, 12, 1.5, 14.5, 1.5));
+        mark(S+"quantizeicon.png", (g, i) -> {
+            line(g, 1.5, 14.2, 14.5, 14.2);
+            double[] xs = { 2.5, 6, 9.5, 13 };
+            double[] ys = { 8, 4, 9.5, 5.5 };
+            for (int k = 0; k < 4; k++) {
+                final double x = xs[k], y = ys[k];
+                line(g, x, 14.2, x, 12.2);
+                withColor(g, i.getSecondaryColor(), () -> dashed(g, () -> line(g, x, y+2, x, 11.6)));
+                dot(g, x, y, 1.5);
+            }
+        });
+        mark(S+"rhythmizeicon.png", (g, i) -> {
+            double[] xs = { 2.5, 6, 9.6, 12.8 };
+            for (double x : xs) {
+                head(g, x, 13, 3.3, 2.4);
+                line(g, x+1.4, 12.6, x+1.4, 3.5);
+            }
+            Stroke old = g.getStroke();
+            g.setStroke(new BasicStroke(1.8f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+            line(g, 3.9, 3.5, 7.4, 3.5);
+            line(g, 11.0, 3.5, 14.2, 3.5);
+            line(g, 11.0, 6.2, 14.2, 6.2);
+            g.setStroke(old);
+        });
+        button(S+"play.png", RUN, RUN_FALLBACK, (g, i) -> g.fill(polygon(5, 2.8, 13.2, 8, 5, 13.2)));
+        button(S+"pause.png", FG, FG_FALLBACK, (g, i) -> {
+            g.fill(new RoundRectangle2D.Double(4.2, 3, 2.8, 10, 1, 1));
+            g.fill(new RoundRectangle2D.Double(9, 3, 2.8, 10, 1, 1));
+        });
+        button(S+"stop.png", STOP, STOP_FALLBACK, (g, i) ->
+            g.fill(new RoundRectangle2D.Double(3.5, 3.5, 9, 9, 1.6, 1.6)));
+        mark(R+"select2d/select2dicon.png", (g, i) -> {
+            withColor(g, i.getSecondaryColor(), () -> dot(g, 13.5, 13.5, 1.3));
+            dashed(g, () -> g.draw(polygon(2, 4, 11, 1.8, 14, 9.5, 5, 13.5)));
+            dot(g, 6.5, 7, 1.4);
+            dot(g, 10, 8.5, 1.4);
+        });
     }
 }
