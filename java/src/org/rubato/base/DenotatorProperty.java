@@ -37,6 +37,7 @@ public class DenotatorProperty
     public DenotatorProperty(String key, String name, Denotator value) {
         super(key, name);
         this.value = value;
+        this.tmpValue = value;
     }
     
     
@@ -48,6 +49,7 @@ public class DenotatorProperty
     public DenotatorProperty(DenotatorProperty prop) {
         super(prop);
         this.value = prop.value;
+        this.tmpValue = prop.tmpValue;
     }
     
     

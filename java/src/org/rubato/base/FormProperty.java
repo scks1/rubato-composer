@@ -37,6 +37,7 @@ public class FormProperty
     public FormProperty(String key, String name, Form value) {
         super(key, name);
         this.value = value;
+        this.tmpValue = value;
     }
     
     
@@ -48,6 +49,7 @@ public class FormProperty
     public FormProperty(FormProperty prop) {
         super(prop);
         this.value = prop.value;
+        this.tmpValue = prop.tmpValue;
     }
     
     

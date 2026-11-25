@@ -46,6 +46,7 @@ public class BooleanProperty extends RubetteProperty implements ActionListener {
     public BooleanProperty(String key, String name, boolean value) {
         super(key, name);
         this.value = value;
+        this.tmpValue = value;
     }
     
     
@@ -53,6 +54,7 @@ public class BooleanProperty extends RubetteProperty implements ActionListener {
         super(property);
         this.allowedExtensions = property.allowedExtensions;
         this.value = property.value;
+        this.tmpValue = property.tmpValue;
     }
     
     
