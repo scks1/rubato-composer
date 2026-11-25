@@ -144,5 +144,5 @@ class JAffineGraphDialog extends JDialog implements ActionListener {
     private JTextField   yField;
 
     private Border paddingBorder = BorderFactory.createEmptyBorder(5, 5, 5, 5);
-    private Border lineBorder = org.rubato.composer.Utilities.makeLineBorder(Color.BLACK);
+    private Border lineBorder = org.rubato.composer.Utilities.makeLineBorder(org.rubato.composer.Theme.color("Rubato.view.axes", Color.BLACK)); //$NON-NLS-1$
 }

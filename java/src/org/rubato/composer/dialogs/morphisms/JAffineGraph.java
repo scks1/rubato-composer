@@ -25,6 +25,7 @@ import java.awt.event.*;
 import javax.swing.JPanel;
 import javax.swing.event.EventListenerList;
 
+import org.rubato.composer.Theme;
 import org.rubato.math.arith.Complex;
 import org.rubato.math.arith.NumberTheory;
 import org.rubato.math.arith.Rational;
@@ -37,7 +38,7 @@ class JAffineGraph
 
     public JAffineGraph(Ring ring) {
         setOpaque(true);
-        setBackground(Color.WHITE);
+        setBackground(Theme.color("Rubato.view.background", Color.WHITE)); //$NON-NLS-1$
         addMouseListener(this);
         addMouseMotionListener(this);
         addMouseWheelListener(this);
@@ -257,6 +258,11 @@ class JAffineGraph
         for (int i = 0; i < x.length; i++) {
             g.setColor(handleColor[i]);
             g.fillOval(x[i]-3, y[i]-3, 7, 7);
+            if (Theme.isFlat()) {
+                // a ring in the background color keeps each handle apart from the fill under it
+                g.setColor(getBackground());
+                g.drawOval(x[i]-4, y[i]-4, 8, 8);
+            }
         }
     }
     
@@ -549,11 +555,15 @@ class JAffineGraph
     int[]   lastYp = { 0, 0, 0 };
 
     private static final Dimension MINIMUM_SIZE  = new Dimension(300, 300);
-    private static final Color   axesColor = Color.GRAY;
-    private static final Color   unitTriangleColor = new Color(0.0f, 0.0f, 0.0f, 0.3f);
-    private static final Color   triangleColor = new Color(0.0f, 1.0f, 0.0f, 0.5f);
-    private static final Color   mirrorColor = new Color(1.0f, 0.0f, 0.0f, 0.5f);
-    private static final Color[] handleColor = new Color[] { Color.BLUE, Color.YELLOW, Color.MAGENTA }; 
+    private static final Color   axesColor = Theme.color("Rubato.view.axes", Color.GRAY); //$NON-NLS-1$
+    private static final Color   unitTriangleColor = Theme.color("Rubato.affine.unit", new Color(0.0f, 0.0f, 0.0f, 0.3f)); //$NON-NLS-1$
+    private static final Color   triangleColor = Theme.color("Rubato.affine.image", new Color(0.0f, 1.0f, 0.0f, 0.5f)); //$NON-NLS-1$
+    private static final Color   mirrorColor = Theme.color("Rubato.affine.mirror", new Color(1.0f, 0.0f, 0.0f, 0.5f)); //$NON-NLS-1$
+    private static final Color[] handleColor = new Color[] {
+        Theme.color("Rubato.affine.handle0", Color.BLUE),    //$NON-NLS-1$
+        Theme.color("Rubato.affine.handle1", Color.YELLOW),  //$NON-NLS-1$
+        Theme.color("Rubato.affine.handle2", Color.MAGENTA)  //$NON-NLS-1$
+    };
 
     private static final double X_MIN = -1;
     private static final double X_MAX =  3;
