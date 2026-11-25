@@ -256,6 +256,7 @@ public class RealArithRubette extends AbstractRubette {
         if (child != null) {
             int n = XMLReader.getIntAttribute(child, NUMBER_ATTR, 1);
             rubette.setInCount(n);
+            rubette.values = new double[n];
             child = XMLReader.getNextSibling(child, EXPRESSION);
             if (child != null) {
                 rubette.expressionString = XMLReader.getStringAttribute(child, EXPR_ATTR);
