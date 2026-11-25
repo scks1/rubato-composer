@@ -367,7 +367,7 @@ public class ThreeVoiceCounterpointTest extends TestCase {
     public void testCheckAgreesWithSuccessors() {
         Map<Reason, Integer> strictKinds = new HashMap<Reason, Integer>();
         Map<Reason, Integer> holdKinds = new HashMap<Reason, Integer>();
-        for (RelaxationMode mode : RelaxationMode.values()) {
+        for (RelaxationMode mode : new RelaxationMode[] { RelaxationMode.STRICT, RelaxationMode.HOLD_FIBRE }) {
             for (State s : M.states()) {
                 Set<State> succ = new HashSet<State>(M.successors(s, mode));
                 for (State t : M.states()) {

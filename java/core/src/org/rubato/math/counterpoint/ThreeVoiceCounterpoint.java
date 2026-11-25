@@ -47,8 +47,9 @@ import org.rubato.math.arith.NumberTheory;
  * which returns them for a cantus of 0; this class conjugates them to the
  * pair's cantus x as T^x &#8728; g &#8728; T^&minus;x (spec D4).
  * {@link #check} adds reasons for a refusal (spec D5), and
- * {@link RelaxationMode#HOLD_FIBRE} is the spec's relaxation D6, which is
- * not the paper's. See sources/THREE-VOICE-COUNTERPOINT-SPEC.md.
+ * {@link RelaxationMode#HOLD_FIBRE}, {@link RelaxationMode#HOLD} and
+ * {@link RelaxationMode#REFLEXIVE} are the spec's relaxations D6, D12 and
+ * D13, which are not the paper's. See sources/THREE-VOICE-COUNTERPOINT-SPEC.md.
  */
 public final class ThreeVoiceCounterpoint {
 
@@ -79,7 +80,25 @@ public final class ThreeVoiceCounterpoint {
          * maximization runs over the moving pairs among the states that keep
          * the held pairs fixed. A step where nothing moves is admitted.
          */
-        HOLD_FIBRE
+        HOLD_FIBRE,
+        /**
+         * Ours (spec D12): as {@link #HOLD_FIBRE}, but the joint maximization
+         * over the moving pairs runs over all states in the mask, not only
+         * those that keep the held pairs fixed. From the 26 sources with
+         * lower voice 0 it admits 2 steps that HOLD_FIBRE refuses and
+         * refuses 21 that HOLD_FIBRE admits.
+         */
+        HOLD,
+        /**
+         * Ours (spec D13): the paper's V1 baseline with held pairs skipped.
+         * Each moving active pair's target must lie in some image of its
+         * maximizing symmetries; there is no joint maximization, so
+         * {@link Reason#NOT_MAXIMAL} never occurs. Over the 26 sources with
+         * lower voice 0 it admits 1,391 edges more than STRICT: 1,178 of them
+         * come from dropping the joint maximization (V1 alone) and 213 from
+         * held pairs.
+         */
+        REFLEXIVE
     }
 
     /** Why a step is refused (spec D5). */
@@ -540,16 +559,20 @@ public final class ThreeVoiceCounterpoint {
         return r;
     }
 
-    /** The hold-fibre union for a source and its set of still pairs (spec D6, step 3). */
-    private synchronized BitSet holdUnion(State s, List<Pair> still) {
-        String key = s + "|" + still;
+    /**
+     * The hold union for a source and its set of still pairs (spec D6 step 3,
+     * D12): with fibre, the maximization runs over the states that keep the
+     * held pairs fixed; without, over all states in the mask.
+     */
+    private synchronized BitSet holdUnion(State s, List<Pair> still, boolean fibre) {
+        String key = s + "|" + still + "|" + fibre;
         BitSet r = holdCache.get(key);
         if (r == null) {
             BitSet base = new BitSet(states.size());
             for (int i = 0; i < states.size(); i++) {
                 boolean keeps = true;
                 for (Pair p : still) {
-                    if (!java.util.Arrays.equals(project(p, s), project(p, states.get(i)))) {
+                    if (fibre && !java.util.Arrays.equals(project(p, s), project(p, states.get(i)))) {
                         keeps = false;
                         break;
                     }
@@ -590,10 +613,36 @@ public final class ThreeVoiceCounterpoint {
             return strictSuccessors(s).get(ti);
         }
         List<Pair> still = stillPairs(s, t);
+        if (mode == RelaxationMode.REFLEXIVE) {
+            return pairsAdmit(s, ti, still);
+        }
         if (still.size() == activePairs(s).size()) {
             return true;
         }
-        return holdUnion(s, still).get(ti);
+        return holdUnion(s, still, mode == RelaxationMode.HOLD_FIBRE).get(ti);
+    }
+
+    /**
+     * True if every active pair of s outside skip has its target projection,
+     * for the state at index ti, in some image of its maximizing symmetries.
+     */
+    private boolean pairsAdmit(State s, int ti, List<Pair> skip) {
+        for (Pair p : activePairs(s)) {
+            if (skip.contains(p)) {
+                continue;
+            }
+            boolean some = false;
+            for (BitSet pre : pairPreimages(p, s)) {
+                if (pre.get(ti)) {
+                    some = true;
+                    break;
+                }
+            }
+            if (!some) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
