@@ -194,7 +194,7 @@ public final class BooleanRubette extends AbstractRubette {
     
     public void toXML(XMLWriter writer) {
         writer.empty(INPUTS, NUMBER_ATTR, getInCount());
-        writer.empty(EXPRESSION, EXPR_ATTR, expression);
+        writer.empty(EXPRESSION, EXPR_ATTR, expressionString);
     }
 
     
@@ -204,10 +204,11 @@ public final class BooleanRubette extends AbstractRubette {
         if (child != null) {
             int n = XMLReader.getIntAttribute(child, NUMBER_ATTR, 1);
             rubette.setInCount(n);
+            rubette.values = new boolean[n];
             child = XMLReader.getNextSibling(child, EXPRESSION);
             if (child != null) {
                 rubette.expressionString = XMLReader.getStringAttribute(child, EXPR_ATTR);
-                rubette.expression.parse(rubette.expressionString, getInCount());
+                rubette.expression.parse(rubette.expressionString, n);
             }
         }
         return rubette;
