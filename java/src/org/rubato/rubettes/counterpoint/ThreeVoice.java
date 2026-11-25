@@ -190,24 +190,45 @@ public final class ThreeVoice {
         }
     }
 
-    /** A description of the mode for reports. */
-    public static String modeText(RelaxationMode mode) {
-        return mode == RelaxationMode.STRICT
-            ? "relaxation strict (the paper's relation, eq. (2))"
-            : "relaxation hold-fibre (ours, not the paper's: a pair that stands still is held"
-              + " and the other pairs are maximized among the chords that keep it; spec D6)";
+    /** The property value of a mode: strict, hold-fibre, hold or reflexive. */
+    public static String modeName(RelaxationMode mode) {
+        switch (mode) {
+            case HOLD_FIBRE: return "hold-fibre";
+            case HOLD: return "hold";
+            case REFLEXIVE: return "reflexive";
+            default: return "strict";
+        }
     }
 
-    /** The mode for "strict" or "hold-fibre", ignoring case and surrounding blanks. */
+    /** A description of the mode for reports. */
+    public static String modeText(RelaxationMode mode) {
+        switch (mode) {
+            case HOLD_FIBRE:
+                return "relaxation hold-fibre (ours, not the paper's: a pair that stands still is held"
+                     + " and the other pairs are maximized among the chords that keep it; spec D6)";
+            case HOLD:
+                return "relaxation hold (ours, not the paper's: a pair that stands still is held"
+                     + " and the other pairs are maximized among all chords in the mask; spec D12)";
+            case REFLEXIVE:
+                return "relaxation reflexive (ours, not the paper's: the paper's V1 baseline with held pairs"
+                     + " skipped, so each moving pair is checked alone and there is no joint maximization;"
+                     + " from the chords on lower voice 0 it admits 1,391 steps more than strict, 1,178 of them"
+                     + " from dropping the joint maximization and 213 from held pairs; spec D13)";
+            default:
+                return "relaxation strict (the paper's relation, eq. (2))";
+        }
+    }
+
+    /** The mode for strict, hold-fibre, hold or reflexive, ignoring case and surrounding blanks. */
     public static RelaxationMode parseMode(String s) {
         String t = s == null ? "" : s.trim().toLowerCase(Locale.ROOT);
-        if (t.equals("strict")) {
-            return RelaxationMode.STRICT;
+        for (RelaxationMode m : RelaxationMode.values()) {
+            if (t.equals(modeName(m))) {
+                return m;
+            }
         }
-        if (t.equals("hold-fibre")) {
-            return RelaxationMode.HOLD_FIBRE;
-        }
-        throw new IllegalArgumentException("The relaxation must be strict or hold-fibre, not \"" + s + "\"");
+        throw new IllegalArgumentException(
+                "The relaxation must be strict, hold-fibre, hold or reflexive, not \"" + s + "\"");
     }
 
     /** Three MIDI pitches, lower voice first, separated by blanks. */

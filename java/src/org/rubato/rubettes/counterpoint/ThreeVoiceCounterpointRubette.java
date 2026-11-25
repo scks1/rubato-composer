@@ -48,7 +48,6 @@ import org.rubato.composer.RunInfo;
 import org.rubato.composer.icons.Icons;
 import org.rubato.io.ScoreNote;
 import org.rubato.math.counterpoint.ThreeVoiceCounterpoint;
-import org.rubato.math.counterpoint.ThreeVoiceCounterpoint.RelaxationMode;
 import org.rubato.math.counterpoint.ThreeVoiceCounterpoint.State;
 import org.rubato.math.yoneda.Denotator;
 
@@ -60,7 +59,7 @@ import org.rubato.math.yoneda.Denotator;
  * second chord of each refused step; output 1 holds the admitted successors
  * of the input's last chord or, without an input, of the start chord. The
  * relaxation property chooses the paper's relation (strict, the default) or
- * the hold-fibre relaxation, which is ours. The view lists each chord and
+ * one of our relaxations hold-fibre, hold and reflexive. The view lists each chord and
  * step with the reasons for a refusal and can append the P/L/R report.
  * Departures: sources/THREE-VOICE-COUNTERPOINT-SPEC.md.
  */
@@ -97,7 +96,7 @@ public class ThreeVoiceCounterpointRubette extends SimpleAbstractRubette {
         putProperty(new IntegerProperty(MIDDLE_KEY, "Middle voice", 1, 0, 1000));
         putProperty(new IntegerProperty(UPPER_KEY, "Upper voice", 2, 0, 1000));
         putProperty(new StringProperty(RELAXATION_KEY,
-                "Relaxation: strict (the paper's relation) or hold-fibre (ours; a voice pair may stand still)",
+                "Relaxation: strict (the paper's relation), or ours: hold-fibre, hold or reflexive (a voice pair may stand still)",
                 "strict", 1, 20));
         putProperty(new StringProperty(START_KEY,
                 "Start chord when the input is not linked: three MIDI pitches, lower voice first",
@@ -182,8 +181,7 @@ public class ThreeVoiceCounterpointRubette extends SimpleAbstractRubette {
         ((IntegerProperty) getProperty(LOWER_KEY)).setInt(s.lowerVoice);
         ((IntegerProperty) getProperty(MIDDLE_KEY)).setInt(s.middleVoice);
         ((IntegerProperty) getProperty(UPPER_KEY)).setInt(s.upperVoice);
-        ((StringProperty) getProperty(RELAXATION_KEY)).setString(
-                s.mode == RelaxationMode.STRICT ? "strict" : "hold-fibre");
+        ((StringProperty) getProperty(RELAXATION_KEY)).setString(ThreeVoice.modeName(s.mode));
         ((StringProperty) getProperty(START_KEY)).setString(startChord);
         ((BooleanProperty) getProperty(PLR_KEY)).setBoolean(plr);
     }
@@ -271,8 +269,9 @@ public class ThreeVoiceCounterpointRubette extends SimpleAbstractRubette {
              + " maximized together, allow it. It reads the lower, middle and upper voices of a zero-addressed"
              + " Score note against note. Output 0 holds the chords outside the mask and the second chord of"
              + " each refused step; output 1 holds the admitted successors of the last chord, or of the start"
-             + " chord when nothing is linked. The relaxation strict is the paper's relation; hold-fibre is"
-             + " ours and lets a voice pair stand still. The view lists every step with its reasons.";
+             + " chord when nothing is linked. The relaxation strict is the paper's relation; hold-fibre,"
+             + " hold and reflexive are ours and let a voice pair stand still; reflexive also drops the"
+             + " joint maximization. The view lists every step with its reasons.";
     }
 
     public String getInTip(int i) {
