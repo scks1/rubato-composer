@@ -87,6 +87,9 @@ public class MorphingRubette extends SimpleAbstractRubette {
 		if (this.readAndVerifyInput()) {
 			try {
 				if (this.inputForm.equals(this.noteGenerator.getScoreForm())) {
+					if (!this.verifyOnsetSpans()) {
+						return;
+					}
 					this.makeTimeCorrection(this.d1, this.d2);
 				}
 				this.setOutput(0, this.getMorph());
@@ -113,6 +116,37 @@ public class MorphingRubette extends SimpleAbstractRubette {
 			this.addError("Input denotators not of type Power.");
 			return false;
 		}
+	}
+	
+	/*
+	 * The time correction divides by each Score's onset span, so each input needs notes at
+	 * two or more different onsets. Adds an error for each input that has not.
+	 */
+	private boolean verifyOnsetSpans() throws RubatoException {
+		boolean ok = true;
+		PowerDenotator[] inputs = {this.d1, this.d2};
+		for (int i = 0; i < inputs.length; i++) {
+			if (!this.hasTwoOnsets(inputs[i])) {
+				this.addError("Input #"+i+" needs notes at two or more different onsets.");
+				ok = false;
+			}
+		}
+		return ok;
+	}
+	
+	private boolean hasTwoOnsets(PowerDenotator score) throws RubatoException {
+		int[] onsetPath = {0,0};
+		Iterator<Denotator> notes = score.iterator();
+		if (!notes.hasNext()) {
+			return false;
+		}
+		double firstOnset = ((RElement)notes.next().getElement(onsetPath)).getValue();
+		while (notes.hasNext()) {
+			if (((RElement)notes.next().getElement(onsetPath)).getValue() != firstOnset) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	private void updatePaths() {
