@@ -172,6 +172,9 @@ public class JWallpaperDimensionsTable
 	private boolean updateTempAttributes() {
 		DefaultTableModel model = (DefaultTableModel)this.getModel();
 		this.tempMorphisms = new ArrayList<ModuleMorphism>();
+		this.tempRangeFroms = new HashMap<ModuleMorphism, Integer>();
+		this.tempRangeTos = new HashMap<ModuleMorphism, Integer>();
+		this.tempCoordinates = new HashMap<ModuleMorphism, List<List<Integer>>>();
 		for (int i = 0; i < model.getRowCount(); i++) {
 			ModuleMorphism currentMorphism = (ModuleMorphism)model.getValueAt(i, 0);
 			//add morphism
