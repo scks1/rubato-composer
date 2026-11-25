@@ -178,7 +178,7 @@ public class SchemeRubette extends AbstractRubette {
     
     
     public void toXML(XMLWriter writer) {
-        writer.empty(INPUTS, NUMBER_ATTR, getOutCount());
+        writer.empty(INPUTS, NUMBER_ATTR, getInCount());
         writer.empty(OUTPUTS, NUMBER_ATTR, getOutCount());
         writer.openBlock(CODE);
         writer.writeTextNode(schemeCode.trim()+"\n");
