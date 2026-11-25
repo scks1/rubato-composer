@@ -208,14 +208,7 @@ public final class ScoreToCsoundRubette extends AbstractRubette {
 
 
     public void revertProperties() {
-        String fileName = " ";
-        try {
-            fileName = scoFile.getCanonicalPath();
-        }
-        catch (IOException e) {
-            e.printStackTrace();
-        }
-        fileNameField.setText(fileName);
+        fileNameField.setText(getScoFileName());
         timeScaleField.setText(Double.toString(timeScale));
         freqField.setText(Double.toString(a4freq));
         prologTextArea.setText(prolog);
