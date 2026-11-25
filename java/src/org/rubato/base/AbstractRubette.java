@@ -364,10 +364,18 @@ public abstract class AbstractRubette implements Rubette {
     /**
      * Adds an exception message to the current error state.
      * A period (".") is appended if there is none in the message.
+     * An exception with a null, empty or blank message is reported
+     * by its class name.
      */
     public final void addError(Exception e) {
-        String s = e.getMessage().trim();
-        if (!s.substring(s.length()-1).equals(".")) { //$NON-NLS-1$
+        String s = e.getMessage() == null ? "" : e.getMessage().trim(); //$NON-NLS-1$
+        if (s.isEmpty()) {
+            s = e.getClass().getSimpleName();
+            if (s.isEmpty()) {
+                s = e.getClass().getName();
+            }
+        }
+        if (!s.endsWith(".")) { //$NON-NLS-1$
             s += "."; //$NON-NLS-1$
         }
         errors.add(s);
