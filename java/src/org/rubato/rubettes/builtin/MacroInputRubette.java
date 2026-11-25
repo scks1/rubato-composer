@@ -105,7 +105,7 @@ public class MacroInputRubette
             outSlider.addChangeListener(this);
             properties.add(outSlider, BorderLayout.NORTH);
             outPanel = new JPanel();
-            fillOutPanel();
+            fillOutPanel(labels);
             properties.add(outPanel, BorderLayout.CENTER);
         }
         return properties;
@@ -126,7 +126,7 @@ public class MacroInputRubette
 
     public void revertProperties() {
         outSlider.setOutValue(getOutCount());
-        fillOutPanel();
+        fillOutPanel(labels);
         getJDialog(properties).pack();
     }
 
@@ -158,12 +158,33 @@ public class MacroInputRubette
 
     
     public void stateChanged(ChangeEvent e) {
-        fillOutPanel();
+        fillOutPanel(fieldTexts());
         getJDialog(properties).pack();
     }
     
     
-    private void fillOutPanel() {
+    /**
+     * Returns the texts of the label fields now in the window, or an empty
+     * array before the window has been built.
+     */
+    private String[] fieldTexts() {
+        if (outTextFields == null) {
+            return new String[0];
+        }
+        String[] texts = new String[outTextFields.length];
+        for (int i = 0; i < outTextFields.length; i++) {
+            texts[i] = outTextFields[i].getText();
+        }
+        return texts;
+    }
+    
+    
+    /**
+     * Builds one label field for each connector the slider shows. Field i
+     * starts with texts[i], and fields past the end of texts start empty.
+     * The rubette's labels change only on Apply.
+     */
+    private void fillOutPanel(String[] texts) {
         outPanel.removeAll();
         GridBagLayout gbl = new GridBagLayout();
         GridBagConstraints c = new GridBagConstraints();
@@ -173,7 +194,6 @@ public class MacroInputRubette
             outPanel.setLayout(gbl);
             outPanel.setBorder(makeTitledBorder("Input labels")); //$NON-NLS-1$
             outTextFields = new JTextField[outCount];
-            labels = new String[outCount];
             c.ipadx = 10;
             for (int i = 0; i < outCount; i++) {
                 c.weightx = 0.0;
@@ -185,7 +205,8 @@ public class MacroInputRubette
                 c.weightx = 1.0;
                 c.fill = GridBagConstraints.HORIZONTAL;
                 c.gridwidth = GridBagConstraints.REMAINDER;
-                outTextFields[i] = new JTextField();
+                String text = (i < texts.length && texts[i] != null) ? texts[i] : ""; //$NON-NLS-1$
+                outTextFields[i] = new JTextField(text);
                 gbl.setConstraints(outTextFields[i], c);
                 outPanel.add(outTextFields[i]);
             }
