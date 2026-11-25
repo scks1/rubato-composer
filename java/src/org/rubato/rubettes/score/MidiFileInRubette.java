@@ -103,6 +103,9 @@ public class MidiFileInRubette extends AbstractRubette {
     public Rubette duplicate() {
         MidiFileInRubette newRubette = new MidiFileInRubette();
         newRubette.midiFile = midiFile;
+        newRubette.tempoFactor = tempoFactor;
+        newRubette.storeDenotator = storeDenotator;
+        newRubette.score = score;
         return newRubette;
     }
     
