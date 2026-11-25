@@ -54,13 +54,13 @@ final class VectorIcons {
     }
 
 
-    private static Path2D.Double path() {
+    static Path2D.Double path() {
         return new Path2D.Double();
     }
 
 
     /** A page with a folded corner, its right edge at <code>right</code> and its bottom at <code>bottom</code>. */
-    private static void page(Graphics2D g, double right, double bottom) {
+    static void page(Graphics2D g, double right, double bottom) {
         Path2D.Double p = path();
         p.moveTo(3, 1.5);
         p.lineTo(right-3.5, 1.5);
@@ -78,7 +78,7 @@ final class VectorIcons {
 
 
     /** Fills the outline of <code>text</code> centered on the grid. */
-    private static void letters(Graphics2D g, String text, float size, double dy) {
+    static void letters(Graphics2D g, String text, float size, double dy) {
         Font font = new Font(Font.SERIF, Font.ITALIC, 1).deriveFont(size);
         FontRenderContext frc = new FontRenderContext(null, true, true);
         GlyphVector gv = font.createGlyphVector(frc, text);

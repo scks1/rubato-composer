@@ -36,6 +36,7 @@ import org.rubato.base.Rubette;
 import org.rubato.composer.JComposer;
 import org.rubato.composer.JRubetteList;
 import org.rubato.composer.components.JMenuTitleItem;
+import org.rubato.composer.icons.VectorIcon;
 import org.rubato.composer.network.JNetwork;
 import org.rubato.composer.network.JMacroRubetteView;
 import org.rubato.composer.network.NetworkModel;
@@ -75,6 +76,8 @@ public final class JRubette extends JPanel
             nameLabel = new JLabel(model.getName(), model.getIcon(), SwingConstants.CENTER);            
         }
         nameLabel.setForeground(foregroundColor);
+        // the rubette's icon takes the name's color, which reads on every box fill
+        nameLabel.putClientProperty(VectorIcon.FOLLOW_FOREGROUND, Boolean.TRUE);
         if (Theme.isFlat()) {
             nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
         }

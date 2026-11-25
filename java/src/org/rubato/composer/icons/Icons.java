@@ -74,6 +74,22 @@ public class Icons {
     
     
     public static ImageIcon loadIcon(Class<?> cls, String name) {
+        return loadIcon(cls, name, Theme.isFlat());
+    }
+
+
+    /**
+     * Loads the icon <code>name</code> next to <code>cls</code>. With
+     * <code>vector</code> true, an icon that {@link RubetteIcons} draws is
+     * returned as its drawing; every other icon is loaded from its bitmap.
+     */
+    static ImageIcon loadIcon(Class<?> cls, String name, boolean vector) {
+        if (vector) {
+            ImageIcon drawn = RubetteIcons.forResource(resourcePath(cls, name));
+            if (drawn != null) {
+                return drawn;
+            }
+        }
         URL imageURL;
         imageURL = cls.getResource(name);
         ImageIcon icon = new ImageIcon(imageURL);
@@ -85,6 +101,19 @@ public class Icons {
             icon = forDarkBackground(icon);
         }
         return scaled(icon);
+    }
+
+
+    /**
+     * Returns the class path resource path of <code>name</code> resolved
+     * against <code>cls</code>, the way Class.getResource resolves it.
+     */
+    static String resourcePath(Class<?> cls, String name) {
+        if (name.startsWith("/")) { //$NON-NLS-1$
+            return name.substring(1);
+        }
+        String pkg = cls.getPackageName();
+        return pkg.isEmpty() ? name : pkg.replace('.', '/')+"/"+name; //$NON-NLS-1$
     }
 
 

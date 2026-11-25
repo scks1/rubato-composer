@@ -24,6 +24,8 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.AbstractButton;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
 import javax.swing.UIManager;
 
 import org.rubato.composer.Theme;
@@ -58,21 +60,53 @@ public class VectorIcon extends ImageIcon {
      * when the key is not defined.
      */
     public VectorIcon(Painter painter, String colorKey, Color fallback) {
+        this(painter, colorKey, fallback, UNITS, false);
+    }
+
+
+    /**
+     * Creates an icon of <code>size</code> by <code>size</code> pixels before
+     * user interface scaling, painted on the same 16 unit grid. When
+     * <code>followsLabel</code> is true and the icon sits on a label that
+     * shows selected text, or on a label marked with
+     * {@link #FOLLOW_FOREGROUND}, the icon paints in that label's foreground
+     * color, so it keeps the contrast of the text beside it.
+     */
+    public VectorIcon(Painter painter, String colorKey, Color fallback, int size, boolean followsLabel) {
         this.painter = painter;
         this.colorKey = colorKey;
         this.fallback = fallback;
+        this.size = size;
+        this.followsLabel = followsLabel;
+    }
+
+
+    /**
+     * The client property that makes icons created with
+     * <code>followsLabel</code> paint in the foreground color of the label
+     * they sit on, whatever that color is.
+     */
+    public static final String FOLLOW_FOREGROUND = "Rubato.icon.followForeground"; //$NON-NLS-1$
+
+
+    /**
+     * Returns true if this icon paints in the color of the label it sits on
+     * when that label shows selected text.
+     */
+    public boolean followsLabel() {
+        return followsLabel;
     }
 
 
     @Override
     public int getIconWidth() {
-        return Theme.scale(UNITS);
+        return Theme.scale(size);
     }
 
 
     @Override
     public int getIconHeight() {
-        return Theme.scale(UNITS);
+        return Theme.scale(size);
     }
 
 
@@ -104,18 +138,43 @@ public class VectorIcon extends ImageIcon {
                 color = d;
             }
         }
+        else if (followsLabel && c instanceof JLabel) {
+            Color f = c.getForeground();
+            if (f != null && (Boolean.TRUE.equals(((JComponent)c).getClientProperty(FOLLOW_FOREGROUND))
+                              || isSelectionForeground(f))) {
+                color = f;
+            }
+        }
         paintAt((Graphics2D)g, x, y, getIconWidth(), color);
     }
 
 
-    private void paintAt(Graphics2D g0, int x, int y, int size, Color color) {
+    private static final String[] SELECTION_KEYS = {
+        "List.selectionForeground", "List.selectionInactiveForeground", //$NON-NLS-1$ //$NON-NLS-2$
+        "Tree.selectionForeground", "Tree.selectionInactiveForeground", //$NON-NLS-1$ //$NON-NLS-2$
+        "Table.selectionForeground", "Table.selectionInactiveForeground" //$NON-NLS-1$ //$NON-NLS-2$
+    };
+
+
+    private static boolean isSelectionForeground(Color f) {
+        for (String key : SELECTION_KEYS) {
+            Color s = UIManager.getColor(key);
+            if (s != null && s.getRGB() == f.getRGB()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+
+    private void paintAt(Graphics2D g0, int x, int y, int px, Color color) {
         Graphics2D g = (Graphics2D)g0.create();
         try {
             g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
             g.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
             g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             g.translate(x, y);
-            double s = size/(double)UNITS;
+            double s = px/(double)UNITS;
             g.scale(s, s);
             g.setColor(color);
             g.setStroke(new BasicStroke(1.4f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
@@ -140,11 +199,11 @@ public class VectorIcon extends ImageIcon {
     }
 
 
-    private BufferedImage render(int size) {
-        BufferedImage img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+    private BufferedImage render(int px) {
+        BufferedImage img = new BufferedImage(px, px, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = img.createGraphics();
         g.setTransform(new AffineTransform());
-        paintAt(g, 0, 0, size, getColor());
+        paintAt(g, 0, 0, px, getColor());
         g.dispose();
         return img;
     }
@@ -153,6 +212,8 @@ public class VectorIcon extends ImageIcon {
     private static final int UNITS = 16;
 
     private final Painter painter;
+    private final int     size;
+    private final boolean followsLabel;
     private final String  colorKey;
     private final Color   fallback;
     private Color currentColor;
