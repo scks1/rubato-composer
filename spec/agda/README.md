@@ -41,10 +41,10 @@ standard library. Every module uses `--safe --without-K`.
 | `FieldExtraction.agda` | the field formula of Topos II §47.3.4 (p. 762) on exact 2 × 2 integer matrices: det and adjugate, the affine performance [[2,0],[1,2]] through two bases (det 4 for both, U Adj(V) Δ = (2, 1) for both, so Z = A⁻¹Δ), a direction-only image (direction (2, −1)) and two images without information, with facts proved by computation |
 | `VoiceLeading.agda` | the voice-leading space of T/I on Z12 and on the 24 consonant triads after Flieder (arXiv 2512.04090, section 4): two transporters over every pair of Z12 (288 arrows), one per pair for T alone and for T/I on the triads (a GIS), 48 affine maps normalizing T/I of which 24 lie in T/I, with facts proved by computation |
 | `RhythmTrees.agda` | rhythm trees after Flieder (arXiv 2512.04090, Ex. C.1, Figure 2) as the W-type with labels Q × List(Q) and arities Fin(n), its recursion principle, the leaf lengths of the proportional and the label timings (spec D1, D2) over unreduced rationals, Figure 2's leaves under both and Ex. C.1's three equal parts, with facts proved by computation |
-| `ThreeVoice.agda` | three-voice first-species counterpoint after Okumura and Shibayama (arXiv 2606.01102v3): Σ(ε.r) at cantus 0 found by search over H, its conjugation to other cantus pitches, the mask of Table 8 (26 shapes, 312 states), S_H as the joint maximization over the active pairs, Table 9's 26 counts, Example 3.3's eleven steps, Prop. 6.8 (12 of 192) and the hold-fibre relaxation (168 of 192, spec D6), with facts proved by computation |
+| `ThreeVoice.agda` | three-voice first-species counterpoint after Okumura and Shibayama (arXiv 2606.01102v3): Σ(ε.r) at cantus 0 found by search over H, its conjugation to other cantus pitches, the mask of Table 8 (26 shapes, 312 states), S_H as the joint maximization over the active pairs, Table 9's 26 counts, Example 3.3's eleven steps, Prop. 6.8 (12 of 192) and the relaxations hold-fibre (168 of 192, spec D6), hold (144, D12) and reflexive (180, D13), with facts proved by computation |
 | `Certificates.agda` | the claims of Rubato's Agda certificates after Flieder (arXiv 2512.04090, Ex. 2.4, B.2, B.3): list membership, pcint and intclass on Z_n, `AllInterval n C` as a Π over interval classes of a Σ over pairs, the three keys' scales, degrees and triads, the leading tone and `DominantContainsLeadingTone`; departures D1 to D11 of sources/AGDA-CERTIFICATES-SPEC.md |
 | `GeneratedCertificates.agda` | written by `gen/ExportCertificates.java` from `AgdaCertificates.exampleModule()`: 8 all-interval certificates (4 negative), the 36 keys of Ex. B.3 (12 vacuous) and 5 scale memberships (2 negative). Do not edit |
-| `adversarial/*.agda` | 58 files that must fail to typecheck, each with an `-- EXPECT:` line |
+| `adversarial/*.agda` | 62 files that must fail to typecheck, each with an `-- EXPECT:` line |
 | `gen/ExportAgda.java` | the generator for `Generated.agda` |
 | `gen/ExportAddresses.java` | the generator for `GeneratedAddresses.agda` |
 | `gen/ExportCertificates.java` | the generator for `GeneratedCertificates.agda` |
@@ -420,12 +420,26 @@ and the two intervals above it, and proves by computation:
 - `hold-fibre`: under the hold-fibre relaxation (ours, spec D6) 168 of the
   192 are admitted (P 84, L 36, R 48), and the 24 refused are 12 of P from
   the major triad in type 351 and 12 of L from the minor triad in type 135.
-The whole module checks in about 95 s on this VM. Five adversarial files:
+- `hold`: under the hold relaxation (ours, spec D12), which maximizes the
+  moving pairs over all states in the mask, 144 of the 192 are admitted
+  (P 60, L 36, R 48); it refuses the same 24 as hold-fibre and 24 more.
+- `reflexive`: under the reflexive relaxation (ours, spec D13), V1 with held
+  pairs skipped and no joint maximization, 180 are admitted (P 96, L 36,
+  R 48), refusing only the 12 of L from the minor triad in type 135.
+- `major-p351-hold`, `major-p351-reflexive`: E G C to E♭ G C is refused by
+  hold and admitted by reflexive.
+- `reflexive-edges`: reflexive admits 5,547 steps from the 26 sources with
+  lower voice 0.
+The whole module checks in about 200 s on this VM. Nine adversarial files:
 `ThreeVoiceMajorP351` admits P from E G C to E♭ G C, `ThreeVoiceTable9Off`
 gives h11 255 successors, `ThreeVoiceStillAdmitted` admits a held fifth
 under the strict relation, `ThreeVoiceHoldFibre180` gives hold-fibre the
-reflexive relaxation's 180, and `ThreeVoiceSigmaExtra` adds a symmetry to
-Σ(ε.7).
+reflexive relaxation's 180 (its comment predates the reflexive mode and is
+left as it was), `ThreeVoiceSigmaExtra` adds a symmetry to Σ(ε.7),
+`ThreeVoiceHold168` gives hold hold-fibre's 168, `ThreeVoiceHoldInsideFibre`
+has hold refuse (0; 0, 0) → (3; 9, 9), which it admits and hold-fibre
+refuses, `ThreeVoiceReflexiveMaximizes` has reflexive refuse E G C to E♭ G C,
+and `ThreeVoiceReflexiveIsV1` gives reflexive V1's 5,334 steps.
 
 ### Agda certificates (Certificates.agda, GeneratedCertificates.agda)
 

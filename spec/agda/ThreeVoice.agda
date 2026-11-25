@@ -17,7 +17,9 @@
 --  * the 288 parsimonious P/L/R realizations of §6.4: 192 have the target in
 --    the mask and 12 are admitted, all P from a minor triad in voicing type
 --    351 (Prop. 6.8, p. 23); under the hold-fibre relaxation (spec D6, ours)
---    168 are admitted.
+--    168 are admitted, under hold (D12, ours) 144 and under reflexive (D13,
+--    ours) 180, and reflexive admits 5,547 steps from the lower-voice-0
+--    sources.
 
 module ThreeVoice where
 
@@ -424,3 +426,75 @@ holdSummary = countR holdR realizations
 -- up the 192
 hold-fibre : holdSummary ≡ 168 ∷ 84 ∷ 36 ∷ 48 ∷ 12 ∷ 12 ∷ []
 hold-fibre = refl
+
+------------------------------------------------------------------------
+-- The hold relaxation (spec D12; ours, not the paper's): as hold-fibre, but
+-- the moving pairs are maximized jointly among all states in the mask
+
+holdAllWith : St → St → List Pair → Bool
+holdAllWith s t []     = true
+holdAllWith s t moving = memSt t (unionOf states (product (map (pairPreds s) moving)))
+
+holdAllAdmitted : St → St → Bool
+holdAllAdmitted (st a b c) t = inMask t && holdAllWith s0 t0 (filterPair (λ α → not (stillIn s0 t0 α)) (active s0))
+  where
+    s0 = st 0 b c
+    t0 = shift (12 - a) t
+
+holdAllR : Real → Bool
+holdAllR (real _ _ _ s t) = holdAllAdmitted s t
+
+------------------------------------------------------------------------
+-- The reflexive relaxation (spec D13; ours, not the paper's): the V1
+-- baseline with held pairs skipped. Each moving active pair's target lies in
+-- some image of its maximizing symmetries; there is no joint maximization.
+
+reflAt0 : St → St → Bool
+reflAt0 s t = all (λ α → stillIn s t α || any (λ q → q t) (pairPreds s α)) (active s)
+
+reflAdmitted : St → St → Bool
+reflAdmitted (st a b c) t = inMask t && reflAt0 (st 0 b c) (shift (12 - a) t)
+
+reflR : Real → Bool
+reflR (real _ _ _ s t) = reflAdmitted s t
+
+refusedBy : (Real → Bool) → Tr → Bool → Nat → Real → Bool
+refusedBy q tr mj ty z@(real tr' mj' ty' _ _) =
+  targetIn z && not (q z) && isTr tr z && (mj ⇔ᵇ mj') && (ty ==ⁿ ty')
+
+-- admitted, admitted P, L and R, refused (P, major, 351), refused (L, minor, 135)
+summaryOf : (Real → Bool) → List Nat
+summaryOf q = countR q realizations
+            ∷ countR (λ z → q z && isTr P z) realizations
+            ∷ countR (λ z → q z && isTr L z) realizations
+            ∷ countR (λ z → q z && isTr R z) realizations
+            ∷ countR (refusedBy q P true 351) realizations
+            ∷ countR (refusedBy q L false 135) realizations ∷ []
+
+-- Fact 9: hold admits 144 of the 192 (P 60, L 36, R 48); it refuses the 12
+-- of (P, major, 351) and the 12 of (L, minor, 135), and 24 more
+hold : summaryOf holdAllR ≡ 144 ∷ 60 ∷ 36 ∷ 48 ∷ 12 ∷ 12 ∷ []
+hold = refl
+
+-- Fact 10: reflexive admits 180 of the 192 (P 96, L 36, R 48), refusing only
+-- the 12 of (L, minor, 135)
+reflexive : summaryOf reflR ≡ 180 ∷ 96 ∷ 36 ∷ 48 ∷ 0 ∷ 12 ∷ []
+reflexive = refl
+
+-- Fact 11: E G C to E♭ G C, P from the major triad in type 351, is refused by
+-- the joint maximization under strict and hold and admitted by reflexive
+major-p351-hold : holdAllAdmitted (st 4 3 8) (st 3 4 9) ≡ false
+major-p351-hold = refl
+
+major-p351-reflexive : reflAdmitted (st 4 3 8) (st 3 4 9) ≡ true
+major-p351-reflexive = refl
+
+-- Fact 12: from the 26 sources with lower voice 0, reflexive admits 5,547 steps
+sources0 : List St
+sources0 = map (λ { (pt b c) → st 0 b c }) table8
+
+reflEdges : Nat
+reflEdges = length (concatMap (λ s → filterL (reflAdmitted s) states) sources0)
+
+reflexive-edges : reflEdges ≡ 5547
+reflexive-edges = refl
