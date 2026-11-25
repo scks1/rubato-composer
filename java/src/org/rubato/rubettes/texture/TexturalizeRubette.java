@@ -29,7 +29,16 @@ public class TexturalizeRubette extends SimpleAbstractRubette {
 	
 	@Override
 	public void run(RunInfo runInfo) {
-		PowerDenotator score = (PowerDenotator)this.getInput(0);
+		Denotator input = this.getInput(0);
+		if (input == null) {
+			this.addError("Input denotator is null.");
+			return;
+		}
+		if (!input.hasForm(CoolFormRegistrant.SCORE_FORM)) {
+			this.addError("Input denotator is not of form \"Score\".");
+			return;
+		}
+		PowerDenotator score = (PowerDenotator)input;
 		Map<Double,Integer> occurrences = new TreeMap<Double,Integer>();
 		Map<Double,Double> avgLoudnesses = new TreeMap<Double,Double>();
 		Map<Double,Double> avgDurations = new TreeMap<Double,Double>();
