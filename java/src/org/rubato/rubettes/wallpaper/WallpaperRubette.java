@@ -100,11 +100,11 @@ public class WallpaperRubette extends AbstractRubette implements ActionListener 
     }
 	
     /*
-     * calls getUnitedMappedDenotators with all current morphisms in the table. Used for testing
-     * only. 
+     * calls getUnitedMappedDenotators with a copy of all current morphisms in the table, since
+     * the recursion consumes its list. Used for testing only.
      */
 	protected PowerDenotator getUnitedMappedDenotators(PowerDenotator input) throws RubatoException {
-		return this.getUnitedMappedDenotators(input, this.morphismsTable.getMorphisms());
+		return this.getUnitedMappedDenotators(input, new ArrayList<ModuleMorphism>(this.morphismsTable.getMorphisms()));
 	}
 	
 	/*
