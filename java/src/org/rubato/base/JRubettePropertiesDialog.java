@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 
 public class JRubettePropertiesDialog extends JPanel {
 
@@ -66,12 +67,61 @@ public class JRubettePropertiesDialog extends JPanel {
             }
             layout.setConstraints(comp, c);
             panel.add(comp);
+            JComponent target = focusTarget(comp);
+            label.setLabelFor(target);
+            if (target instanceof AbstractButton && isEmpty(((AbstractButton) target).getText())) {
+                // A button's own text, even an empty one, takes precedence over labeledBy.
+                target.getAccessibleContext().setAccessibleName(label.getText());
+            }
         }
         
         add(panel, BorderLayout.CENTER);
     }
     
     
+    /**
+     * Returns the component that takes focus for a property editor, so that its label names it:
+     * the editor itself when it is a text component or a button, the view of a scroll pane, or
+     * else the first text component or text-less button inside the editor. A button with its
+     * own text, such as "Browse...", keeps its own name.
+     */
+    private static JComponent focusTarget(JComponent comp) {
+        if (comp instanceof JScrollPane) {
+            Component view = ((JScrollPane) comp).getViewport().getView();
+            return view instanceof JComponent ? (JComponent) view : comp;
+        }
+        if (comp instanceof JTextComponent || comp instanceof AbstractButton) {
+            return comp;
+        }
+        JComponent inner = findUnnamedEditor(comp);
+        return inner == null ? comp : inner;
+    }
+
+
+    private static JComponent findUnnamedEditor(Container container) {
+        for (Component child : container.getComponents()) {
+            if (child instanceof JTextComponent) {
+                return (JComponent) child;
+            }
+            if (child instanceof AbstractButton && isEmpty(((AbstractButton) child).getText())) {
+                return (JComponent) child;
+            }
+            if (child instanceof Container) {
+                JComponent inner = findUnnamedEditor((Container) child);
+                if (inner != null) {
+                    return inner;
+                }
+            }
+        }
+        return null;
+    }
+
+
+    private static boolean isEmpty(String s) {
+        return s == null || s.isEmpty();
+    }
+
+
     private RubetteProperties properties;
 
     private static final long serialVersionUID = 1L;
