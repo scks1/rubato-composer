@@ -72,7 +72,16 @@ public class RhythmizeRubette extends SimpleAbstractRubette {
     }
 
     public void run(RunInfo runInfo) {
-		PowerDenotator score = (PowerDenotator) this.getInput(0).copy();
+		Denotator input = this.getInput(0);
+		if (input == null) {
+			this.addError("Input denotator is null.");
+			return;
+		}
+		if (!input.hasForm(this.noteGenerator.getScoreForm())) {
+			this.addError("Input denotator is not of form \"Score\".");
+			return;
+		}
+		PowerDenotator score = (PowerDenotator) input.copy();
 		this.readProperties();
 		
 		try {
