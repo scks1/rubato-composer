@@ -19,6 +19,8 @@
 
 package org.rubato.base;
 
+import java.awt.KeyboardFocusManager;
+
 import javax.swing.*;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
@@ -98,6 +100,12 @@ public class TextProperty
         textArea.setEditable(true);
         textArea.setLineWrap(lineWrap);
         textArea.setWrapStyleWord(wordWrap);
+        // Tab and Shift+Tab move focus out of the area, as in every other editor of the dialog.
+        KeyboardFocusManager kfm = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+        for (int id : new int[] { KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS,
+                                  KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS }) {
+            textArea.setFocusTraversalKeys(id, kfm.getDefaultFocusTraversalKeys(id));
+        }
         JScrollPane scrollPane = new JScrollPane(textArea);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED);
