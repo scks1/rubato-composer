@@ -56,6 +56,12 @@ public class Runner implements Runnable {
     
     
     /**
+     * How many characters of an exception message a Problems line shows.
+     */
+    private static final int MAX_MESSAGE_LENGTH = 300;
+    
+    
+    /**
      * The parts of the user interface that a Runner reports to.
      * JComposer provides them in the program; tests provide their own.
      */
@@ -150,7 +156,7 @@ public class Runner implements Runnable {
                     }
                     if (!info.stopped()) {
                         e.printStackTrace();
-                        addProblem(runProblems, Messages.getString("Runner.exceptionproblem"), model); //$NON-NLS-1$
+                        addProblem(runProblems, describe("Runner.exceptionproblem", e), model); //$NON-NLS-1$
                     }
                 }
                 if (!info.abandoned) {
@@ -165,6 +171,71 @@ public class Runner implements Runnable {
         }
     }
     
+
+    /**
+     * Returns the Problems line for a Throwable from a rubette's run method:
+     * the message with the given key, with %1 replaced by the class name and
+     * the first line of the message, and %2 by the place it was thrown.
+     */
+    static String describe(String key, Throwable t) {
+        String what = t.getClass().getSimpleName();
+        if (what.isEmpty()) {
+            what = t.getClass().getName();
+        }
+        String msg = t.getMessage();
+        if (msg != null) {
+            int nl = msg.indexOf('\n');
+            msg = (nl >= 0 ? msg.substring(0, nl) : msg).trim();
+            if (msg.length() > MAX_MESSAGE_LENGTH) {
+                msg = msg.substring(0, MAX_MESSAGE_LENGTH) + "\u2026"; //$NON-NLS-1$
+            }
+            if (!msg.isEmpty()) {
+                what += ": " + msg; //$NON-NLS-1$
+            }
+        }
+        return fill(Messages.getString(key), what, place(t));
+    }
+
+
+    /**
+     * Returns the first stack frame outside the Java runtime and this class,
+     * as Class.method(File.java:line), or "?" when there is none.
+     */
+    private static String place(Throwable t) {
+        for (StackTraceElement e : t.getStackTrace()) {
+            String c = e.getClassName();
+            if (c.startsWith("java.") || c.startsWith("javax.") || c.startsWith("jdk.") //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$
+                || c.startsWith("sun.") || c.startsWith("com.sun.") //$NON-NLS-1$ //$NON-NLS-2$
+                || c.equals(Runner.class.getName())) {
+                continue;
+            }
+            String simple = c.substring(c.lastIndexOf('.') + 1);
+            String file = e.getFileName() == null ? "?" : e.getFileName(); //$NON-NLS-1$
+            return simple + "." + e.getMethodName() + "(" + file + ":" + e.getLineNumber() + ")"; //$NON-NLS-1$ //$NON-NLS-2$ //$NON-NLS-3$ //$NON-NLS-4$
+        }
+        return "?"; //$NON-NLS-1$
+    }
+
+
+    /**
+     * Replaces %1 and %2 in the template in one pass, taking the values
+     * literally, so a value that contains $, \ or %2 stays as it is.
+     */
+    private static String fill(String template, String v1, String v2) {
+        StringBuilder b = new StringBuilder();
+        for (int i = 0; i < template.length(); i++) {
+            char c = template.charAt(i);
+            if (c == '%' && i + 1 < template.length() && (template.charAt(i + 1) == '1' || template.charAt(i + 1) == '2')) {
+                b.append(template.charAt(i + 1) == '1' ? v1 : v2);
+                i++;
+            }
+            else {
+                b.append(c);
+            }
+        }
+        return b.toString();
+    }
+
 
     /**
      * Adds a new problem to the list of problems.
