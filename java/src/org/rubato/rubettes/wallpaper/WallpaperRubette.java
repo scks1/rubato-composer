@@ -33,6 +33,7 @@ import javax.swing.*;
 
 import org.rubato.base.*;
 import org.rubato.composer.RunInfo;
+import org.rubato.composer.icons.Icons;
 import org.rubato.composer.Utilities;
 import org.rubato.composer.components.JSelectForm;
 import org.rubato.composer.components.JStatusline;
@@ -222,6 +223,11 @@ public class WallpaperRubette extends AbstractRubette implements ActionListener 
      */
     public String getName() {
         return "Wallpaper";
+    }
+
+
+    public ImageIcon getIcon() {
+        return icon;
     }
 
     /**
@@ -524,4 +530,6 @@ public class WallpaperRubette extends AbstractRubette implements ActionListener 
 		return loadedRubette;
     }
 
+
+    private static final ImageIcon icon = Icons.drawnIcon("wallpaper"); //$NON-NLS-1$
 }

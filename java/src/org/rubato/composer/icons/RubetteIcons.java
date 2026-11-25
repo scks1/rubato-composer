@@ -67,6 +67,28 @@ final class RubetteIcons {
 
     private static final Map<String,Supplier<ImageIcon>> ICONS = new LinkedHashMap<>();
 
+    private static final Map<String,Supplier<ImageIcon>> NAMED = new LinkedHashMap<>();
+
+
+    /**
+     * Returns the vector icon named <code>name</code>, drawn for a rubette
+     * that has no bitmap of its own (such as "morphing") or that shares its
+     * bitmap with another rubette (such as "handgesture"), or null if there
+     * is none.
+     */
+    static ImageIcon forName(String name) {
+        Supplier<ImageIcon> s = NAMED.get(name);
+        return (s == null) ? null : s.get();
+    }
+
+
+    /**
+     * Returns the names of the vector icons that are not keyed by a bitmap.
+     */
+    static Set<String> names() {
+        return Collections.unmodifiableSet(NAMED.keySet());
+    }
+
 
     /**
      * Returns the vector icon for the bitmap at the class path resource
@@ -91,6 +113,11 @@ final class RubetteIcons {
 
     private static void mark(String path, VectorIcon.Painter p) {
         ICONS.put(path, () -> new VectorIcon(p, FG, FG_FALLBACK, 16, true));
+    }
+
+
+    private static void named(String name, VectorIcon.Painter p) {
+        NAMED.put(name, () -> new VectorIcon(p, FG, FG_FALLBACK, 16, true));
     }
 
 
@@ -492,6 +519,79 @@ final class RubetteIcons {
             c.moveTo(1.5, 9.5);
             c.quadTo(9.5, 9.5, 14.5, 2);
             g.draw(c);
+        });
+
+        // Rubettes without a bitmap of their own, drawn by name
+
+        // a square passing through a rounded square into a circle
+        named("morphing", (g, i) -> {
+            g.draw(new Rectangle2D.Double(1.5, 1.5, 5, 5));
+            withColor(g, i.getSecondaryColor(), () ->
+                g.draw(new RoundRectangle2D.Double(5.5, 5.5, 5, 5, 3, 3)));
+            ring(g, 12, 12, 2.5);
+        });
+        // a basket weave: pairs of strands turning a quarter at each square
+        named("texturalize", (g, i) -> {
+            line(g, 1.5, 3.2, 6.8, 3.2);
+            line(g, 1.5, 5.8, 6.8, 5.8);
+            line(g, 10.2, 1.5, 10.2, 6.8);
+            line(g, 12.8, 1.5, 12.8, 6.8);
+            line(g, 3.2, 9.2, 3.2, 14.5);
+            line(g, 5.8, 9.2, 5.8, 14.5);
+            line(g, 9.2, 10.2, 14.5, 10.2);
+            line(g, 9.2, 12.8, 14.5, 12.8);
+        });
+        // one motif repeated in shifted rows, as a wallpaper repeats it
+        named("wallpaper", (g, i) -> {
+            double[][] at = { {3, 3.5}, {8, 3.5}, {13, 3.5}, {5.5, 8.5}, {10.5, 8.5}, {3, 13.5}, {8, 13.5}, {13, 13.5} };
+            for (double[] p : at) {
+                g.fill(polygon(p[0]-1.9, p[1]+1.6, p[0], p[1]-1.9, p[0]+1.9, p[1]+1.6));
+            }
+        });
+        // the sharp, the alteration sign of notation
+        named("alteration", (g, i) -> {
+            line(g, 6, 1.5, 6, 14.5);
+            line(g, 10, 1.5, 10, 14.5);
+            Stroke old = g.getStroke();
+            g.setStroke(new BasicStroke(2.2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_ROUND));
+            line(g, 2.5, 6.6, 13.5, 4.6);
+            line(g, 2.5, 11.4, 13.5, 9.4);
+            g.setStroke(old);
+        });
+        // the maps-to arrow of a module morphism
+        named("modulemap", (g, i) -> {
+            line(g, 2, 4.5, 2, 11.5);
+            arrow(g, 2, 8, 14, 8);
+        });
+        // an arrow writing into a sound wave, the Csound score file
+        named("scoretocsound", (g, i) -> {
+            arrow(g, 8, 1.5, 8, 6.5);
+            Path2D.Double w = VectorIcons.path();
+            w.moveTo(1.5, 11);
+            w.curveTo(3.2, 7.2, 4.8, 7.2, 6.5, 11);
+            w.curveTo(8.2, 14.8, 9.8, 14.8, 11.5, 11);
+            w.quadTo(12.9, 7.9, 14.5, 9.2);
+            g.draw(w);
+        });
+        // a point with rays bursting from it
+        named("bigbang", (g, i) -> {
+            dot(g, 8, 8, 2);
+            for (int k = 0; k < 8; k++) {
+                double a = Math.toRadians(45*k+22.5);
+                line(g, 8+3.9*Math.cos(a), 8+3.9*Math.sin(a), 8+6.6*Math.cos(a), 8+6.6*Math.sin(a));
+            }
+        });
+        // a form, the hexagon of limits, picked out by a dashed selection
+        named("selectform", (g, i) -> {
+            withColor(g, i.getSecondaryColor(), () ->
+                dashed(g, () -> g.draw(new RoundRectangle2D.Double(1.2, 1.2, 13.6, 13.6, 3, 3))));
+            double[] xy = new double[12];
+            for (int k = 0; k < 6; k++) {
+                double a = Math.toRadians(60*k);
+                xy[2*k] = 8+4*Math.cos(a);
+                xy[2*k+1] = 8+4*Math.sin(a);
+            }
+            g.draw(polygon(xy));
         });
 
         // Form types

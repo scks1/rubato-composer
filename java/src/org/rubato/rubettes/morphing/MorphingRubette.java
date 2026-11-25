@@ -26,9 +26,12 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import javax.swing.ImageIcon;
+
 import org.rubato.base.RubatoException;
 import org.rubato.base.SimpleAbstractRubette;
 import org.rubato.composer.RunInfo;
+import org.rubato.composer.icons.Icons;
 import org.rubato.math.module.RElement;
 import org.rubato.math.yoneda.Denotator;
 import org.rubato.math.yoneda.LimitDenotator;
@@ -69,6 +72,11 @@ public class MorphingRubette extends SimpleAbstractRubette {
 	@Override
 	public String getName() {
 		return "Morphing";
+	}
+
+
+	public ImageIcon getIcon() {
+		return icon;
 	}
 	
 	@Override
@@ -343,4 +351,6 @@ public class MorphingRubette extends SimpleAbstractRubette {
 		return neighborMap;
 	}
 
+
+	private static final ImageIcon icon = Icons.drawnIcon("morphing"); //$NON-NLS-1$
 }

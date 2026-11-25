@@ -1,11 +1,13 @@
 package org.rubato.rubettes.bigbang;
 
 import javax.swing.JComponent;
+import javax.swing.ImageIcon;
 
 import org.rubato.base.AbstractRubette;
 import org.rubato.base.RubatoConstants;
 import org.rubato.base.Rubette;
 import org.rubato.composer.RunInfo;
+import org.rubato.composer.icons.Icons;
 import org.rubato.math.yoneda.Denotator;
 import org.rubato.rubettes.bigbang.controller.BigBangController;
 import org.rubato.rubettes.bigbang.model.BigBangModel;
@@ -61,6 +63,11 @@ public class BigBangRubette extends AbstractRubette {
 	public String getName() {
 		return "BigBang";
 	}
+
+
+	public ImageIcon getIcon() {
+		return icon;
+	}
 	
 	/**
      * Returns the fact that BigBangRubette belongs to the core rubettes
@@ -110,4 +117,6 @@ public class BigBangRubette extends AbstractRubette {
 		//return new BigBangRubette(new BigBangModel());
 	}
 
+
+	private static final ImageIcon icon = Icons.drawnIcon("bigbang"); //$NON-NLS-1$
 }

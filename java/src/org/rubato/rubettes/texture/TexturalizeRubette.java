@@ -3,10 +3,13 @@ package org.rubato.rubettes.texture;
 import java.util.Map;
 import java.util.TreeMap;
 
+import javax.swing.ImageIcon;
+
 import org.rubato.base.DoubleProperty;
 import org.rubato.base.RubatoException;
 import org.rubato.base.SimpleAbstractRubette;
 import org.rubato.composer.RunInfo;
+import org.rubato.composer.icons.Icons;
 import org.rubato.math.module.QElement;
 import org.rubato.math.module.RElement;
 import org.rubato.math.module.ZElement;
@@ -93,6 +96,11 @@ public class TexturalizeRubette extends SimpleAbstractRubette {
 	public String getName() {
 		return "Texturalize";
 	}
+
+
+	public ImageIcon getIcon() {
+		return icon;
+	}
 	
 	@Override
 	public String getGroup() {
@@ -120,4 +128,6 @@ public class TexturalizeRubette extends SimpleAbstractRubette {
         return "Output Texture denotator";
     }
 
+
+	private static final ImageIcon icon = Icons.drawnIcon("texturalize"); //$NON-NLS-1$
 }

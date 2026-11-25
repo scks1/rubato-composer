@@ -105,6 +105,45 @@ public class Icons {
 
 
     /**
+     * Loads the icon of a rubette that shares the bitmap <code>name</code>
+     * next to <code>cls</code> with another rubette but has a drawing of
+     * its own: under FlatLaf the drawing <code>drawing</code> from
+     * {@link RubetteIcons}, under the classic theme the shared bitmap.
+     */
+    public static ImageIcon loadIcon(Class<?> cls, String name, String drawing) {
+        return loadIcon(cls, name, drawing, Theme.isFlat());
+    }
+
+
+    static ImageIcon loadIcon(Class<?> cls, String name, String drawing, boolean vector) {
+        if (vector) {
+            ImageIcon drawn = RubetteIcons.forName(drawing);
+            if (drawn != null) {
+                return drawn;
+            }
+        }
+        return loadIcon(cls, name, false);
+    }
+
+
+    /**
+     * Returns the icon of a rubette that has no bitmap: under FlatLaf the
+     * drawing <code>drawing</code> from {@link RubetteIcons}, under the
+     * classic theme {@link #emptyIcon}, which a rubette box shows as no
+     * icon at all.
+     */
+    public static ImageIcon drawnIcon(String drawing) {
+        return drawnIcon(drawing, Theme.isFlat());
+    }
+
+
+    static ImageIcon drawnIcon(String drawing, boolean vector) {
+        ImageIcon drawn = vector ? RubetteIcons.forName(drawing) : null;
+        return (drawn != null) ? drawn : emptyIcon;
+    }
+
+
+    /**
      * Returns the class path resource path of <code>name</code> resolved
      * against <code>cls</code>, the way Class.getResource resolves it.
      */

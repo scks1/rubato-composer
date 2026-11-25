@@ -36,6 +36,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingConstants;
+import javax.swing.ImageIcon;
 
 import org.rubato.base.AbstractRubette;
 import org.rubato.base.Repository;
@@ -43,6 +44,7 @@ import org.rubato.base.RubatoConstants;
 import org.rubato.base.Rubette;
 import org.rubato.base.RubatoException;
 import org.rubato.composer.RunInfo;
+import org.rubato.composer.icons.Icons;
 import org.rubato.composer.Utilities;
 import org.rubato.composer.components.JSelectForm;
 import org.rubato.composer.components.JStatusline;
@@ -94,6 +96,11 @@ public class AlterationRubette extends AbstractRubette implements ActionListener
 	@Override
 	public String getName() {
 		return "Alteration";
+	}
+
+
+	public ImageIcon getIcon() {
+		return icon;
 	}
 
 	@Override
@@ -471,4 +478,6 @@ public class AlterationRubette extends AbstractRubette implements ActionListener
 		return loadedRubette;
     }
 
+
+	private static final ImageIcon icon = Icons.drawnIcon("alteration"); //$NON-NLS-1$
 }

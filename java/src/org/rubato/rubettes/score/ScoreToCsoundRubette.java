@@ -35,6 +35,7 @@ import org.rubato.base.Repository;
 import org.rubato.base.Rubette;
 import org.rubato.composer.RunInfo;
 import org.rubato.composer.Utilities;
+import org.rubato.composer.icons.Icons;
 import org.rubato.math.arith.Rational;
 import org.rubato.math.yoneda.Denotator;
 import org.rubato.math.yoneda.Form;
@@ -390,11 +391,10 @@ public final class ScoreToCsoundRubette extends AbstractRubette {
     private static final Form scoreForm;
         
     protected JPanel properties = null;
-    private static final ImageIcon icon = null;
+    private static final ImageIcon icon = Icons.drawnIcon("scoretocsound"); //$NON-NLS-1$
     
     static {
         Repository rep = Repository.systemRepository();
         scoreForm = rep.getForm("Score");
-//        icon = Icons.loadIcon(Icons.class, "csound.png");
     }
 }

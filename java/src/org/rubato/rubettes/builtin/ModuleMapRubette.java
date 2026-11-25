@@ -33,6 +33,7 @@ import javax.swing.*;
 
 import org.rubato.base.*;
 import org.rubato.composer.RunInfo;
+import org.rubato.composer.icons.Icons;
 import org.rubato.composer.components.*;
 import org.rubato.math.module.Module;
 import org.rubato.math.module.morphism.ModuleMorphism;
@@ -93,6 +94,11 @@ public class ModuleMapRubette
     
     public String getName() {
         return "ModuleMap"; //$NON-NLS-1$
+    }
+
+
+    public ImageIcon getIcon() {
+        return icon;
     }
 
     
@@ -349,4 +355,6 @@ public class ModuleMapRubette
     private JSelectForm    selectForm = null;
     private JMorphismEntry morphismEntry = null;
     private JStatusline    statusline = null;
+
+    private static final ImageIcon icon = Icons.drawnIcon("modulemap"); //$NON-NLS-1$
 }

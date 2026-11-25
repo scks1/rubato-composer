@@ -203,5 +203,5 @@ public class SelectFormRubette extends AbstractRubette {
     private JSelectForm selectForm = null;
     private Form outputForm = null; 
     private Form baseForm = null;
-    private static final ImageIcon icon = Icons.emptyIcon;
+    private static final ImageIcon icon = Icons.drawnIcon("selectform"); //$NON-NLS-1$
 }

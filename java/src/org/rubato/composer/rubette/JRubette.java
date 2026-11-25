@@ -36,6 +36,7 @@ import org.rubato.base.Rubette;
 import org.rubato.composer.JComposer;
 import org.rubato.composer.JRubetteList;
 import org.rubato.composer.components.JMenuTitleItem;
+import org.rubato.composer.icons.Icons;
 import org.rubato.composer.icons.VectorIcon;
 import org.rubato.composer.network.JNetwork;
 import org.rubato.composer.network.JMacroRubetteView;
@@ -69,7 +70,9 @@ public final class JRubette extends JPanel
 
         int wy = MARGIN_TOP+5;
 
-        if (model.getIcon() == null) {
+        // a rubette without a picture may return the blank emptyIcon, which
+        // would only push its name off center
+        if (model.getIcon() == null || model.getIcon() == Icons.emptyIcon) {
             nameLabel = new JLabel(model.getName(), SwingConstants.CENTER);
         }
         else {
