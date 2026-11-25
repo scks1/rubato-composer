@@ -57,6 +57,14 @@ public class Problem {
     }
     
     
+    /**
+     * Returns the message without the network and rubette names.
+     */
+    public String getMessage() {
+        return msg;
+    }
+
+
     public String toString() {
         return jnetwork+":"+jrubette+": "+msg; //$NON-NLS-1$ //$NON-NLS-2$
     }
