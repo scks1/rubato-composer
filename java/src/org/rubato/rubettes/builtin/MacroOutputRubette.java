@@ -49,6 +49,7 @@ public class MacroOutputRubette
     public MacroOutputRubette() {
         setInCount(1);
         setOutCount(0);
+        values = new Denotator[1];
         labels = new String[1];
     }
     
