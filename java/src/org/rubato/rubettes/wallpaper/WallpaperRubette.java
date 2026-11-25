@@ -465,8 +465,8 @@ public class WallpaperRubette extends AbstractRubette implements ActionListener 
     public void toXML(XMLWriter writer) {
         if (this.inputForm != null) {
             writer.writeFormRef(this.inputForm);
-			for (int i = 0; i < this.morphismsTable.getMorphismCount(); i++) {
-				ModuleMorphism currentMorphism = this.morphismsTable.getMorphism(i);
+			// the applied morphisms; the table's rows can hold unapplied edits
+			for (ModuleMorphism currentMorphism : this.morphismsTable.getMorphisms()) {
 				writer.openBlock(MORPHISM,
 					R_FROM, this.morphismsTable.getRangeFrom(currentMorphism),
 					R_TO, this.morphismsTable.getRangeTo(currentMorphism));
