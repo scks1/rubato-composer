@@ -407,6 +407,45 @@ public final class FiniteCategory {
         return tables == null ? null : tables[f].clone();
     }
 
+    /**
+     * The opposite category: the same objects and arrows, each arrow with
+     * its ends swapped, and g after f in the opposite equal to f after g
+     * here. Value tables are not carried over.
+     */
+    public FiniteCategory opposite() {
+        int n = dom.length;
+        int[][] op = new int[n][n];
+        for (int g = 0; g < n; g++) {
+            for (int f = 0; f < n; f++) {
+                op[g][f] = compose[f][g];
+            }
+        }
+        return of(objectNames, cod, dom, arrowNames, identity, op);
+    }
+
+    /**
+     * True iff the only endomorphisms and the only isomorphisms are the
+     * identities (arXiv 2611.32655, Remark 4.14). It is enough to check
+     * that no non-identity arrow is an endomorphism and that no composite
+     * of two non-identity arrows is an identity.
+     */
+    public boolean isAcyclic() {
+        for (int f = 0; f < dom.length; f++) {
+            if (f != identity[dom[f]] && dom[f] == cod[f]) {
+                return false;
+            }
+        }
+        for (int g = 0; g < dom.length; g++) {
+            for (int f = 0; f < dom.length; f++) {
+                int gf = compose[g][f];
+                if (gf >= 0 && f != identity[dom[f]] && g != identity[dom[g]] && gf == identity[dom[gf]]) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     /** True iff every arrow has an inverse. */
     public boolean isGroupoid() {
         for (int f = 0; f < dom.length; f++) {
