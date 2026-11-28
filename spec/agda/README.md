@@ -44,7 +44,8 @@ standard library. Every module uses `--safe --without-K`.
 | `ThreeVoice.agda` | three-voice first-species counterpoint after Okumura and Shibayama (arXiv 2606.01102v3): Σ(ε.r) at cantus 0 found by search over H, its conjugation to other cantus pitches, the mask of Table 8 (26 shapes, 312 states), S_H as the joint maximization over the active pairs, Table 9's 26 counts, Example 3.3's eleven steps, Prop. 6.8 (12 of 192) and the relaxations hold-fibre (168 of 192, spec D6), hold (144, D12) and reflexive (180, D13), with facts proved by computation |
 | `Certificates.agda` | the claims of Rubato's Agda certificates after Flieder (arXiv 2512.04090, Ex. 2.4, B.2, B.3): list membership, pcint and intclass on Z_n, `AllInterval n C` as a Π over interval classes of a Σ over pairs, the three keys' scales, degrees and triads, the leading tone and `DominantContainsLeadingTone`; departures D1 to D11 of sources/AGDA-CERTIFICATES-SPEC.md |
 | `GeneratedCertificates.agda` | written by `gen/ExportCertificates.java` from `AgdaCertificates.exampleModule()`: 8 all-interval certificates (4 negative), the 36 keys of Ex. B.3 (12 vacuous) and 5 scale memberships (2 negative). Do not edit |
-| `adversarial/*.agda` | 62 files that must fail to typecheck, each with an `-- EXPECT:` line |
+| `MasterMonoid.agda` | the truncated master monoid M₂ = Mon(C₂) of arXiv 2611.32655 (Def. 4.3, Prop. 4.4): the eleven arrows of C₂ and their composition, reduced words by one left-to-right pass (Lemma 2.3), the three printed relations by refl, normal forms, 8, 58 and 416 reduced words of length 1, 2 and 3, the generator and relation counts for n = 1 .. 7, and the Tonnetz (this fork's example) as a semisimplicial set whose 24 triads satisfy the face identities with every edge on two triads, with facts proved by computation |
+| `adversarial/*.agda` | 68 files that must fail to typecheck, each with an `-- EXPECT:` line |
 | `gen/ExportAgda.java` | the generator for `Generated.agda` |
 | `gen/ExportAddresses.java` | the generator for `GeneratedAddresses.agda` |
 | `gen/ExportCertificates.java` | the generator for `GeneratedCertificates.agda` |
@@ -440,6 +441,36 @@ left as it was), `ThreeVoiceSigmaExtra` adds a symmetry to Σ(ε.7),
 has hold refuse (0; 0, 0) → (3; 9, 9), which it admits and hold-fibre
 refuses, `ThreeVoiceReflexiveMaximizes` has reflexive refuse E G C to E♭ G C,
 and `ThreeVoiceReflexiveIsV1` gives reflexive V1's 5,334 steps.
+
+### Master monoid (MasterMonoid.agda)
+
+`MasterMonoid.agda` restates the M₂ part of the Java classes
+`SemisimplicialCategory` and `UniversalMonoid` (arXiv 2611.32655,
+Carcacía-Campos), written from the paper rather than the Java code. C₂ has
+eleven arrows; the three arrows [2] → [0] are named by the vertex they
+keep. A word lists u₁ first and uₖ acts first, and `normalize` reduces it
+in one left-to-right pass. Agda proves by computation:
+- `rel1`, `rel2`, `rel3`: the relations of p. 19, d¹₀ d²₁ = d¹₀ d²₀,
+  d¹₀ d²₂ = d¹₁ d²₀ and d¹₁ d²₂ = d¹₁ d²₁, as equal normal forms.
+- `nf-*`: normal forms, among them d¹₀ d²₁ ↦ keep2 and the reduced pair
+  d²₀ d¹₀.
+- `reduced-1` to `reduced-3`: 8, 58 and 416 reduced words of length 1, 2
+  and 3, the counts the Java test checks.
+- `normal-is-reduced`, `reduced-fixed`: on all 512 words of length 3,
+  `normalize` returns a reduced word and fixes reduced words.
+- `gens-count`, `rels-count`, `rels-2`: the presentation of Prop. 4.4 has
+  n(n+3)/2 generators and the sum of C(k+1, 2) relations for n = 1 .. 7,
+  and M₂'s three relations come in the printed order.
+- `tonnetz-identities`, `two-triads`, `c-major`: the Tonnetz with triad
+  faces ordered root, third, fifth (this fork's choice) satisfies the
+  semisimplicial identities on all 24 triads, every one of its 36 edges
+  lies on two triads, and C major has faces E-G, C-G, C-E.
+Homology is not checked in Agda. Six adversarial files: `MasterMonoidWrongRelation`
+equates d¹₀ d²₁ and d¹₁ d²₁, `MasterMonoidReducedTwo60` claims 60 reduced
+words of length 2, `MasterMonoidFourRelations` gives M₂ four relations,
+`MasterMonoidComposablePair` reduces d²₀ d¹₀ to one letter,
+`TonnetzFaceOrderSwapped` lists the root-fifth edge first, and
+`TonnetzEdgeOnThreeTriads` puts every edge on three triads.
 
 ### Agda certificates (Certificates.agda, GeneratedCertificates.agda)
 

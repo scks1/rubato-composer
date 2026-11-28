@@ -9,7 +9,7 @@
 #     and GeneratedCertificates.agda (any difference fails)
 #  3. runs DepartureProbe and keeps its output
 #  4. typechecks every positive module from a clean state, Counterpoint.agda,
-#     Global.agda, Harmony.agda, Performance.agda, FiniteModAt.agda, FieldExtraction.agda, VoiceLeading.agda, RhythmTrees.agda and ThreeVoice.agda included (their facts need no generated values),
+#     Global.agda, Harmony.agda, Performance.agda, FiniteModAt.agda, FieldExtraction.agda, VoiceLeading.agda, RhythmTrees.agda, ThreeVoice.agda and MasterMonoid.agda included (their facts need no generated values),
 #     and Certificates.agda with the committed GeneratedCertificates.agda
 #  4b. typechecks GeneratedCertificates.agda once more through
 #     check-certificate.sh, the script a user runs on a rubette's file
@@ -89,7 +89,7 @@ fi
 
 find . -name '*.agdai' -delete
 : > "$logdir/agda-positive.log"
-for m in Prelude OrderedSets Forms Registry Generated GeneratedChecks Addresses GeneratedAddresses AddressChecks Counterpoint Global Harmony Performance Gestures Monteverdi FiniteModAt FieldExtraction VoiceLeading RhythmTrees ThreeVoice Certificates GeneratedCertificates; do
+for m in Prelude OrderedSets Forms Registry Generated GeneratedChecks Addresses GeneratedAddresses AddressChecks Counterpoint Global Harmony Performance Gestures Monteverdi FiniteModAt FieldExtraction VoiceLeading RhythmTrees ThreeVoice MasterMonoid Certificates GeneratedCertificates; do
   if out="$("$AGDA" --no-libraries -i . "$m.agda" 2>&1)"; then
     say "PASS $m.agda"
   else
