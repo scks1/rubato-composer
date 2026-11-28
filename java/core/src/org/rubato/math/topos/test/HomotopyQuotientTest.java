@@ -298,6 +298,30 @@ public class HomotopyQuotientTest extends TestCase {
                      ChainComplex.format(ex.homotopyQuotientHomology(SemisimplicialCategory.truncated(1))));
     }
 
+    /**
+     * Thm. 4.12's extra edges join s&#772; to v(s) = Z(&epsilon;)(s), the 0-th
+     * vertex, with &epsilon; computed here as the word d^1_1 d^2_2 (k = 2),
+     * d^1_1 (k = 1) and the unit (k = 0). Homology cannot see this choice:
+     * any vertex in the same path component gives the same homotopy type.
+     */
+    public void testThm412ExtraEdgesJoinTheZerothVertex() {
+        SemisimplicialCategory c2 = SemisimplicialCategory.truncated(2);
+        Random rnd = new Random(412);
+        int[][] eps = { {}, c2.element(new int[][] { { 1, 1 } }), c2.element(new int[][] { { 1, 1 }, { 2, 2 } }) };
+        for (int trial = 0; trial < 20; trial++) {
+            FiniteMonoidAction s = MonoidFixtures.randomM2Set(c2, rnd);
+            SemisimplicialSet q = s.homotopyQuotientComplex(c2);
+            int n = s.size();
+            for (int k = 0; k <= 2; k++) {
+                for (int x = 0; x < n; x++) {
+                    int edge = n + k * n + x;
+                    assertEquals(n + x, q.face(1, edge, 0));
+                    assertEquals(s.act(eps[k], x), q.face(1, edge, 1));
+                }
+            }
+        }
+    }
+
     /** Thm. 4.12: the complex for S has n+1 typed copies per element, one cone vertex and one edge per copy. */
     public void testThm412ComplexShape() {
         SemisimplicialCategory c2 = SemisimplicialCategory.truncated(2);
